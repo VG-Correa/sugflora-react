@@ -8,6 +8,7 @@ import Password from './screens/Password';
 import NewProject from './screens/NewProject';
 import HomePage from './screens/HomePage';
 import Profile from './screens/Profile';
+import About from './screens/About';
 import MyProjects from './screens/MyProjects'; // Importe o novo componente MyProjects
 
 const Stack = createNativeStackNavigator();
@@ -30,6 +31,11 @@ const App = () => {
         <Stack.Screen 
           name="Login" 
           component={Login} 
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen 
+          name="About" 
+          component={About} 
           options={{ headerShown: false }}
         />
         

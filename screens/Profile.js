@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Image, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native'; // Adicione esta importação
+import Header from '../components/Header';
 
 const Profile = () => {
   const navigation = useNavigation(); // Adicione este hook

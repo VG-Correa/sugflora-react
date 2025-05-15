@@ -11,3 +11,5 @@ const loginApi = {
         }
     }
 }
+
+export default loginApi;

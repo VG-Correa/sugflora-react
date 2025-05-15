@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { use, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -11,18 +11,48 @@ import {
   ImageBackground,
   useWindowDimensions,
   ScrollView,
-  KeyboardAvoidingView
+  KeyboardAvoidingView,
+  Alert
 } from 'react-native';
 import Header from '../components/Header';
 import forestImage from '../assets/images/forest.png';
+import loginApi from '../functions/api/loginApi';
+import usuarioApi from '../functions/api/usuarioApi';
 
 const Login = ({ navigation }) => {
+
+  const usernameRef = useRef(null)
+  const passRef = useRef(null)
 
   const handleLogin = async (event) => {
     event.preventDefault();
 
-    const username = event.target.username.value;
-    const password = event.target.password.value;
+    const username = usernameRef.current.value
+    const password = passRef.current.value
+    
+    const response = await loginApi.login(username, password);
+
+    if (response.status === 200) {
+      localStorage.setItem('token', response.data.token);
+      
+      const usuarioLogado = await usuarioApi.getUserByUsername(username);
+      if (usuarioLogado != null && usuarioLogado.status === 200) {
+        console.log(usuarioLogado.data.data[0])
+        localStorage.setItem('user_id', usuarioLogado.data.data[0].id)
+        localStorage.setItem('username', usuarioLogado.data.data[0].username)
+        navigation.navigate('HomePage');
+      } else {
+        localStorage.removeItem('token')
+      }
+
+      console.log(localStorage.getItem('user'))
+
+    } else {
+      window.alert("Credenciais inválidas")
+    }
+
+    console.log(response);
+    
 
   }
 
@@ -93,7 +123,7 @@ const Login = ({ navigation }) => {
 
               <View style={styles.formContainer}>
                 <Text style={styles.label}>EMAIL</Text>
-                <TextInput
+                <TextInput ref={usernameRef}
                   style={[
                     styles.input,
                     { paddingVertical: isSmallDevice ? 10 : 12 }
@@ -104,7 +134,7 @@ const Login = ({ navigation }) => {
                 />
 
                 <Text style={styles.label}>SENHA</Text>
-                <TextInput
+                <TextInput ref={passRef}
                   style={[
                     styles.input,
                     { paddingVertical: isSmallDevice ? 10 : 12 }
@@ -120,7 +150,7 @@ const Login = ({ navigation }) => {
 
                 <View style={styles.registerContainer}>
                   <Text style={styles.registerText}>Não tem uma conta? </Text>
-                  <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+                  <TouchableOpacity onPress={(event) => {handleLogin(event)}}>
                     <Text style={styles.createAccount}>Cadastre-se</Text>
                   </TouchableOpacity>
                 </View>
@@ -130,7 +160,7 @@ const Login = ({ navigation }) => {
                     styles.loginButton,
                     { marginTop: isSmallDevice ? 10 : 20 }
                   ]}
-                  onPress={() => navigation.navigate('HomePage')}
+                  onPress={(event) => {handleLogin(event)}}
                   activeOpacity={0.9}
                 >
                   <Text style={styles.loginText}>ENTRAR</Text>

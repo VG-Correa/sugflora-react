@@ -1,10 +1,14 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, TextInput } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Header from '../components/Header';
 
 const MyProjects = () => {
   const navigation = useNavigation();
+  
+  const [projetos, setProjetos] = useState([])
+
+  
 
   return (
     <View style={styles.container}>

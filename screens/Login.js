@@ -8,13 +8,19 @@ import {
   SafeAreaView,
   Platform,
   StatusBar,
-  ImageBackground
+  ImageBackground,
+  useWindowDimensions,
+  ScrollView,
+  KeyboardAvoidingView
 } from 'react-native';
-
 import Header from '../components/Header';
-import forestImage from '../assets/images/forest.png'; // ajuste o caminho se necessário
+import forestImage from '../assets/images/forest.png';
 
 const Login = ({ navigation }) => {
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const isLargeScreen = screenWidth >= 768;
+  const isSmallDevice = screenHeight < 600;
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ImageBackground
@@ -22,59 +28,108 @@ const Login = ({ navigation }) => {
         resizeMode="cover"
         style={styles.background}
       >
-        <Header navigation={navigation} />
-        <View style={styles.container}>
-          <Text style={styles.title}>Login</Text>
-          <Text style={styles.welcomeText}>Bem-Vindo de Volta!</Text>
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.flex}
+        >
+          <ScrollView
+            contentContainerStyle={styles.scrollContainer}
+            keyboardShouldPersistTaps="handled"
+          >
+            <Header navigation={navigation} />
 
-          <View style={styles.socialOptions}>
-            <TouchableOpacity style={[styles.socialButton, styles.unselectedSocial]}>
-              <Text style={styles.socialText}>Entre com Google</Text>
-            </TouchableOpacity>
+            <View style={[
+              styles.container,
+              {
+                width: isLargeScreen ? '40%' : '90%',
+                marginVertical: isLargeScreen ? 40 : 20,
+                padding: isLargeScreen ? 30 : 20,
+              }
+            ]}>
+              <Text style={[
+                styles.title,
+                { fontSize: isLargeScreen ? 28 : 24 }
+              ]}>
+                Login
+              </Text>
+              
+              <Text style={[
+                styles.welcomeText,
+                { fontSize: isLargeScreen ? 20 : 16 }
+              ]}>
+                Bem-Vindo de Volta!
+              </Text>
 
-            <TouchableOpacity style={[styles.socialButton, styles.selectedSocial]}>
-              <Text style={styles.socialText}>Entre com Facebook</Text>
-            </TouchableOpacity>
-          </View>
+              <View style={styles.socialOptions}>
+                <TouchableOpacity 
+                  style={[styles.socialButton, styles.unselectedSocial]}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.socialText}>Entre com Google</Text>
+                </TouchableOpacity>
 
-          <View style={styles.dividerContainer}>
-            <View style={styles.dividerLine} />
-            <Text style={styles.dividerText}>Ou</Text>
-            <View style={styles.dividerLine} />
-          </View>
+                <TouchableOpacity 
+                  style={[styles.socialButton, styles.selectedSocial]}
+                  activeOpacity={0.8}
+                >
+                  <Text style={[styles.socialText, styles.socialSelectedText]}>Entre com Facebook</Text>
+                </TouchableOpacity>
+              </View>
 
-          <View style={styles.formContainer}>
-            <Text style={styles.label}>EMAIL</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="home@exemplo.com"
-              keyboardType="email-address"
-            />
+              <View style={styles.dividerContainer}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>Ou</Text>
+                <View style={styles.dividerLine} />
+              </View>
 
-            <Text style={styles.label}>SENHA</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="*****"
-              secureTextEntry={true}
-            />
+              <View style={styles.formContainer}>
+                <Text style={styles.label}>EMAIL</Text>
+                <TextInput
+                  style={[
+                    styles.input,
+                    { paddingVertical: isSmallDevice ? 10 : 12 }
+                  ]}
+                  placeholder="home@exemplo.com"
+                  placeholderTextColor="#888"
+                  keyboardType="email-address"
+                />
 
-            <TouchableOpacity>
-              <Text style={styles.forgotPassword}>Esqueceu sua senha?</Text>
-            </TouchableOpacity>
+                <Text style={styles.label}>SENHA</Text>
+                <TextInput
+                  style={[
+                    styles.input,
+                    { paddingVertical: isSmallDevice ? 10 : 12 }
+                  ]}
+                  placeholder="*****"
+                  placeholderTextColor="#888"
+                  secureTextEntry={true}
+                />
 
-            <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-              <Text style={styles.createAccount}>Crie uma conta</Text>
-            </TouchableOpacity>
-          
-            <TouchableOpacity
-              style={styles.loginButton}
-              onPress={() => navigation.navigate('HomePage')}
-            >
-              <Text style={styles.loginText}>LOGIN</Text>
-            </TouchableOpacity>
-          </View>
+                <TouchableOpacity style={styles.forgotPasswordButton}>
+                  <Text style={styles.forgotPassword}>Esqueceu sua senha?</Text>
+                </TouchableOpacity>
 
-        </View>
+                <View style={styles.registerContainer}>
+                  <Text style={styles.registerText}>Não tem uma conta? </Text>
+                  <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+                    <Text style={styles.createAccount}>Cadastre-se</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity
+                  style={[
+                    styles.loginButton,
+                    { marginTop: isSmallDevice ? 10 : 20 }
+                  ]}
+                  onPress={() => navigation.navigate('HomePage')}
+                  activeOpacity={0.9}
+                >
+                  <Text style={styles.loginText}>ENTRAR</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </ImageBackground>
     </SafeAreaView>
   );
@@ -86,19 +141,19 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   background: {
-    // flex: 1,
-    width: '100%',
-    height: "100%",
+    flex: 1,
+  },
+  flex: {
+    flex: 1,
+  },
+  scrollContainer: {
+    flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
   container: {
-    top: 0,
-    height: Platform.OS === 'android' ? "95%" : "90%",
-    width: Platform.OS === 'android' ? "85%" : "30%",
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderRadius: 16,
-    padding: 20,
     elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -106,24 +161,23 @@ const styles = StyleSheet.create({
     shadowRadius: 6,
   },
   title: {
-    fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 10,
+    color: '#2d5a27',
     textAlign: 'center',
+    marginBottom: 8,
   },
   welcomeText: {
-    fontSize: 18,
     textAlign: 'center',
-    marginBottom: 30,
-    color: '#333',
+    color: '#444',
+    marginBottom: 25,
   },
   socialOptions: {
-    marginBottom: 30,
+    marginBottom: 25,
+    gap: 12,
   },
   socialButton: {
-    padding: 15,
-    borderRadius: 5,
-    marginBottom: 10,
+    padding: 14,
+    borderRadius: 8,
     alignItems: 'center',
     borderWidth: 1,
   },
@@ -133,11 +187,14 @@ const styles = StyleSheet.create({
   },
   unselectedSocial: {
     backgroundColor: '#fff',
-    borderColor: '#ccc',
+    borderColor: '#ddd',
   },
   socialText: {
-    fontWeight: 'bold',
-    color: '#000',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  socialSelectedText: {
+    color: '#fff',
   },
   dividerContainer: {
     flexDirection: 'row',
@@ -147,50 +204,69 @@ const styles = StyleSheet.create({
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: '#ccc',
+    backgroundColor: '#ddd',
   },
   dividerText: {
     marginHorizontal: 10,
     color: '#666',
+    fontSize: 14,
   },
   formContainer: {
-    marginBottom: 30,
+    gap: 15,
   },
   label: {
-    fontWeight: 'bold',
-    marginBottom: 5,
-    color: '#333',
+    fontWeight: '600',
+    color: '#444',
+    fontSize: 14,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    padding: 12,
-    fontSize: 16,
-    marginBottom: 15,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    paddingHorizontal: 15,
+    fontSize: 15,
     backgroundColor: '#fff',
+    color: '#333',
+  },
+  forgotPasswordButton: {
+    alignSelf: 'flex-end',
+    marginTop: 5,
   },
   forgotPassword: {
     color: '#648C47',
-    textAlign: 'right',
-    marginBottom: 15,
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  registerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 15,
+  },
+  registerText: {
+    color: '#666',
+    fontSize: 14,
   },
   createAccount: {
     color: '#648C47',
-    textAlign: 'center',
+    fontWeight: '600',
     textDecorationLine: 'underline',
-    marginBottom: 5,
   },
   loginButton: {
     backgroundColor: '#648C47',
     padding: 15,
-    borderRadius: 5,
+    borderRadius: 8,
     alignItems: 'center',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
   },
   loginText: {
     color: '#fff',
     fontWeight: 'bold',
-    fontSize: 14,
+    fontSize: 16,
+    letterSpacing: 0.5,
   },
 });
 

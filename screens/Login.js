@@ -15,6 +15,15 @@ import Header from '../components/Header';
 import forestImage from '../assets/images/forest.png'; // ajuste o caminho se necessário
 
 const Login = ({ navigation }) => {
+
+  const handleLogin = async (event) => {
+    event.preventDefault();
+
+    const username = event.target.username.value;
+    const password = event.target.password.value;
+
+  }
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ImageBackground

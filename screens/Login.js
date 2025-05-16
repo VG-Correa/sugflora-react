@@ -37,7 +37,6 @@ const Login = ({ navigation }) => {
       
       const usuarioLogado = await usuarioApi.getUserByUsername(username);
       if (usuarioLogado != null && usuarioLogado.status === 200) {
-        console.log(usuarioLogado.data.data[0])
         localStorage.setItem('user_id', usuarioLogado.data.data[0].id)
         localStorage.setItem('username', usuarioLogado.data.data[0].username)
         navigation.navigate('HomePage');
@@ -45,13 +44,11 @@ const Login = ({ navigation }) => {
         localStorage.removeItem('token')
       }
 
-      console.log(localStorage.getItem('user'))
 
     } else {
       window.alert("Credenciais inválidas")
     }
 
-    console.log(response);
     
 
   }

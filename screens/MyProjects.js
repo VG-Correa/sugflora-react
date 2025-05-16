@@ -1,14 +1,29 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, TextInput } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Header from '../components/Header';
+import projetoApi from '../functions/api/projetoApi';
 
 const MyProjects = () => {
   const navigation = useNavigation();
   
   const [projetos, setProjetos] = useState([])
 
-  
+  async function fetchProjetos () {
+    const response = await projetoApi.getProjetos(localStorage.getItem('user_id'))
+
+    if (response.status === 200) {
+      setProjetos(response.data.data)
+      
+    } else {
+      console.log("Erro ao carregar projtos: ", response)
+    }
+
+  }
+
+  useEffect(()=> {
+    fetchProjetos();
+  }, [])
 
   return (
     <View style={styles.container}>

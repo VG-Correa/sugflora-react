@@ -1,11 +1,38 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Image, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Header from '../components/Header';
+import projetoApi from '../functions/api/projetoApi';
 
 
 const NewProject = () => {
   const navigation = useNavigation(); 
+
+  const nomeProjetoRef = useRef()
+  const descricaoProjetoRef = useRef()
+
+  async function postProjeto() {
+    try {
+      
+      const response = await projetoApi.create({
+        id: null,
+        nome: nomeProjetoRef.current.value,
+        descricao: descricaoProjetoRef.current.value,
+        usuario_dono_uuid: localStorage.getItem("user_id"),
+        public: false
+      })
+
+      if (response.status === 201) {
+        navigation.navigate('MyProjects')
+      } else {
+        window.alert("Erro ao salvar projeto")
+      }
+
+    } catch (error) {
+      console.log("Erro ao salvar o projeto ", error);
+      
+    }
+  }
 
   return (
     <View style={styles.container}>
@@ -29,7 +56,7 @@ const NewProject = () => {
           <View style={styles.dataSection}>
             <View style={styles.fieldGroup}>
               <Text style={styles.fieldLabel}>NOME DO PROJETO</Text>
-              <TextInput
+              <TextInput ref={nomeProjetoRef}
                 style={styles.input}
                 placeholder=""
               />
@@ -37,7 +64,7 @@ const NewProject = () => {
 
             <View style={styles.fieldGroup}>
               <Text style={styles.fieldLabel}>DESCRIÇÃO</Text>
-              <TextInput
+              <TextInput ref={descricaoProjetoRef}
                 style={[styles.input, {height: 100}]}
                 placeholder="Digite aqui"
                 multiline
@@ -48,31 +75,31 @@ const NewProject = () => {
 
         {/* Seção de datas e responsável */}
         <View style={styles.bottomSection}>
-          <View style={styles.fieldGroup}>
+          {/* <View style={styles.fieldGroup}>
             <Text style={styles.fieldLabel}>DATA DE INÍCIO</Text>
             <TextInput
               style={styles.input}
               placeholder="dd/mm/aa"
             />
-          </View>
+          </View> */}
 
-          <View style={styles.fieldGroup}>
+          {/* <View style={styles.fieldGroup}>
             <Text style={styles.fieldLabel}>PREVISÃO DE CONCLUSÃO</Text>
             <TextInput
               style={styles.input}
               placeholder="dd/mm/aa"
             />
-          </View>
+          </View> */}
 
-          <View style={styles.fieldGroup}>
+          {/* <View style={styles.fieldGroup}>
             <Text style={styles.fieldLabel}>RESPONSÁVEL</Text>
             <TextInput
               style={styles.input}
               placeholder="Nome do Responsável"
             />
-          </View>
+          </View> */}
 
-          <TouchableOpacity style={styles.createButton}>
+          <TouchableOpacity style={styles.createButton} onPress={() => {postProjeto()}}>
             <Text style={styles.createButtonText}>CRIAR PROJETO</Text>
           </TouchableOpacity>
         </View>

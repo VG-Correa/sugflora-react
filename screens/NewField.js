@@ -1,8 +1,16 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Image, ScrollView } from 'react-native';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput,
+  Image,
+  ScrollView
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 
-const NewProject = () => {
+const NewField = () => {
   const navigation = useNavigation();
 
   return (
@@ -41,70 +49,84 @@ const NewProject = () => {
         </View>
       </View>
 
-      <ScrollView style={styles.content}>
-        <Text style={styles.pageTitle}>CRIAR PROJETO</Text>
-        
-        <View style={styles.profileSection}>
-          {/* Seção Foto à esquerda */}
-          <View style={styles.photoSection}>
-            <Text style={styles.photoLabel}>IMAGEM</Text>
-            <View style={styles.photoPlaceholder}></View>
-            <TouchableOpacity style={styles.changePhotoButton}>
-              <Text style={styles.changePhotoText}>Adicionar imagem</Text>
-            </TouchableOpacity>
-          </View>
-          
-          {/* Dados do projeto à direita */}
-          <View style={styles.dataSection}>
-            <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>NOME DO PROJETO</Text>
-              <TextInput
-                style={styles.input}
-                placeholder=""
-              />
-            </View>
+      <ScrollView style={styles.content} contentContainerStyle={{paddingBottom: 30}}>
+        <Text style={styles.pageTitle}>ADICIONAR CAMPO</Text>
 
-            <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>DESCRIÇÃO</Text>
-              <TextInput
-                style={[styles.input, {height: 100}]}
-                placeholder="Digite aqui"
-                multiline
-              />
-            </View>
-          </View>
+        {/* Campos grandes: Nome, Descrição, Localização */}
+        <View style={styles.fieldGroup}>
+          <Text style={styles.fieldLabel}>NOME DO CAMPO</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Nome do campo"
+          />
         </View>
 
-        {/* Seção de datas e responsável */}
-        <View style={styles.bottomSection}>
-          <View style={styles.fieldGroup}>
+        <View style={styles.fieldGroup}>
+          <Text style={styles.fieldLabel}>DESCRIÇÃO</Text>
+          <TextInput
+            style={[styles.input, {height: 100}]}
+            placeholder="Descrição do campo"
+            multiline
+          />
+        </View>
+
+        {/* Datas lado a lado */}
+        <View style={styles.rowFields}>
+          <View style={[styles.fieldGroup, styles.smallField]}>
             <Text style={styles.fieldLabel}>DATA DE INÍCIO</Text>
             <TextInput
               style={styles.input}
-              placeholder="dd/mm/aa"
+              placeholder="dd/mm/aaaa"
             />
           </View>
 
-          <View style={styles.fieldGroup}>
+          <View style={[styles.fieldGroup, styles.smallField]}>
             <Text style={styles.fieldLabel}>PREVISÃO DE CONCLUSÃO</Text>
             <TextInput
               style={styles.input}
-              placeholder="dd/mm/aa"
+              placeholder="dd/mm/aaaa"
             />
           </View>
-
-          <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>RESPONSÁVEL</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Nome do Responsável"
-            />
-          </View>
-
-          <TouchableOpacity style={styles.createButton}>
-            <Text style={styles.createButtonText}>CRIAR PROJETO</Text>
-          </TouchableOpacity>
         </View>
+
+        {/* Localização: País, Estado, Cidade, Endereço */}
+        <View style={styles.fieldGroup}>
+          <Text style={styles.fieldLabel}>PAÍS</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Brasil"
+            editable={false}
+          />
+        </View>
+
+        <View style={styles.fieldGroup}>
+          <Text style={styles.fieldLabel}>ESTADO</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="SP"
+          />
+        </View>
+
+        <View style={styles.fieldGroup}>
+          <Text style={styles.fieldLabel}>CIDADE</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Ferraz de Vasconcelos"
+          />
+        </View>
+
+        <View style={styles.fieldGroup}>
+          <Text style={styles.fieldLabel}>ENDEREÇO</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Rua Exemplo, 123"
+          />
+        </View>
+
+        {/* Botão salvar */}
+        <TouchableOpacity style={styles.createButton}>
+          <Text style={styles.createButtonText}>SALVAR CAMPO</Text>
+        </TouchableOpacity>
       </ScrollView>
     </View>
   );
@@ -165,6 +187,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    paddingHorizontal: 20,
   },
   pageTitle: {
     fontSize: 24,
@@ -172,43 +195,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginVertical: 20,
     color: '#2e7d32',
-  },
-  profileSection: {
-    flexDirection: 'row',
-    paddingHorizontal: 20,
-    marginBottom: 20,
-  },
-  photoSection: {
-    width: '30%',
-    alignItems: 'center',
-    marginRight: 20,
-  },
-  photoLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#2e7d32',
-  },
-  photoPlaceholder: {
-    width: 100,
-    height: 100,
-    backgroundColor: '#e8f5e9',
-    marginBottom: 10,
-  },
-  changePhotoButton: {
-    backgroundColor: '#2e7d32',
-    padding: 8,
-    borderRadius: 5,
-  },
-  changePhotoText: {
-    color: '#fff',
-    fontSize: 12,
-  },
-  dataSection: {
-    flex: 1,
-  },
-  bottomSection: {
-    paddingHorizontal: 20,
   },
   fieldGroup: {
     marginBottom: 15,
@@ -227,6 +213,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     backgroundColor: '#f9f9f9',
   },
+  rowFields: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  smallField: {
+    width: '48%',
+  },
   createButton: {
     backgroundColor: '#2e7d32',
     padding: 15,
@@ -242,4 +235,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default NewProject;
+export default NewField;

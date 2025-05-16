@@ -1,43 +1,45 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Image, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import Header from '../components/Header';
-import projetoApi from '../functions/api/projetoApi';
-
 
 const NewProject = () => {
-  const navigation = useNavigation(); 
-
-  const nomeProjetoRef = useRef()
-  const descricaoProjetoRef = useRef()
-
-  async function postProjeto() {
-    try {
-      
-      const response = await projetoApi.create({
-        id: null,
-        nome: nomeProjetoRef.current.value,
-        descricao: descricaoProjetoRef.current.value,
-        usuario_dono_uuid: localStorage.getItem("user_id"),
-        public: false
-      })
-
-      if (response.status === 201) {
-        navigation.navigate('MyProjects')
-      } else {
-        window.alert("Erro ao salvar projeto")
-      }
-
-    } catch (error) {
-      console.log("Erro ao salvar o projeto ", error);
-      
-    }
-  }
+  const navigation = useNavigation();
 
   return (
     <View style={styles.container}>
-      <Header navigation={navigation}/>
-
+      {/* Cabeçalho igual ao da HomePage */}
+      <View style={styles.headerContainer}>
+        <Image 
+          source={require('../assets/images/cabecalho.jpg')} 
+          style={styles.headerBackgroundImage}
+          resizeMode="cover"
+        />
+        <View style={styles.headerContent}>
+          <Image 
+            source={require('../assets/images/logo.png')}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
+          <Text style={styles.logoText}>SUG - FLORA</Text>
+          <View style={styles.menuTop}>
+            <TouchableOpacity 
+              style={styles.menuItem}
+              onPress={() => navigation.navigate('HomePage')}
+            >
+              <Text style={styles.menuText}>PÁGINA INICIAL</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.menuItem}>
+              <Text style={styles.menuText}>SOBRE</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.menuItem}>
+              <Text style={styles.menuText}>CONTATO</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.menuItem}>
+              <Text style={styles.menuText}>SAIR</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
 
       <ScrollView style={styles.content}>
         <Text style={styles.pageTitle}>CRIAR PROJETO</Text>
@@ -56,7 +58,7 @@ const NewProject = () => {
           <View style={styles.dataSection}>
             <View style={styles.fieldGroup}>
               <Text style={styles.fieldLabel}>NOME DO PROJETO</Text>
-              <TextInput ref={nomeProjetoRef}
+              <TextInput
                 style={styles.input}
                 placeholder=""
               />
@@ -64,7 +66,7 @@ const NewProject = () => {
 
             <View style={styles.fieldGroup}>
               <Text style={styles.fieldLabel}>DESCRIÇÃO</Text>
-              <TextInput ref={descricaoProjetoRef}
+              <TextInput
                 style={[styles.input, {height: 100}]}
                 placeholder="Digite aqui"
                 multiline
@@ -75,31 +77,31 @@ const NewProject = () => {
 
         {/* Seção de datas e responsável */}
         <View style={styles.bottomSection}>
-          {/* <View style={styles.fieldGroup}>
+          <View style={styles.fieldGroup}>
             <Text style={styles.fieldLabel}>DATA DE INÍCIO</Text>
             <TextInput
               style={styles.input}
               placeholder="dd/mm/aa"
             />
-          </View> */}
+          </View>
 
-          {/* <View style={styles.fieldGroup}>
+          <View style={styles.fieldGroup}>
             <Text style={styles.fieldLabel}>PREVISÃO DE CONCLUSÃO</Text>
             <TextInput
               style={styles.input}
               placeholder="dd/mm/aa"
             />
-          </View> */}
+          </View>
 
-          {/* <View style={styles.fieldGroup}>
+          <View style={styles.fieldGroup}>
             <Text style={styles.fieldLabel}>RESPONSÁVEL</Text>
             <TextInput
               style={styles.input}
               placeholder="Nome do Responsável"
             />
-          </View> */}
+          </View>
 
-          <TouchableOpacity style={styles.createButton} onPress={() => {postProjeto()}}>
+          <TouchableOpacity style={styles.createButton}>
             <Text style={styles.createButtonText}>CRIAR PROJETO</Text>
           </TouchableOpacity>
         </View>
@@ -139,6 +141,9 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#fff',
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowOffset: {width: 1, height: 1},
+    textShadowRadius: 5,
     marginBottom: 15,
   },
   menuTop: {
@@ -153,7 +158,10 @@ const styles = StyleSheet.create({
   menuText: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#fff'
+    color: '#fff',
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowOffset: {width: 1, height: 1},
+    textShadowRadius: 5,
   },
   content: {
     flex: 1,

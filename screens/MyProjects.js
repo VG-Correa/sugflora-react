@@ -1,34 +1,45 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, TextInput } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import Header from '../components/Header';
-import projetoApi from '../functions/api/projetoApi';
 
 const MyProjects = () => {
   const navigation = useNavigation();
-  
-  const [projetos, setProjetos] = useState([])
-
-  async function fetchProjetos () {
-    const response = await projetoApi.getProjetos(localStorage.getItem('user_id'))
-
-    if (response.status === 200) {
-      setProjetos(response.data.data)
-      
-    } else {
-      console.log("Erro ao carregar projtos: ", response)
-    }
-
-  }
-
-  useEffect(()=> {
-    fetchProjetos();
-  }, [])
 
   return (
     <View style={styles.container}>
       {/* Cabeçalho igual ao da HomePage */}
-      <Header navigation={navigation}/>
+      <View style={styles.headerContainer}>
+        <Image 
+          source={require('../assets/images/cabecalho.jpg')} 
+          style={styles.headerBackgroundImage}
+          resizeMode="cover"
+        />
+        <View style={styles.headerContent}>
+          <Image 
+            source={require('../assets/images/logo.png')}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
+          <Text style={styles.logoText}>SUG - FLORA</Text>
+          <View style={styles.menuTop}>
+            <TouchableOpacity 
+              style={styles.menuItem}
+              onPress={() => navigation.navigate('HomePage')}
+            >
+              <Text style={styles.menuText}>PÁGINA INICIAL</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.menuItem}>
+              <Text style={styles.menuText}>SOBRE</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.menuItem}>
+              <Text style={styles.menuText}>CONTATO</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.menuItem}>
+              <Text style={styles.menuText}>SAIR</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
 
       <View style={styles.content}>
         <Text style={styles.pageTitle}>MEUS PROJETOS</Text>
@@ -40,7 +51,7 @@ const MyProjects = () => {
           {/* Área para foto */}
           <View style={styles.photoContainer}>
             <Image 
-              source={require('../assets/images/sem-imagem.png')} 
+              source={require('../assets/images/sem-imagem.jpg')} 
               style={styles.projectImage}
               resizeMode="cover"
             />
@@ -71,7 +82,10 @@ const MyProjects = () => {
           />
           
           {/* Botão Abrir Projeto */}
-          <TouchableOpacity style={styles.openButton}>
+          <TouchableOpacity 
+            style={styles.openButton}
+            onPress={() => navigation.navigate('ProjectScreen')}
+          >
             <Text style={styles.buttonText}>Abrir Projeto</Text>
           </TouchableOpacity>
         </View>
@@ -110,9 +124,9 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#fff',
-    // textShadowColor: 'rgba(0,0,0,0.8)',
-    // textShadowOffset: {width: 1, height: 1},
-    // textShadowRadius: 5,
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowOffset: {width: 1, height: 1},
+    textShadowRadius: 5,
     marginBottom: 15,
   },
   menuTop: {
@@ -128,9 +142,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#fff',
-    // textShadowColor: 'rgba(0,0,0,0.8)',
-    // textShadowOffset: {width: 1, height: 1},
-    // textShadowRadius: 5,
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowOffset: {width: 1, height: 1},
+    textShadowRadius: 5,
   },
   content: {
     flex: 1,
@@ -149,10 +163,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#e8f5e9',
     borderRadius: 10,
     padding: 15,
-    // shadowColor: '#000',
-    // shadowOffset: { width: 0, height: 2 },
-    // shadowOpacity: 0.1,
-    // shadowRadius: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
     elevation: 3,
   },
   projectHeader: {

@@ -1,15 +1,42 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, TextInput } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import Header from '../components/Header';
 
 const HomeScreen = () => {
   const navigation = useNavigation();
 
   return (
     <View style={styles.container}>
-      <Header navigation={navigation}/>
-
+      {/* Cabeçalho (mantido exatamente como estava) */}
+      <View style={styles.headerContainer}>
+        <Image 
+          source={require('../assets/images/cabecalho.jpg')} 
+          style={styles.headerBackgroundImage}
+          resizeMode="cover"
+        />
+        <View style={styles.headerContent}>
+          <Image 
+            source={require('../assets/images/logo.png')}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
+          <Text style={styles.logoText}>SUG - FLORA</Text>
+          <View style={styles.menuTop}>
+            <TouchableOpacity style={styles.menuItem}>
+              <Text style={styles.menuText}>PÁGINA INICIAL</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.menuItem}>
+              <Text style={styles.menuText}>SOBRE</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.menuItem}>
+              <Text style={styles.menuText}>CONTATO</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.menuItem}>
+              <Text style={styles.menuText}>SAIR</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
 
       <ScrollView style={styles.content}>
         <View style={styles.mainContent}>
@@ -18,7 +45,7 @@ const HomeScreen = () => {
             <View style={styles.gridRow}>
               <View style={styles.profileContainer}>
                 <Text style={styles.gridTitle}>Meu perfil</Text>
-                <Image source={require('../assets/images/1.png')} style={styles.profileImage} />
+                <Image source={require('../assets/images/1.jpg')} style={styles.profileImage} />
                 <TextInput
                   style={styles.inputField}
                   editable={false}
@@ -39,7 +66,7 @@ const HomeScreen = () => {
               
               <View style={styles.profileContainer}>
                 <Text style={styles.gridTitle}>Projetos</Text>
-                <Image source={require('../assets/images/2.png')} style={styles.gridImage} />
+                <Image source={require('../assets/images/2.jpg')} style={styles.gridImage} />
                 <TouchableOpacity 
                   style={styles.actionButton}
                   onPress={() => navigation.navigate('MyProjects')}
@@ -59,7 +86,7 @@ const HomeScreen = () => {
             <View style={styles.gridRow}>
               <View style={styles.profileContainer}>
                 <Text style={styles.gridTitle}>Espécies</Text>
-                <Image source={require('../assets/images/3.png')} style={styles.gridImage} />
+                <Image source={require('../assets/images/3.jpg')} style={styles.gridImage} />
                 <TouchableOpacity style={styles.actionButton}>
                   <Text style={styles.buttonText}>Pesquisar espécie</Text>
                 </TouchableOpacity>
@@ -70,7 +97,7 @@ const HomeScreen = () => {
               
               <View style={styles.profileContainer}>
                 <Text style={styles.gridTitle}>Flora Match</Text>
-                <Image source={require('../assets/images/4.png')} style={styles.gridImage} />
+                <Image source={require('../assets/images/4.jpg')} style={styles.gridImage} />
                 <TouchableOpacity style={styles.actionButton}>
                   <Text style={styles.buttonText}>Ajude-me a identificar</Text>
                 </TouchableOpacity>
@@ -128,9 +155,9 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontWeight: 'bold',
     color: '#fff',
-    // textShadowColor: 'rgba(0,0,0,0.8)',
-    // textShadowOffset: {width: 1, height: 1},
-    // textShadowRadius: 5,
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowOffset: {width: 1, height: 1},
+    textShadowRadius: 5,
     marginBottom: 15,
   },
   menuTop: {
@@ -146,9 +173,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     color: '#fff',
-    // textShadowColor: 'rgba(0,0,0,0.8)',
-    // textShadowOffset: {width: 1, height: 1},
-    // textShadowRadius: 5,
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowOffset: {width: 1, height: 1},
+    textShadowRadius: 5,
+    textAlign: 'justify',
   },
   content: {
     flex: 1,
@@ -170,10 +198,10 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     padding: 15,
-    // shadowColor: '#000',
-    // shadowOffset: { width: 0, height: 2 },
-    // shadowOpacity: 0.1,
-    // shadowRadius: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
     elevation: 3,
   },
   gridTitle: {

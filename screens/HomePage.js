@@ -10,7 +10,7 @@ const HomeScreen = () => {
       {/* Cabeçalho (mantido exatamente como estava) */}
       <View style={styles.headerContainer}>
         <Image 
-          source={require('../assets/images/cabecalho.jpg')} 
+          source={require('../assets/images/cabecalho.png')} 
           style={styles.headerBackgroundImage}
           resizeMode="cover"
         />
@@ -42,10 +42,10 @@ const HomeScreen = () => {
         <View style={styles.mainContent}>
           <View style={styles.gridContainer}>
             {/* Linha 1 - Perfil e Projetos (mantido igual) */}
-            <View style={styles.gridRow}>
-              <View style={styles.profileContainer}>
+            {/* <View style={styles.gridRow}> */}
+              {/* <View style={styles.profileContainer}>
                 <Text style={styles.gridTitle}>Meu perfil</Text>
-                <Image source={require('../assets/images/1.jpg')} style={styles.profileImage} />
+                <Image source={require('../assets/images/1.png')} style={styles.profileImage} />
                 <TextInput
                   style={styles.inputField}
                   editable={false}
@@ -62,11 +62,26 @@ const HomeScreen = () => {
                 >
                   <Text style={styles.buttonText}>Editar perfil</Text>
                 </TouchableOpacity>
-              </View>
+              </View> */}
               
+              
+            {/* </View> */}
+            
+            {/* Linha 2 - Espécies e Flora Match (mantido igual) */}
+            <View style={styles.gridRow}>
+              {/* <View style={styles.profileContainer}>
+                <Text style={styles.gridTitle}>Espécies</Text>
+                <Image source={require('../assets/images/3.png')} style={styles.gridImage} />
+                <TouchableOpacity style={styles.actionButton}>
+                  <Text style={styles.buttonText}>Pesquisar espécie</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.actionButton}>
+                  <Text style={styles.buttonText}>Minhas coletas</Text>
+                </TouchableOpacity>
+              </View> */}
               <View style={styles.profileContainer}>
                 <Text style={styles.gridTitle}>Projetos</Text>
-                <Image source={require('../assets/images/2.jpg')} style={styles.gridImage} />
+                <Image source={require('../assets/images/2.png')} style={styles.gridImage} />
                 <TouchableOpacity 
                   style={styles.actionButton}
                   onPress={() => navigation.navigate('MyProjects')}
@@ -80,24 +95,9 @@ const HomeScreen = () => {
                   <Text style={styles.buttonText}>Criar projeto</Text>
                 </TouchableOpacity>
               </View>
-            </View>
-            
-            {/* Linha 2 - Espécies e Flora Match (mantido igual) */}
-            <View style={styles.gridRow}>
-              <View style={styles.profileContainer}>
-                <Text style={styles.gridTitle}>Espécies</Text>
-                <Image source={require('../assets/images/3.jpg')} style={styles.gridImage} />
-                <TouchableOpacity style={styles.actionButton}>
-                  <Text style={styles.buttonText}>Pesquisar espécie</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.actionButton}>
-                  <Text style={styles.buttonText}>Minhas coletas</Text>
-                </TouchableOpacity>
-              </View>
-              
               <View style={styles.profileContainer}>
                 <Text style={styles.gridTitle}>Flora Match</Text>
-                <Image source={require('../assets/images/4.jpg')} style={styles.gridImage} />
+                <Image source={require('../assets/images/4.png')} style={styles.gridImage} />
                 <TouchableOpacity style={styles.actionButton}>
                   <Text style={styles.buttonText}>Ajude-me a identificar</Text>
                 </TouchableOpacity>
@@ -107,7 +107,7 @@ const HomeScreen = () => {
               </View>
             </View>
 
-            {/* NOVA LINHA - Relatórios (único quadrado alinhado à esquerda) */}
+            {/* NOVA LINHA - Relatórios (único quadrado alinhado à esquerda)
             <View style={styles.gridRow}>
               <View style={styles.profileContainer}>
                 <Text style={styles.gridTitle}>Relatórios</Text>
@@ -116,7 +116,7 @@ const HomeScreen = () => {
                   <Text style={styles.buttonText}>Meus relatórios</Text>
                 </TouchableOpacity>
               </View>
-            </View>
+            </View> */}
           </View>
         </View>
       </ScrollView>
@@ -186,14 +186,16 @@ const styles = StyleSheet.create({
   },
   gridContainer: {
     width: '100%',
+    // alignContent: 'center',
+    // alignItems: 'center'
   },
   gridRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'space-evenly',
     marginBottom: 20,
   },
   profileContainer: {
-    width: '48%',
+    width: '20%',
     backgroundColor: '#e8f5e9',
     borderRadius: 10,
     alignItems: 'center',

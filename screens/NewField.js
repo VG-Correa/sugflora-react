@@ -18,7 +18,7 @@ const NewField = () => {
       {/* Cabeçalho igual ao da HomePage */}
       <View style={styles.headerContainer}>
         <Image 
-          source={require('../assets/images/cabecalho.jpg')} 
+          source={require('../assets/images/cabecalho.png')} 
           style={styles.headerBackgroundImage}
           resizeMode="cover"
         />

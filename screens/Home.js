@@ -24,7 +24,7 @@ const Home = ({ navigation }) => {
         <Header navigation={navigation} /> {/* Já está configurado para navegar para Login */}
 
         <Image
-          source={require('../assets/images/forest.jpg')}
+          source={require('../assets/images/forest.png')}
           style={[styles.heroImage, { height: isLargeScreen ? 350 : 220 }]}
         />
 
@@ -55,21 +55,21 @@ const Home = ({ navigation }) => {
           {/* Imagens pequenas */}
           <View style={styles.right}>
             <Image
-              source={require('../assets/images/forest1.jpg')}
+              source={require('../assets/images/forest1.png')}
               style={[styles.smallImage, {
                 width: isLargeScreen ? 380 : 340,
                 height: isLargeScreen ? 200 : 140,
               }]}
             />
             <Image
-              source={require('../assets/images/forest2.jpg')}
+              source={require('../assets/images/forest2.png')}
               style={[styles.smallImage, {
                 width: isLargeScreen ? 380 : 340,
                 height: isLargeScreen ? 200 : 140,
               }]}
             />
             <Image
-              source={require('../assets/images/forest3.jpg')}
+              source={require('../assets/images/forest3.png')}
               style={[styles.smallImage, {
                 width: isLargeScreen ? 380 : 340,
                 height: isLargeScreen ? 200 : 140,

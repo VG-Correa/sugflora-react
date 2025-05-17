@@ -1,16 +1,36 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, TextInput } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import projetoApi from '../functions/api/projetoApi';
+import { Header } from '../components/Header';
 
 const MyProjects = () => {
+  const [projetos, setProjetos] = useState([])
   const navigation = useNavigation();
+
+  async function fetchProjetos() {
+    const user_id = localStorage.getItem('user_id')
+    const response = await projetoApi.getProjetos(user_id);
+
+    if (response.status === 200) {
+      setProjetos(response.data.data)
+      console.log("Response: ", response.data.data)
+    } else {
+      alert("Erro ao carregar projetos")
+    }
+  }
+
+  useEffect(async () => {
+    await fetchProjetos()
+  }, [])
+
 
   return (
     <View style={styles.container}>
       {/* Cabeçalho igual ao da HomePage */}
       <View style={styles.headerContainer}>
         <Image 
-          source={require('../assets/images/cabecalho.jpg')} 
+          source={require('../assets/images/cabecalho.png')} 
           style={styles.headerBackgroundImage}
           resizeMode="cover"
         />
@@ -43,52 +63,60 @@ const MyProjects = () => {
 
       <View style={styles.content}>
         <Text style={styles.pageTitle}>MEUS PROJETOS</Text>
-        
+
         {/* Container do projeto */}
-        <View style={styles.projectContainer}>
-          <Text style={styles.projectHeader}>Projeto Exemplo</Text>
-          
-          {/* Área para foto */}
-          <View style={styles.photoContainer}>
-            <Image 
-              source={require('../assets/images/sem-imagem.jpg')} 
-              style={styles.projectImage}
-              resizeMode="cover"
-            />
-          </View>
-          
-          {/* Situação */}
-          <Text style={styles.label}>Situação</Text>
-          <TextInput
-            style={styles.inputField}
-            editable={false}
-            value="Em andamento"
-          />
-          
-          {/* Campos */}
-          <Text style={styles.label}>Campos</Text>
-          <TextInput
-            style={styles.inputField}
-            editable={false}
-            value="5 campos registrados"
-          />
-          
-          {/* Coletas */}
-          <Text style={styles.label}>Coletas</Text>
-          <TextInput
-            style={styles.inputField}
-            editable={false}
-            value="12 coletas realizadas"
-          />
-          
-          {/* Botão Abrir Projeto */}
-          <TouchableOpacity 
-            style={styles.openButton}
-            onPress={() => navigation.navigate('ProjectScreen')}
-          >
-            <Text style={styles.buttonText}>Abrir Projeto</Text>
-          </TouchableOpacity>
+        <View style={styles.container_projetos}>
+          {
+            projetos.map(projeto => (
+              <View style={styles.projectContainer}>
+                <Text style={styles.projectHeader}>{projeto.nome}</Text>
+
+                {/* Área para foto */}
+                {/* <View style={styles.photoContainer}>
+                  <Image
+                    source={require('../assets/images/sem-imagem.png')}
+                    style={styles.projectImage}
+                    resizeMode="cover"
+                  />
+                </View> */}
+
+                {/* Situação */}
+                {/* <Text style={styles.label}>{"Público" ? projeto.deleted : "Privado"}</Text> */}
+                <TextInput
+                  style={styles.inputField}
+                  editable={false}
+                  value={projeto.deleted ? "Publicado" : "Privado"}
+                />
+
+                {/* Campos */}
+                {/* <Text style={styles.label}>Campos</Text>
+                <TextInput
+                  style={styles.inputField}
+                  editable={false}
+                  value="5 campos registrados"
+                /> */}
+
+                {/* Coletas */}
+                {/* <Text style={styles.label}>Coletas</Text>
+                <TextInput
+                  style={styles.inputField}
+                  editable={false}
+                  value="12 coletas realizadas"
+                /> */}
+
+                {/* Botão Abrir Projeto */}
+                <TouchableOpacity
+                  style={styles.openButton}
+                  onPress={() => navigation.navigate('ProjectScreen', { projeto: projeto })}
+                >
+                  <Text style={styles.buttonText}>Abrir Projeto</Text>
+                </TouchableOpacity>
+              </View>
+            ))
+          }
+
         </View>
+
       </View>
     </View>
   );
@@ -125,7 +153,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#fff',
     textShadowColor: 'rgba(0,0,0,0.8)',
-    textShadowOffset: {width: 1, height: 1},
+    textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 5,
     marginBottom: 15,
   },
@@ -143,7 +171,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#fff',
     textShadowColor: 'rgba(0,0,0,0.8)',
-    textShadowOffset: {width: 1, height: 1},
+    textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 5,
   },
   content: {
@@ -159,7 +187,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   projectContainer: {
-    width: '80%',
+    width: 'auto',
     backgroundColor: '#e8f5e9',
     borderRadius: 10,
     padding: 15,
@@ -214,6 +242,17 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 14,
   },
+  container_projetos: {
+    width: '100% !important',
+    height: '100% !important',
+    display: 'flex !important',
+    flexWrap: 'wrap !important',
+    flexDirection: 'row',
+    gap: 10,
+    justifyContent: "space-around !important",
+    alignContent: 'space-around !important',
+    alignItems: 'center !important',
+  }
 });
 
 export default MyProjects;

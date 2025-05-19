@@ -22,7 +22,7 @@ const AboutScreen = ({ navigation }) => {
         <Header navigation={navigation} />
         
         <Image
-          source={require('../assets/images/forest.png')}
+          source={require('../assets/images/forest.webp')}
           style={[styles.heroImage, { height: isLargeScreen ? 350 : 220 }]}
         />
 

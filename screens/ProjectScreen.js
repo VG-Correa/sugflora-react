@@ -29,6 +29,7 @@ const ProjectScreen = () => {
       <View style={styles.headerContainer}>
         <Image 
           source={require('../assets/images/cabecalho.webp')} 
+
           style={styles.headerBackgroundImage}
           resizeMode="cover"
         />

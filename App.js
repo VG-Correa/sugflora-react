@@ -8,6 +8,8 @@ import Login from './screens/Login';
 import Password from './screens/Password';
 import HomePage from './screens/HomePage';
 import Profile from './screens/Profile';
+import About from './screens/About';
+import Contact from './screens/Contact';
 import NewProject from './screens/NewProject';
 import MyProjects from './screens/MyProjects';
 import ProjectScreen from './screens/ProjectScreen';
@@ -29,6 +31,16 @@ const App = () => {
         <Stack.Screen 
           name="Register" 
           component={Register} 
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen 
+          name="Contact" 
+          component={Contact} 
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen 
+          name="About" 
+          component={About} 
           options={{ headerShown: false }}
         />
         <Stack.Screen 

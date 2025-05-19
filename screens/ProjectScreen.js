@@ -28,13 +28,14 @@ const ProjectScreen = () => {
       {/* Header */}
       <View style={styles.headerContainer}>
         <Image 
-          source={require('../assets/images/cabecalho.png')} 
+          source={require('../assets/images/cabecalho.webp')} 
+
           style={styles.headerBackgroundImage}
           resizeMode="cover"
         />
         <View style={styles.headerContent}>
           <Image 
-            source={require('../assets/images/logo.png')}
+            source={require('../assets/images/logo.webp')}
             style={styles.logoImage}
             resizeMode="contain"
           />
@@ -56,7 +57,7 @@ const ProjectScreen = () => {
           <View style={[styles.projectInfoContainer, isMobile && styles.mobileProjectInfoContainer]}>
             <View style={[styles.imageContainer, isMobile && styles.mobileImageContainer]}>
               <Image
-                source={require('../assets/images/sem-imagem.png')}
+                source={require('../assets/images/sem-imagem.webp')}
                 style={styles.projectImage}
                 resizeMode="cover"
                 onError={handleImageError}

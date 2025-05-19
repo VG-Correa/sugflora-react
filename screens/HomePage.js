@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, TextInput } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import HeaderInterno from '../components/HeaderInterno'; // ou o caminho correto
 
 const HomeScreen = () => {
   const navigation = useNavigation();
@@ -8,36 +9,7 @@ const HomeScreen = () => {
   return (
     <View style={styles.container}>
       {/* Cabeçalho (mantido exatamente como estava) */}
-      <View style={styles.headerContainer}>
-        <Image 
-          source={require('../assets/images/cabecalho.png')} 
-          style={styles.headerBackgroundImage}
-          resizeMode="cover"
-        />
-        <View style={styles.headerContent}>
-          <Image 
-            source={require('../assets/images/logo.png')}
-            style={styles.logoImage}
-            resizeMode="contain"
-          />
-          <Text style={styles.logoText}>SUG - FLORA</Text>
-          <View style={styles.menuTop}>
-            <TouchableOpacity style={styles.menuItem}>
-              <Text style={styles.menuText}>PÁGINA INICIAL</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem}>
-              <Text style={styles.menuText}>SOBRE</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem}>
-              <Text style={styles.menuText}>CONTATO</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem}>
-              <Text style={styles.menuText}>SAIR</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-
+      <HeaderInterno />
       <ScrollView style={styles.content}>
         <View style={styles.mainContent}>
           <View style={styles.gridContainer}>
@@ -45,7 +17,7 @@ const HomeScreen = () => {
             {/* <View style={styles.gridRow}> */}
               {/* <View style={styles.profileContainer}>
                 <Text style={styles.gridTitle}>Meu perfil</Text>
-                <Image source={require('../assets/images/1.png')} style={styles.profileImage} />
+                <Image source={require('../assets/images/1.webp')} style={styles.profileImage} />
                 <TextInput
                   style={styles.inputField}
                   editable={false}
@@ -81,7 +53,7 @@ const HomeScreen = () => {
               </View> */}
               <View style={styles.profileContainer}>
                 <Text style={styles.gridTitle}>Projetos</Text>
-                <Image source={require('../assets/images/2.png')} style={styles.gridImage} />
+                <Image source={require('../assets/images/2.webp')} style={styles.profileImage} />
                 <TouchableOpacity 
                   style={styles.actionButton}
                   onPress={() => navigation.navigate('MyProjects')}
@@ -95,9 +67,24 @@ const HomeScreen = () => {
                   <Text style={styles.buttonText}>Criar projeto</Text>
                 </TouchableOpacity>
               </View>
+            </View>
+            
+            {/* Linha 2 - Espécies e Flora Match (mantido igual) */}
+            <View style={styles.gridRow}>
+              <View style={styles.profileContainer}>
+                <Text style={styles.gridTitle}>Espécies</Text>
+                <Image source={require('../assets/images/3.webp')} style={styles.profileImage} />
+                <TouchableOpacity style={styles.actionButton}>
+                  <Text style={styles.buttonText}>Pesquisar espécie</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.actionButton}>
+                  <Text style={styles.buttonText}>Minhas coletas</Text>
+                </TouchableOpacity>
+              </View>
+              
               <View style={styles.profileContainer}>
                 <Text style={styles.gridTitle}>Flora Match</Text>
-                <Image source={require('../assets/images/4.png')} style={styles.gridImage} />
+                <Image source={require('../assets/images/4.webp')} style={styles.profileImage} />
                 <TouchableOpacity style={styles.actionButton}>
                   <Text style={styles.buttonText}>Ajude-me a identificar</Text>
                 </TouchableOpacity>
@@ -111,7 +98,7 @@ const HomeScreen = () => {
             <View style={styles.gridRow}>
               <View style={styles.profileContainer}>
                 <Text style={styles.gridTitle}>Relatórios</Text>
-                <Image source={require('../assets/images/5.png')} style={styles.gridImage} />
+                <Image source={require('../assets/images/5.webp')} style={styles.profileImage} />
                 <TouchableOpacity style={styles.actionButton}>
                   <Text style={styles.buttonText}>Meus relatórios</Text>
                 </TouchableOpacity>

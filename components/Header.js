@@ -29,7 +29,7 @@ const Header = ({ navigation }) => {
 
   return (
     <View style={styles.header}>
-      <Image source={require('../assets/images/logo.png')} style={styles.logo} />
+      <Image source={require('../assets/images/logo.webp')} style={styles.logo} />
 
       {isLargeScreen ? (
         <View style={styles.nav}>

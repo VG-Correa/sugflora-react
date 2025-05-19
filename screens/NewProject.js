@@ -37,8 +37,6 @@ const NewProject = () => {
   return (
     <View style={styles.container}>
       <Header navigation={navigation}/>
-
-
       <ScrollView style={styles.content}>
         <Text style={styles.pageTitle}>CRIAR PROJETO</Text>
         

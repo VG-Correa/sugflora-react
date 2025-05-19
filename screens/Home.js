@@ -24,59 +24,45 @@ const Home = ({ navigation }) => {
         <Header navigation={navigation} /> {/* Já está configurado para navegar para Login */}
 
         <Image
-          source={require('../assets/images/forest.png')}
+          source={require('../assets/images/forest.webp')}
           style={[styles.heroImage, { height: isLargeScreen ? 350 : 220 }]}
         />
 
-        <View
-          style={[
-            styles.contentWrapper,
-            { flexDirection: isLargeScreen ? 'row' : 'column' },
-          ]}
-        >
-          {/* Texto e botão */}
-          <View style={styles.left}>
-            <Text style={styles.title}>Sistema Único de Gestão</Text>
-            <Text style={styles.description}>
-              O SUG-FLORA é um sistema de gestão para profissionais que lidam com plantas e flores,
-              automatizando tarefas e integrando bancos de dados públicos. Além de facilitar o trabalho,
-              oferece uma plataforma confiável para pesquisa, identificação de espécies e análise de dados.
-            </Text>
+<View style={[styles.contentWrapper, { flexDirection: isLargeScreen ? 'row' : 'column' }]}>
+  {/* Seção Esquerda (Texto + Botão) */}
+  <View style={[styles.left, { flex: 1 }]}> 
+    <Text style={styles.title}>Sistema Único de Gestão</Text>
+    <Text style={styles.description}>
+      O SUG-FLORA é um sistema de gestão para profissionais que lidam com plantas e flores,
+      automatizando tarefas e integrando bancos de dados públicos. Além de facilitar o trabalho,
+      oferece uma plataforma confiável para pesquisa, identificação de espécies e análise de dados.
+    </Text>
 
-            {/* Botão LOGIN verde - Já está configurado para navegar para Login */}
-            <TouchableOpacity
-              style={[styles.loginButton, { alignSelf: 'center' }]}
-              onPress={() => navigation.navigate('Login')}
-            >
-              <Text style={styles.loginText}>LOGIN</Text>
-            </TouchableOpacity>
-          </View>
+    {/* Botão fixo na base */}
+    <TouchableOpacity
+      style={styles.loginButton}
+      onPress={() => navigation.navigate('Login')}
+    >
+      <Text style={styles.loginText}>LOGIN</Text>
+    </TouchableOpacity>
+  </View>
 
-          {/* Imagens pequenas */}
-          <View style={styles.right}>
-            <Image
-              source={require('../assets/images/forest1.png')}
-              style={[styles.smallImage, {
-                width: isLargeScreen ? 380 : 340,
-                height: isLargeScreen ? 200 : 140,
-              }]}
-            />
-            <Image
-              source={require('../assets/images/forest2.png')}
-              style={[styles.smallImage, {
-                width: isLargeScreen ? 380 : 340,
-                height: isLargeScreen ? 200 : 140,
-              }]}
-            />
-            <Image
-              source={require('../assets/images/forest3.png')}
-              style={[styles.smallImage, {
-                width: isLargeScreen ? 380 : 340,
-                height: isLargeScreen ? 200 : 140,
-              }]}
-            />
-          </View>
-        </View>
+  {/* Seção Direita (Imagens) */}
+  <View style={[styles.right, { flex: isLargeScreen ? 1 : undefined }]}>
+    <Image
+      source={require('../assets/images/forest1.webp')}
+      style={styles.smallImage}
+    />
+    <Image
+      source={require('../assets/images/forest2.webp')}
+      style={styles.smallImage}
+    />
+    <Image
+      source={require('../assets/images/forest3.webp')}
+      style={styles.smallImage}
+    />
+  </View>
+</View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -99,16 +85,16 @@ const styles = StyleSheet.create({
     resizeMode: 'cover',
   },
   contentWrapper: {
+    flex: 1, // 👈 Garante que o container ocupe toda a altura disponível
     justifyContent: 'flex-start',
     alignItems: 'flex-start',
     padding: 20,
     gap: 20,
-    flexWrap: 'wrap',
   },
   left: {
     flex: 1,
+    justifyContent: 'space-between', // 👈 Distribui espaço entre título e botão
     paddingRight: 20,
-    flexShrink: 0,
   },
   title: {
     fontSize: 28,
@@ -126,25 +112,24 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 20,
-    marginBottom: 30,
+    alignSelf: 'center',
+    marginTop: 'auto', // 👈 Fixa o botão na base
   },
   loginText: {
     color: '#fff',
     fontWeight: 'bold',
   },
-  right: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    right: {
+    flex: 1,
+    justifyContent: 'center', // 👈 Centraliza as imagens verticalmente
     gap: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 20,
-    width: '100%',
   },
+   
   smallImage: {
+    width: '100%',
+    height: 140,
     resizeMode: 'cover',
     borderRadius: 10,
-    marginBottom: 10,
   },
 });
 

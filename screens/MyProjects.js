@@ -29,14 +29,14 @@ const MyProjects = () => {
     <View style={styles.container}>
       {/* Cabeçalho igual ao da HomePage */}
       <View style={styles.headerContainer}>
-        <Image
-          source={require('../assets/images/cabecalho.png')}
+        <Image 
+          source={require('../assets/images/cabecalho.webp')} 
           style={styles.headerBackgroundImage}
           resizeMode="cover"
         />
         <View style={styles.headerContent}>
-          <Image
-            source={require('../assets/images/logo.png')}
+          <Image 
+            source={require('../assets/images/logo.webp')}
             style={styles.logoImage}
             resizeMode="contain"
           />

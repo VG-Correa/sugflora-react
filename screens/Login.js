@@ -15,7 +15,7 @@ import {
   Alert
 } from 'react-native';
 import Header from '../components/Header';
-import forestImage from '../assets/images/forest.png';
+import forestImage from '../assets/images/forest.webp';
 import loginApi from '../functions/api/loginApi';
 import usuarioApi from '../functions/api/usuarioApi';
 
@@ -149,7 +149,7 @@ const Login = ({ navigation }) => {
 
                 <View style={styles.registerContainer}>
                   <Text style={styles.registerText}>Não tem uma conta? </Text>
-                  <TouchableOpacity onPress={(event) => {handleLogin(event)}}>
+                  <TouchableOpacity onPress={() => navigation.navigate('Register')}>
                     <Text style={styles.createAccount}>Cadastre-se</Text>
                   </TouchableOpacity>
                 </View>
@@ -236,7 +236,6 @@ const styles = StyleSheet.create({
   },
   dividerContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
     marginVertical: 20,
   },
   dividerLine: {

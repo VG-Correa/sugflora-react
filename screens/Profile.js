@@ -11,13 +11,13 @@ const Profile = () => {
       {/* Cabeçalho igual ao da HomePage */}
       <View style={styles.headerContainer}>
         <Image 
-          source={require('../assets/images/cabecalho.png')} 
+          source={require('../assets/images/cabecalho.webp')} 
           style={styles.headerBackgroundImage}
           resizeMode="cover"
         />
         <View style={styles.headerContent}>
           <Image 
-            source={require('../assets/images/logo.png')}
+            source={require('../assets/images/logo.webp')}
             style={styles.logoImage}
             resizeMode="contain"
           />

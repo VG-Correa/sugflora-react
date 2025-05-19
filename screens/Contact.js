@@ -27,7 +27,9 @@ const ContactScreen = ({ navigation }) => {
           { 
             flexDirection: isLargeScreen ? 'row' : 'column',
             gap: isLargeScreen ? 40 : 20,
-            paddingHorizontal: isLargeScreen ? 40 : 20
+            paddingHorizontal: isLargeScreen ? 40 : 20,
+            display: 'flex',
+            justifyContent: 'center',
           }
         ]}>
           {/* Seção de Informações */}
@@ -40,7 +42,7 @@ const ContactScreen = ({ navigation }) => {
             <View style={styles.separator} />
             
             <TouchableOpacity>
-              <Text style={styles.emailText}>suaffare@contato.com</Text>
+              <Text style={styles.emailText}>suaflora@contato.com</Text>
             </TouchableOpacity>
           </View>
 
@@ -59,13 +61,13 @@ const ContactScreen = ({ navigation }) => {
               keyboardType="email-address"
             />
 
-            <Text style={styles.label}>ASSENTIO</Text>
+            <Text style={styles.label}>ASSUNTO</Text>
             <TextInput
               style={styles.input}
               placeholder="Descreva o assunto"
             />
 
-            <Text style={styles.label}>VERSALESIA</Text>
+            <Text style={styles.label}>MENSAGEM</Text>
             <TextInput
               style={[styles.input, styles.multilineInput]}
               placeholder="Escreva sua mensagem"

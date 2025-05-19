@@ -128,6 +128,7 @@ const Login = ({ navigation }) => {
                   placeholder="home@exemplo.com"
                   placeholderTextColor="#888"
                   keyboardType="email-address"
+                  defaultValue='VG'
                 />
 
                 <Text style={styles.label}>SENHA</Text>
@@ -139,6 +140,7 @@ const Login = ({ navigation }) => {
                   placeholder="*****"
                   placeholderTextColor="#888"
                   secureTextEntry={true}
+                  defaultValue='test'
                 />
 
                 <TouchableOpacity style={styles.forgotPasswordButton}>

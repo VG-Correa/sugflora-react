@@ -1,11 +1,30 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Image, ScrollView, Dimensions, TouchableOpacity } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import CampoApi from '../functions/api/CampoApi';
 
 const ProjectScreen = () => {
   const navigation = useNavigation();
   const screenWidth = Dimensions.get('window').width;
   const isMobile = screenWidth < 768;
+  const route = useRoute();
+  const { projeto } = route.params;
+
+  const [campos, setCampos] = useState([])
+
+  async function fetchCampos() {
+    try {
+
+      const response = await CampoApi.getAllByProjetoId(projeto.id)
+      console.log("Response Campos: ", response)
+      if (response.status === 200) {
+        setCampos(response.data.data)
+        console.log("Sucesso")
+      }
+    } catch (error) {
+      console.log("Erro ao fazer fetch dos Campos")
+    }
+  }
 
   const handleImageError = (error) => {
     console.log('Image loading error:', error);
@@ -23,17 +42,31 @@ const ProjectScreen = () => {
     console.log("Editar projeto clicado");
   };
 
+  async function getColetas(campo) {
+    return "Não Implementado"
+  }
+  async function getColetasIdentificadas(campo) {
+    return "Não Implementado"
+  }
+  async function getColetasNaoIdentificadas(campo) {
+    return "Não Implementado"
+  }
+
+  useEffect(() => {
+    fetchCampos()
+  }, [])
+
   return (
     <View style={styles.container}>
       {/* Header */}
       <View style={styles.headerContainer}>
-        <Image 
-          source={require('../assets/images/cabecalho.png')} 
+        <Image
+          source={require('../assets/images/cabecalho.png')}
           style={styles.headerBackgroundImage}
           resizeMode="cover"
         />
         <View style={styles.headerContent}>
-          <Image 
+          <Image
             source={require('../assets/images/logo.png')}
             style={styles.logoImage}
             resizeMode="contain"
@@ -49,36 +82,36 @@ const ProjectScreen = () => {
       </View>
 
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.pageTitle}>PROJETO - ECOBOTÂNICA</Text>
+        <Text style={styles.pageTitle}>{projeto.nome}</Text>
 
         {/* Informações do projeto */}
         <View style={styles.box}>
           <View style={[styles.projectInfoContainer, isMobile && styles.mobileProjectInfoContainer]}>
-            <View style={[styles.imageContainer, isMobile && styles.mobileImageContainer]}>
+            {/* <View style={[styles.imageContainer, isMobile && styles.mobileImageContainer]}>
               <Image
                 source={require('../assets/images/sem-imagem.png')}
                 style={styles.projectImage}
                 resizeMode="cover"
                 onError={handleImageError}
               />
-            </View>
+            </View> */}
             <View style={styles.textContainer}>
-              <View style={styles.detailRow}>
+              {/* <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>DATA DE INÍCIO:</Text>
                 <Text style={styles.detailValue}> 19/01/2023</Text>
               </View>
               <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>PREVISÃO DE CONCLUSÃO:</Text>
                 <Text style={styles.detailValue}> 01/04/2026</Text>
-              </View>
+              </View> */}
               <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>STATUS:</Text>
-                <Text style={styles.detailValue}> Ativo</Text>
+                <Text style={styles.detailValue}>{projeto.public ? "Publicado" : "Privado"}</Text>
               </View>
-              <View style={styles.detailRow}>
+              {/* <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>RESPONSÁVEL:</Text>
                 <Text style={styles.detailValue}> Juliana Melo</Text>
-              </View>
+              </View> */}
             </View>
           </View>
         </View>
@@ -87,7 +120,7 @@ const ProjectScreen = () => {
         <View style={styles.box}>
           <Text style={styles.sectionTitle}>DESCRIÇÃO</Text>
           <Text style={styles.descriptionText}>
-            Pesquisa sobre plantas medicinais e nativas do Brasil.
+            {projeto.descricao}
           </Text>
         </View>
 
@@ -102,24 +135,26 @@ const ProjectScreen = () => {
                 <Text style={[styles.tableHeaderText, { width: tableColumnSizes.others }]}>NÃO ID.</Text>
                 <Text style={[styles.tableHeaderText, { width: tableColumnSizes.others }]}>STATUS</Text>
               </View>
-              <View style={styles.tableRow}>
-                <TouchableOpacity onPress={() => navigation.navigate('FieldScreen')}>
-                  <Text style={[styles.tableCell, { width: tableColumnSizes.name, color: '#2e7d32', fontWeight: 'bold', textDecorationLine: 'underline' }]}>
-                    CAMPO 1
-                  </Text>
-                </TouchableOpacity>
-                <Text style={[styles.tableCell, { width: tableColumnSizes.others }]}>4</Text>
-                <Text style={[styles.tableCell, { width: tableColumnSizes.others }]}>4</Text>
-                <Text style={[styles.tableCell, { width: tableColumnSizes.others }]}>0</Text>
-                <Text style={[styles.tableCell, { width: tableColumnSizes.others }]}>Ativo</Text>
-              </View>
-              <View style={styles.tableRow}>
-                <Text style={[styles.tableCell, { width: tableColumnSizes.name }]}>CAMPO 2</Text>
-                <Text style={[styles.tableCell, { width: tableColumnSizes.others }]}>6</Text>
-                <Text style={[styles.tableCell, { width: tableColumnSizes.others }]}>5</Text>
-                <Text style={[styles.tableCell, { width: tableColumnSizes.others }]}>1</Text>
-                <Text style={[styles.tableCell, { width: tableColumnSizes.others }]}>Ativo</Text>
-              </View>
+              {
+
+                campos.map(campo => {
+                  return (
+                    <View style={styles.tableRow}>
+                      <TouchableOpacity onPress={() => navigation.navigate('FieldScreen')}>
+                        <Text style={[styles.tableCell, { width: tableColumnSizes.name, color: '#2e7d32', fontWeight: 'bold', textDecorationLine: 'underline' }]}>
+                          {campo.nome}
+                        </Text>
+                      </TouchableOpacity>
+                      <Text style={[styles.tableCell, { width: tableColumnSizes.others }]}>{getColetas(campo)}</Text>
+                      <Text style={[styles.tableCell, { width: tableColumnSizes.others }]}>{getColetasIdentificadas(campo)}</Text>
+                      <Text style={[styles.tableCell, { width: tableColumnSizes.others }]}>{getColetasNaoIdentificadas(campo)}</Text>
+                      <Text style={[styles.tableCell, { width: tableColumnSizes.others }]}>{campo.deleted ? "Inativo" : "Ativo"}</Text>
+                    </View>
+                  )
+                })
+
+              }
+
             </View>
           </ScrollView>
         </View>

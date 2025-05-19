@@ -29,20 +29,20 @@ const MyProjects = () => {
     <View style={styles.container}>
       {/* Cabeçalho igual ao da HomePage */}
       <View style={styles.headerContainer}>
-        <Image 
-          source={require('../assets/images/cabecalho.png')} 
+        <Image
+          source={require('../assets/images/cabecalho.png')}
           style={styles.headerBackgroundImage}
           resizeMode="cover"
         />
         <View style={styles.headerContent}>
-          <Image 
+          <Image
             source={require('../assets/images/logo.png')}
             style={styles.logoImage}
             resizeMode="contain"
           />
           <Text style={styles.logoText}>SUG - FLORA</Text>
           <View style={styles.menuTop}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.menuItem}
               onPress={() => navigation.navigate('HomePage')}
             >
@@ -65,46 +65,28 @@ const MyProjects = () => {
         <Text style={styles.pageTitle}>MEUS PROJETOS</Text>
 
         {/* Container do projeto */}
-        <View style={styles.container_projetos}>
+        <View style={{
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          flexWrap: 'wrap',
+          flexDirection: 'row',
+          gap: 10,
+          justifyContent: "space-around",
+          alignContent: 'space-around',
+          alignItems: 'center',
+        }}>
           {
             projetos.map(projeto => (
               <View style={styles.projectContainer}>
                 <Text style={styles.projectHeader}>{projeto.nome}</Text>
 
-                {/* Área para foto */}
-                {/* <View style={styles.photoContainer}>
-                  <Image
-                    source={require('../assets/images/sem-imagem.png')}
-                    style={styles.projectImage}
-                    resizeMode="cover"
-                  />
-                </View> */}
-
-                {/* Situação */}
-                {/* <Text style={styles.label}>{"Público" ? projeto.deleted : "Privado"}</Text> */}
-                <TextInput
+               <TextInput
                   style={styles.inputField}
                   editable={false}
                   value={projeto.deleted ? "Publicado" : "Privado"}
                 />
 
-                {/* Campos */}
-                {/* <Text style={styles.label}>Campos</Text>
-                <TextInput
-                  style={styles.inputField}
-                  editable={false}
-                  value="5 campos registrados"
-                /> */}
-
-                {/* Coletas */}
-                {/* <Text style={styles.label}>Coletas</Text>
-                <TextInput
-                  style={styles.inputField}
-                  editable={false}
-                  value="12 coletas realizadas"
-                /> */}
-
-                {/* Botão Abrir Projeto */}
                 <TouchableOpacity
                   style={styles.openButton}
                   onPress={() => navigation.navigate('ProjectScreen', { projeto: projeto })}
@@ -118,7 +100,7 @@ const MyProjects = () => {
         </View>
 
       </View>
-    </View>
+    </View >
   );
 };
 
@@ -241,17 +223,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 14,
-  },
-  container_projetos: {
-    width: '100% !important',
-    height: '100% !important',
-    display: 'flex !important',
-    flexWrap: 'wrap !important',
-    flexDirection: 'row',
-    gap: 10,
-    justifyContent: "space-around !important",
-    alignContent: 'space-around !important',
-    alignItems: 'center !important',
   }
 });
 

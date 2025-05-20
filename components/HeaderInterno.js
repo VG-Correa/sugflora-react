@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from 'react';
 import {
   View,
   Text,
@@ -6,40 +6,82 @@ import {
   TouchableOpacity,
   StyleSheet,
   useWindowDimensions,
-} from "react-native";
-import { useNavigation } from "@react-navigation/native";
+  Modal,
+  Animated,
+  Platform,
+  Dimensions
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 
 const HeaderInterno = () => {
   const navigation = useNavigation();
-  const [showFloraMatchSubmenu, setShowFloraMatchSubmenu] = useState(false);
+  const [activeSubmenu, setActiveSubmenu] = useState(null);
   const [menuAberto, setMenuAberto] = useState(false);
+  const [notificacaoAberta, setNotificacaoAberta] = useState(false);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
-  const { width } = useWindowDimensions();
-  const isMobile = width < 600;
+  const windowWidth = Dimensions.get('window').width;
+  const isMobile = windowWidth < 768;
 
-  const renderMenuItems = () => (
+  const toggleSubmenu = (menuName) => {
+    setActiveSubmenu(activeSubmenu === menuName ? null : menuName);
+  };
+
+  const toggleMenuMobile = () => {
+    const toValue = menuAberto ? 0 : 1;
+    setMenuAberto(!menuAberto);
+    
+    Animated.timing(fadeAnim, {
+      toValue,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const closeAllMenus = () => {
+    setMenuAberto(false);
+    setActiveSubmenu(null);
+    Animated.timing(fadeAnim, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const renderMenuItems = (isMobileView) => (
     <>
-      <TouchableOpacity
-        style={styles.menuItem}
-        onPress={() => navigation.navigate("Home")}
+      <TouchableOpacity 
+        style={styles.menuItem} 
+        onPress={() => {
+          navigation.navigate('HomePage');
+          closeAllMenus();
+        }}
       >
         <Text style={styles.menuText}>PÁGINA INICIAL</Text>
       </TouchableOpacity>
 
       {/* PROJETOS */}
       <View style={styles.menuItem}>
-        <TouchableOpacity
-          onPress={() => setShowFloraMatchSubmenu(!showFloraMatchSubmenu)}
-        >
+        <TouchableOpacity onPress={() => toggleSubmenu('projetos')}>
           <Text style={styles.menuText}>PROJETOS</Text>
         </TouchableOpacity>
-        {showFloraMatchSubmenu && (
-          <View style={styles.submenu}>
-            <TouchableOpacity onPress={() => navigation.navigate("Identificar")}>
-              <Text style={styles.submenuText}>Meus Projetos</Text>
+        {activeSubmenu === 'projetos' && (
+          <View style={isMobileView ? styles.submenuMobile : styles.submenu}>
+            <TouchableOpacity 
+              onPress={() => {
+                navigation.navigate('Identificar');
+                closeAllMenus();
+              }}
+            >
+              <Text style={[styles.submenuText, isMobileView && styles.submenuTextMobile]}>Meus Projetos</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => navigation.navigate("ConhecoEssa")}>
-              <Text style={styles.submenuText}>Criar Projetos</Text>
+            <TouchableOpacity 
+              onPress={() => {
+                navigation.navigate('ConhecoEssa');
+                closeAllMenus();
+              }}
+            >
+              <Text style={[styles.submenuText, isMobileView && styles.submenuTextMobile]}>Criar Projetos</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -47,18 +89,26 @@ const HeaderInterno = () => {
 
       {/* ESPÉCIES */}
       <View style={styles.menuItem}>
-        <TouchableOpacity
-          onPress={() => setShowFloraMatchSubmenu(!showFloraMatchSubmenu)}
-        >
+        <TouchableOpacity onPress={() => toggleSubmenu('especies')}>
           <Text style={styles.menuText}>ESPÉCIES</Text>
         </TouchableOpacity>
-        {showFloraMatchSubmenu && (
-          <View style={styles.submenu}>
-            <TouchableOpacity onPress={() => navigation.navigate("Identificar")}>
-              <Text style={styles.submenuText}>Pesquisar Espécies</Text>
+        {activeSubmenu === 'especies' && (
+          <View style={isMobileView ? styles.submenuMobile : styles.submenu}>
+            <TouchableOpacity 
+              onPress={() => {
+                navigation.navigate('Identificar');
+                closeAllMenus();
+              }}
+            >
+              <Text style={[styles.submenuText, isMobileView && styles.submenuTextMobile]}>Pesquisar Espécies</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => navigation.navigate("ConhecoEssa")}>
-              <Text style={styles.submenuText}>Minhas Coletas</Text>
+            <TouchableOpacity 
+              onPress={() => {
+                navigation.navigate('ConhecoEssa');
+                closeAllMenus();
+              }}
+            >
+              <Text style={[styles.submenuText, isMobileView && styles.submenuTextMobile]}>Minhas Coletas</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -66,127 +116,289 @@ const HeaderInterno = () => {
 
       {/* FLORA MATCH */}
       <View style={styles.menuItem}>
-        <TouchableOpacity
-          onPress={() => setShowFloraMatchSubmenu(!showFloraMatchSubmenu)}
-        >
+        <TouchableOpacity onPress={() => toggleSubmenu('floraMatch')}>
           <Text style={styles.menuText}>FLORA MATCH</Text>
         </TouchableOpacity>
-        {showFloraMatchSubmenu && (
-          <View style={styles.submenu}>
-            <TouchableOpacity onPress={() => navigation.navigate("Identificar")}>
-              <Text style={styles.submenuText}>Ajude-me a identificar</Text>
+        {activeSubmenu === 'floraMatch' && (
+          <View style={isMobileView ? styles.submenuMobile : styles.submenu}>
+            <TouchableOpacity 
+              onPress={() => {
+                navigation.navigate('Identificar');
+                closeAllMenus();
+              }}
+            >
+              <Text style={[styles.submenuText, isMobileView && styles.submenuTextMobile]}>Ajude-me a identificar</Text>
             </TouchableOpacity>
-            <TouchableOpacity onPress={() => navigation.navigate("ConhecoEssa")}>
-              <Text style={styles.submenuText}>Eu conheço essa</Text>
+            <TouchableOpacity 
+              onPress={() => {
+                navigation.navigate('ConhecoEssa');
+                closeAllMenus();
+              }}
+            >
+              <Text style={[styles.submenuText, isMobileView && styles.submenuTextMobile]}>Eu conheço essa</Text>
             </TouchableOpacity>
           </View>
         )}
       </View>
 
-      {/* RELATÓRIO */}
-      <TouchableOpacity
-        style={styles.menuItem}
-        onPress={() => navigation.navigate("Relatorios")}
-      >
-        <Text style={styles.menuText}>RELATÓRIO</Text>
-      </TouchableOpacity>
+      {/* RELATÓRIO + ÍCONES */}
+      <View style={[styles.menuItem]}>
+        <TouchableOpacity 
+          onPress={() => {
+            navigation.navigate('Relatorios');
+            closeAllMenus();
+          }}
+        >
+          <Text style={styles.menuText}>RELATÓRIO</Text>
+        </TouchableOpacity>
+      </View>
+      <View style={[styles.menuItem]}>
+
+        <TouchableOpacity 
+          onPress={() => setNotificacaoAberta(true)} 
+          style={styles.iconButton}
+        >
+          <Text style={styles.icon}>🔔</Text>
+        </TouchableOpacity>
+      </View>
+      <View style={[styles.menuItem]}>
+
+        <TouchableOpacity 
+          onPress={() => {
+            navigation.navigate('Perfil');
+            closeAllMenus();
+          }} 
+          style={styles.iconButton}
+        >
+          <Text style={styles.icon}>👤</Text>
+        </TouchableOpacity>
+      </View>
+      <View style={[styles.menuItem]}>
+
+        <TouchableOpacity 
+      onPress={() => {
+        // Sua função de logout aqui
+        navigation.navigate('Login'); // Exemplo: redirecionar para login
+        closeAllMenus();
+      }} 
+      style={[styles.iconButton, styles.logoutButton]}
+    >
+      <Text style={styles.icon}>SAIR</Text>
+    </TouchableOpacity>
+      </View>
     </>
   );
 
   return (
     <View style={styles.headerContainer}>
       <Image
-        source={require("../assets/images/cabecalho.webp")}
+        source={require('../assets/images/cabecalho.webp')}
         style={styles.headerBackgroundImage}
         resizeMode="cover"
       />
+      
       <View style={styles.headerContent}>
         <Image
-          source={require("../assets/images/logo.webp")}
+          source={require('../assets/images/logo.webp')}
           style={styles.logoImage}
           resizeMode="contain"
         />
-        <Text style={styles.logoText}>SUG - FLORA</Text>
-
+        
         {isMobile ? (
-          <View style={{ alignItems: "center" }}>
-            <TouchableOpacity onPress={() => setMenuAberto(!menuAberto)}>
-              <Text style={[styles.menuText, { fontSize: 20 }]}>☰ MENU</Text>
+          <>
+            <TouchableOpacity 
+              onPress={toggleMenuMobile} 
+              style={styles.menuHamburguer}
+            >
+              <Text style={[styles.menuText, { fontSize: 20 }]}>
+                {menuAberto ? '✕' : '☰'} MENU
+              </Text>
             </TouchableOpacity>
-            {menuAberto && <View style={styles.menuMobile}>{renderMenuItems()}</View>}
-          </View>
+            
+            {menuAberto && (
+              <>
+                <TouchableOpacity
+                  style={styles.menuBackdrop}
+                  activeOpacity={1}
+                  onPress={toggleMenuMobile}
+                />
+                <Animated.View 
+                  style={[
+                    styles.menuMobileContainer,
+                    { opacity: fadeAnim }
+                  ]}
+                >
+                  {renderMenuItems(true)}
+                </Animated.View>
+              </>
+            )}
+          </>
         ) : (
-          <View style={styles.menuTop}>{renderMenuItems()}</View>
+          <View style={styles.menuTop}>{renderMenuItems(false)}</View>
         )}
       </View>
+
+      <Modal
+        transparent
+        visible={notificacaoAberta}
+        animationType="fade"
+        onRequestClose={() => setNotificacaoAberta(false)}
+      >
+        <TouchableOpacity
+          style={styles.modalOverlay}
+          activeOpacity={1}
+          onPress={() => setNotificacaoAberta(false)}
+        >
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Notificações</Text>
+            <Text>Nenhuma notificação no momento.</Text>
+          </View>
+        </TouchableOpacity>
+      </Modal>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   headerContainer: {
-    width: "100%",
-    height: 220,
-    position: "relative",
+    width: '100%',
+    height: 170,
+    position: 'relative',
+    zIndex: 1000,
   },
   headerBackgroundImage: {
-    width: "100%",
-    height: "100%",
-    position: "absolute",
+    width: '100%',
+    height: '100%',
+    position: 'absolute',
   },
   headerContent: {
-    position: "absolute",
-    width: "100%",
-    alignItems: "center",
-    paddingTop: 20,
+    position: 'absolute',
+    width: '100%',
+    alignItems: 'center',
+    paddingTop: Platform.OS === 'ios' ? 40 : 20,
   },
   logoImage: {
     width: 80,
     height: 80,
     marginBottom: 5,
   },
-  logoText: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#fff",
-    textShadowColor: "rgba(0,0,0,0.8)",
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 5,
-    marginBottom: 15,
-  },
   menuTop: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
     paddingVertical: 10,
   },
   menuItem: {
     marginHorizontal: 10,
-    alignItems: "center",
+    alignItems: 'center',
+    position: 'relative',
+    marginVertical: 5,
   },
   menuText: {
     fontSize: 16,
-    fontWeight: "bold",
-    color: "#fff",
-    textShadowColor: "rgba(0,0,0,0.8)",
+    fontWeight: 'bold',
+    color: '#fff',
+    textShadowColor: 'rgba(0,0,0,0.8)',
     textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 5,
   },
   submenu: {
-    marginTop: 5,
-    backgroundColor: "rgba(255,255,255,0.95)",
-    padding: 5,
+    position: 'absolute',
+    top: 30,
+    left: 0,
+    minWidth: 180,
+    backgroundColor: 'rgba(255,255,255,0.95)',
+    padding: 10,
     borderRadius: 5,
+    zIndex: 1001,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  submenuMobile: {
+    width: '100%',
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    padding: 10,
+    borderRadius: 5,
+    marginTop: 5,
+    zIndex: 1001,
   },
   submenuText: {
-    color: "#2e7d32",
-    fontWeight: "bold",
-    paddingVertical: 3,
+    color: '#2e7d32',
+    fontWeight: 'bold',
+    paddingVertical: 8,
+    paddingHorizontal: 10,
   },
-  menuMobile: {
-    marginTop: 10,
-    alignItems: "center",
-    gap: 10,
+  submenuTextMobile: {
+    color: '#fff',
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 5,
+  },
+  menuHamburguer: {
+    position: 'absolute',
+    top: 10,
+    right: 20,
+    zIndex: 1001,
+  },
+  menuBackdrop: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    zIndex: 998,
+  },
+  menuMobileContainer: {
+    position: 'absolute',
+    top: 120,
+    right: 20,
+    backgroundColor: 'rgba(46, 125, 50, 0.95)',
+    borderRadius: 10,
+    padding: 20,
+    width: '80%',
+    maxWidth: 300,
+    zIndex: 999,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  relatorioContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  iconButton: {
+    marginLeft: 10,
+  },
+  icon: {
+    fontSize: 18,
+    color: '#fff',
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 5,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    width: 300,
+    padding: 20,
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontWeight: 'bold',
+    fontSize: 18,
+    marginBottom: 10,
   },
 });
 

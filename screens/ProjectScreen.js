@@ -35,7 +35,7 @@ const ProjectScreen = () => {
     : { name: 220, others: 120 };
 
   const handleAddField = () => {
-    navigation.navigate('NewField');
+    navigation.navigate('NewField', {projeto: projeto});
   };
 
   const handleEditProject = () => {
@@ -53,7 +53,8 @@ const ProjectScreen = () => {
   }
 
   useEffect(() => {
-    fetchCampos()
+    const loadCampos = async () => {await fetchCampos()}
+    loadCampos();
   }, [])
 
   return (
@@ -140,15 +141,15 @@ const ProjectScreen = () => {
 
                 campos.map(campo => {
                   return (
-                    <View style={styles.tableRow}>
+                    <View key={campo.id} style={styles.tableRow}>
                       <TouchableOpacity onPress={() => navigation.navigate('FieldScreen')}>
                         <Text style={[styles.tableCell, { width: tableColumnSizes.name, color: '#2e7d32', fontWeight: 'bold', textDecorationLine: 'underline' }]}>
                           {campo.nome}
                         </Text>
                       </TouchableOpacity>
-                      <Text style={[styles.tableCell, { width: tableColumnSizes.others }]}>{getColetas(campo)}</Text>
-                      <Text style={[styles.tableCell, { width: tableColumnSizes.others }]}>{getColetasIdentificadas(campo)}</Text>
-                      <Text style={[styles.tableCell, { width: tableColumnSizes.others }]}>{getColetasNaoIdentificadas(campo)}</Text>
+                      <Text style={[styles.tableCell, { width: tableColumnSizes.others }]}>N/Imp</Text>
+                      <Text style={[styles.tableCell, { width: tableColumnSizes.others }]}>N/Imp</Text>
+                      <Text style={[styles.tableCell, { width: tableColumnSizes.others }]}>N/Imp</Text>
                       <Text style={[styles.tableCell, { width: tableColumnSizes.others }]}>{campo.deleted ? "Inativo" : "Ativo"}</Text>
                     </View>
                   )

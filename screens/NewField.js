@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import {
   View,
   Text,
@@ -8,29 +8,76 @@ import {
   Image,
   ScrollView
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import CampoApi from '../functions/api/CampoApi';
+
+
 
 const NewField = () => {
   const navigation = useNavigation();
+  const router = useRoute();
+
+  const { projeto } = router.params
+  const user_id = localStorage.getItem('user_id')
+
+  const nomeRef = useRef()
+  const descricaoRef = useRef()
+  const enderecoRef = useRef()
+  const cidadeRef = useRef()
+  const estadoRef = useRef()
+  const paisRef = useRef("Brasil")
+  const cepRef = useRef()
+
+  async function salvarCampo() {
+    const campoJson = {
+      "id": null,
+      "usuario_responsavel_uuid": user_id,
+      "projeto_id": projeto.id,
+      "nome": nomeRef.current.value,
+      "descricao": descricaoRef.current.value,
+      "endereco": enderecoRef.current.value,
+      "cidade": cidadeRef.current.value,
+      "estado": estadoRef.current.value,
+      "pais": paisRef.current.value,
+      "cep": cepRef.current.value
+    }
+
+    try {
+
+      const response = await CampoApi.create(campoJson)
+      if (response.status === 200) {
+        window.alert("Campo criado com sucesso")
+        console.log("Campo criado com sucesso", response.data.data)
+      } else {
+        window.alert("Erro ao criar campo")
+        console.log("Erro ao criar campo", response.data.data)
+      }
+
+    } catch (error) {
+      console.error("Erro ao fazer POST do Campo")
+    }
+
+    console.log("Campo: ", campoJson)
+  }
 
   return (
     <View style={styles.container}>
       {/* Cabeçalho igual ao da HomePage */}
       <View style={styles.headerContainer}>
-        <Image 
-          source={require('../assets/images/cabecalho.webp')} 
+        <Image
+          source={require('../assets/images/cabecalho.webp')}
           style={styles.headerBackgroundImage}
           resizeMode="cover"
         />
         <View style={styles.headerContent}>
-          <Image 
+          <Image
             source={require('../assets/images/logo.webp')}
             style={styles.logoImage}
             resizeMode="contain"
           />
           <Text style={styles.logoText}>SUG - FLORA</Text>
           <View style={styles.menuTop}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.menuItem}
               onPress={() => navigation.navigate('HomePage')}
             >
@@ -49,13 +96,13 @@ const NewField = () => {
         </View>
       </View>
 
-      <ScrollView style={styles.content} contentContainerStyle={{paddingBottom: 30}}>
+      <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 30 }}>
         <Text style={styles.pageTitle}>ADICIONAR CAMPO</Text>
 
         {/* Campos grandes: Nome, Descrição, Localização */}
         <View style={styles.fieldGroup}>
           <Text style={styles.fieldLabel}>NOME DO CAMPO</Text>
-          <TextInput
+          <TextInput ref={nomeRef}
             style={styles.input}
             placeholder="Nome do campo"
           />
@@ -63,36 +110,17 @@ const NewField = () => {
 
         <View style={styles.fieldGroup}>
           <Text style={styles.fieldLabel}>DESCRIÇÃO</Text>
-          <TextInput
-            style={[styles.input, {height: 100}]}
+          <TextInput ref={descricaoRef}
+            style={[styles.input, { height: 100 }]}
             placeholder="Descrição do campo"
             multiline
           />
         </View>
 
-        {/* Datas lado a lado */}
-        <View style={styles.rowFields}>
-          <View style={[styles.fieldGroup, styles.smallField]}>
-            <Text style={styles.fieldLabel}>DATA DE INÍCIO</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="dd/mm/aaaa"
-            />
-          </View>
-
-          <View style={[styles.fieldGroup, styles.smallField]}>
-            <Text style={styles.fieldLabel}>PREVISÃO DE CONCLUSÃO</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="dd/mm/aaaa"
-            />
-          </View>
-        </View>
-
         {/* Localização: País, Estado, Cidade, Endereço */}
         <View style={styles.fieldGroup}>
           <Text style={styles.fieldLabel}>PAÍS</Text>
-          <TextInput
+          <TextInput ref={paisRef}
             style={styles.input}
             placeholder="Brasil"
             editable={false}
@@ -101,7 +129,7 @@ const NewField = () => {
 
         <View style={styles.fieldGroup}>
           <Text style={styles.fieldLabel}>ESTADO</Text>
-          <TextInput
+          <TextInput ref={estadoRef}
             style={styles.input}
             placeholder="SP"
           />
@@ -109,7 +137,7 @@ const NewField = () => {
 
         <View style={styles.fieldGroup}>
           <Text style={styles.fieldLabel}>CIDADE</Text>
-          <TextInput
+          <TextInput ref={cidadeRef}
             style={styles.input}
             placeholder="Ferraz de Vasconcelos"
           />
@@ -117,14 +145,22 @@ const NewField = () => {
 
         <View style={styles.fieldGroup}>
           <Text style={styles.fieldLabel}>ENDEREÇO</Text>
-          <TextInput
+          <TextInput ref={enderecoRef}
             style={styles.input}
             placeholder="Rua Exemplo, 123"
           />
         </View>
 
+        <View style={styles.fieldGroup}>
+          <Text style={styles.fieldLabel}>CEP</Text>
+          <TextInput ref={cepRef}
+            style={styles.input}
+            placeholder=""
+          />
+        </View>
+
         {/* Botão salvar */}
-        <TouchableOpacity style={styles.createButton}>
+        <TouchableOpacity style={styles.createButton} onPress={() => { salvarCampo() }}>
           <Text style={styles.createButtonText}>SALVAR CAMPO</Text>
         </TouchableOpacity>
       </ScrollView>
@@ -164,7 +200,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#fff',
     textShadowColor: 'rgba(0,0,0,0.8)',
-    textShadowOffset: {width: 1, height: 1},
+    textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 5,
     marginBottom: 15,
   },
@@ -182,7 +218,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#fff',
     textShadowColor: 'rgba(0,0,0,0.8)',
-    textShadowOffset: {width: 1, height: 1},
+    textShadowOffset: { width: 1, height: 1 },
     textShadowRadius: 5,
   },
   content: {

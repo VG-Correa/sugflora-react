@@ -11,6 +11,15 @@ const CampoApi = {
         } catch (error) {
             console.error("Erro no GET dos campos: ", error)
         }
+    },
+
+    async create(campoJson) {
+        try {
+            const response = api.post("campo", campoJson)
+            return response
+        } catch (error) {
+            console.error(error)
+        }
     }
 
 }

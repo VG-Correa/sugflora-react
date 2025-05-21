@@ -2,19 +2,28 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 
+// Telas principais
 import Home from './screens/Home';
 import Register from './screens/Register';
 import Login from './screens/Login';
 import Password from './screens/Password';
-import HomePage from './screens/HomePage';
-import Profile from './screens/Profile';
+
+// Telas institucionais
 import About from './screens/About';
 import Contact from './screens/Contact';
+
+// Telas do aplicativo
+import HomePage from './screens/HomePage';
+import Profile from './screens/Profile';
 import NewProject from './screens/NewProject';
 import MyProjects from './screens/MyProjects';
 import ProjectScreen from './screens/ProjectScreen';
-import NewField from './screens/NewField';       // Nova tela NewField
-import FieldScreen from './screens/FieldScreen'; // Nova tela FieldScreen
+import NewField from './screens/NewField';
+import FieldScreen from './screens/FieldScreen';
+import AddCollection from './screens/AddCollection';
+import MyCollection from './screens/MyCollection';
+import SearchSpecies from './screens/SearchSpecies';
+import MyReports from './screens/MyReports';
 
 const Stack = createNativeStackNavigator();
 
@@ -22,6 +31,7 @@ const App = () => {
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Home">
+        
         {/* Telas principais */}
         <Stack.Screen 
           name="Home" 
@@ -34,25 +44,25 @@ const App = () => {
           options={{ headerShown: false }}
         />
         <Stack.Screen 
-          name="Contact" 
-          component={Contact} 
+          name="Login" 
+          component={Login} 
           options={{ headerShown: false }}
         />
+        <Stack.Screen 
+          name="Password" 
+          component={Password} 
+          options={{ headerShown: false }}
+        />
+
+        {/* Telas institucionais */}
         <Stack.Screen 
           name="About" 
           component={About} 
           options={{ headerShown: false }}
         />
         <Stack.Screen 
-          name="Login" 
-          component={Login} 
-          options={{ headerShown: false }}
-        />
-
-        {/* Recuperação de senha */}
-        <Stack.Screen 
-          name="Password" 
-          component={Password} 
+          name="Contact" 
+          component={Contact} 
           options={{ headerShown: false }}
         />
 
@@ -60,71 +70,59 @@ const App = () => {
         <Stack.Screen 
           name="HomePage" 
           component={HomePage} 
-          options={{ 
-            headerShown: false,
-            gestureEnabled: false, // Impede voltar para login com gesto
-          }}
+          options={{ headerShown: false, gestureEnabled: false }}
         />
-
-        {/* Perfil */}
         <Stack.Screen 
           name="Profile" 
           component={Profile} 
-          options={{ 
-            headerShown: false,
-            gestureEnabled: true, // Permite voltar para HomePage com gesto
-          }}
+          options={{ headerShown: false, gestureEnabled: true }}
         />
-
-        {/* Novo Projeto */}
         <Stack.Screen 
           name="NewProject" 
           component={NewProject} 
-          options={{ 
-            headerShown: false,
-            gestureEnabled: true,
-          }}
+          options={{ headerShown: false, gestureEnabled: true }}
         />
-
-        {/* Meus Projetos */}
         <Stack.Screen 
           name="MyProjects" 
           component={MyProjects} 
-          options={{ 
-            headerShown: false,
-            gestureEnabled: true,
-          }}
+          options={{ headerShown: false, gestureEnabled: true }}
         />
-
-        {/* Tela de Projeto Específico */}
         <Stack.Screen 
           name="ProjectScreen" 
           component={ProjectScreen} 
-          options={{ 
-            headerShown: false,
-            gestureEnabled: true,
-          }}
+          options={{ headerShown: false, gestureEnabled: true }}
         />
-
-        {/* Tela Novo Campo */}
         <Stack.Screen 
           name="NewField" 
           component={NewField} 
-          options={{ 
-            headerShown: false,
-            gestureEnabled: true,
-          }}
+          options={{ headerShown: false, gestureEnabled: true }}
         />
-
-        {/* Tela Detalhes do Campo */}
         <Stack.Screen 
           name="FieldScreen" 
           component={FieldScreen} 
-          options={{ 
-            headerShown: false,
-            gestureEnabled: true,
-          }}
+          options={{ headerShown: false, gestureEnabled: true }}
         />
+        <Stack.Screen 
+          name="AddCollection" 
+          component={AddCollection} 
+          options={{ headerShown: false, gestureEnabled: true }}
+        />
+        <Stack.Screen 
+          name="MyCollection" 
+          component={MyCollection} 
+          options={{ headerShown: false, gestureEnabled: true }}
+        />
+        <Stack.Screen 
+          name="SearchSpecies" 
+          component={SearchSpecies} 
+          options={{ headerShown: false, gestureEnabled: true }}
+        />
+        <Stack.Screen 
+          name="MyReports" 
+          component={MyReports} 
+          options={{ headerShown: false, gestureEnabled: true }}
+        />
+        
       </Stack.Navigator>
     </NavigationContainer>
   );

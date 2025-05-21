@@ -69,7 +69,7 @@ const HeaderInterno = () => {
           <View style={isMobileView ? styles.submenuMobile : styles.submenu}>
             <TouchableOpacity 
               onPress={() => {
-                navigation.navigate('Identificar');
+                navigation.navigate('MyProjects');
                 closeAllMenus();
               }}
             >
@@ -77,7 +77,7 @@ const HeaderInterno = () => {
             </TouchableOpacity>
             <TouchableOpacity 
               onPress={() => {
-                navigation.navigate('ConhecoEssa');
+                navigation.navigate('NewProject');
                 closeAllMenus();
               }}
             >
@@ -175,16 +175,15 @@ const HeaderInterno = () => {
       </View>
       <View style={[styles.menuItem]}>
 
-        <TouchableOpacity 
-      onPress={() => {
-        // Sua função de logout aqui
-        navigation.navigate('Login'); // Exemplo: redirecionar para login
-        closeAllMenus();
-      }} 
-      style={[styles.iconButton, styles.logoutButton]}
-    >
-      <Text style={styles.icon}>SAIR</Text>
-    </TouchableOpacity>
+    <TouchableOpacity 
+        style={styles.menuItem} 
+        onPress={() => {
+          navigation.navigate('Login');
+          closeAllMenus();
+        }}
+      >
+        <Text style={styles.menuText}>SAIR</Text>
+      </TouchableOpacity>
       </View>
     </>
   );

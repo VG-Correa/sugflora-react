@@ -1,229 +1,250 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, TextInput } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import projetoApi from '../functions/api/projetoApi';
-import { Header } from '../components/Header';
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput,
+  ScrollView,
+  useWindowDimensions,
+  ActivityIndicator
+} from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import projetoApi from "../functions/api/projetoApi";
+import HeaderInterno from "../components/HeaderInterno";
 
 const MyProjects = () => {
-  const [projetos, setProjetos] = useState([])
+  const [projetos, setProjetos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const navigation = useNavigation();
+  const { width } = useWindowDimensions();
+
+  // Calcula a quantidade de colunas baseado na largura da tela
+  const numColumns = width > 768 ? 3 : width > 480 ? 2 : 1;
+  const cardWidth = width > 768 ? '30%' : width > 480 ? '45%' : '90%';
 
   async function fetchProjetos() {
-    const user_id = localStorage.getItem('user_id')
-    const response = await projetoApi.getProjetos(user_id);
+    try {
+      setLoading(true);
+      setError(null);
+      const user_id = localStorage.getItem("user_id");
+      
+      if (!user_id) {
+        throw new Error("Usuário não autenticado");
+      }
 
-    if (response.status === 200) {
-      setProjetos(response.data.data)
-      console.log("Response: ", response.data.data)
-    } else {
-      alert("Erro ao carregar projetos")
+      const response = await projetoApi.getProjetos(user_id);
+
+      if (response.status === 200) {
+        setProjetos(response.data.data || []);
+      } else {
+        throw new Error("Erro ao carregar projetos");
+      }
+    } catch (err) {
+      console.error("Erro:", err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   }
 
-  useEffect(async () => {
-    await fetchProjetos()
-  }, [])
+  useEffect(() => {
+    fetchProjetos();
+  }, []);
 
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <HeaderInterno />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#2e7d32" />
+          <Text style={styles.loadingText}>Carregando projetos...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <HeaderInterno />
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity 
+            style={styles.retryButton} 
+            onPress={fetchProjetos}
+          >
+            <Text style={styles.buttonText}>Tentar novamente</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
-      {/* Cabeçalho igual ao da HomePage */}
-      <View style={styles.headerContainer}>
-        <Image 
-          source={require('../assets/images/cabecalho.webp')} 
-          style={styles.headerBackgroundImage}
-          resizeMode="cover"
-        />
-        <View style={styles.headerContent}>
-          <Image 
-            source={require('../assets/images/logo.webp')}
-            style={styles.logoImage}
-            resizeMode="contain"
-          />
-          <Text style={styles.logoText}>SUG - FLORA</Text>
-          <View style={styles.menuTop}>
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => navigation.navigate('HomePage')}
-            >
-              <Text style={styles.menuText}>PÁGINA INICIAL</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem}>
-              <Text style={styles.menuText}>SOBRE</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem}>
-              <Text style={styles.menuText}>CONTATO</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem}>
-              <Text style={styles.menuText}>SAIR</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-
-      <View style={styles.content}>
+      <HeaderInterno />
+      
+      <ScrollView 
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         <Text style={styles.pageTitle}>MEUS PROJETOS</Text>
 
-        {/* Container do projeto */}
-        <View style={{
-          width: '100%',
-          height: '100%',
-          display: 'flex',
-          flexWrap: 'wrap',
-          flexDirection: 'row',
-          gap: 10,
-          justifyContent: "space-around",
-          alignContent: 'space-around',
-          alignItems: 'center',
-        }}>
-          {
-            projetos.map(projeto => (
-              <View style={styles.projectContainer}>
+        {projetos.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>Nenhum projeto encontrado</Text>
+            <TouchableOpacity 
+              style={styles.createButton}
+              onPress={() => navigation.navigate('CreateProject')}
+            >
+              <Text style={styles.buttonText}>Criar novo projeto</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={[styles.projectsGrid, { width: '100%' }]}>
+            {projetos.map((projeto) => (
+              <View 
+                key={projeto.id} 
+                style={[styles.projectContainer, { width: cardWidth }]}
+              >
                 <Text style={styles.projectHeader}>{projeto.nome}</Text>
 
-               <TextInput
+                <TextInput
                   style={styles.inputField}
                   editable={false}
-                  value={projeto.deleted ? "Publicado" : "Privado"}
+                  value={projeto.deleted ? "Privado" : "Publicado"}
                 />
 
                 <TouchableOpacity
                   style={styles.openButton}
-                  onPress={() => navigation.navigate('ProjectScreen', { projeto: projeto })}
+                  onPress={() => navigation.navigate("ProjectScreen", { projeto })}
                 >
                   <Text style={styles.buttonText}>Abrir Projeto</Text>
                 </TouchableOpacity>
               </View>
-            ))
-          }
-
-        </View>
-
-      </View>
-    </View >
+            ))}
+          </View>
+        )}
+      </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
-  headerContainer: {
-    width: '100%',
-    height: 220,
-    position: 'relative',
-  },
-  headerBackgroundImage: {
-    width: '100%',
-    height: '100%',
-    position: 'absolute',
-  },
-  headerContent: {
-    position: 'absolute',
-    width: '100%',
-    alignItems: 'center',
-    paddingTop: 20,
-  },
-  logoImage: {
-    width: 80,
-    height: 80,
-    marginBottom: 5,
-  },
-  logoText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    textShadowColor: 'rgba(0,0,0,0.8)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 5,
-    marginBottom: 15,
-  },
-  menuTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-    paddingVertical: 10,
-  },
-  menuItem: {
-    paddingHorizontal: 10,
-  },
-  menuText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff',
-    textShadowColor: 'rgba(0,0,0,0.8)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 5,
-  },
-  content: {
-    flex: 1,
+  scrollContent: {
+    flexGrow: 1,
     padding: 20,
     alignItems: 'center',
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 15,
+    color: '#2e7d32',
+    fontSize: 16,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    color: '#d32f2f',
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
   pageTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#2e7d32',
-    marginBottom: 20,
-    textAlign: 'center',
+    fontWeight: "bold",
+    color: "#2e7d32",
+    marginBottom: 25,
+    textAlign: "center",
+  },
+  projectsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 15,
+    paddingBottom: 20,
   },
   projectContainer: {
-    width: 'auto',
-    backgroundColor: '#e8f5e9',
+    backgroundColor: "#e8f5e9",
     borderRadius: 10,
     padding: 15,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    minWidth: 200, // Largura mínima para os cards
   },
   projectHeader: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2e7d32',
-    textAlign: 'center',
+    fontWeight: "bold",
+    color: "#2e7d32",
+    textAlign: "center",
     marginBottom: 15,
-  },
-  photoContainer: {
-    alignItems: 'center',
-    marginBottom: 15,
-  },
-  projectImage: {
-    width: 100,
-    height: 100,
-    borderRadius: 10,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#2e7d32',
-    marginBottom: 5,
   },
   inputField: {
-    width: '100%',
+    width: "100%",
     height: 40,
-    backgroundColor: '#fff',
-    borderColor: '#ccc',
+    backgroundColor: "#fff",
+    borderColor: "#ccc",
     borderWidth: 1,
     borderRadius: 5,
     paddingHorizontal: 10,
     marginBottom: 15,
-    color: '#333',
+    color: "#333",
+    textAlign: 'center',
   },
   openButton: {
-    backgroundColor: '#2e7d32',
+    backgroundColor: "#2e7d32",
     padding: 12,
     borderRadius: 5,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 10,
   },
+  retryButton: {
+    backgroundColor: "#d32f2f",
+    padding: 12,
+    borderRadius: 5,
+    alignItems: "center",
+  },
+  createButton: {
+    backgroundColor: "#2e7d32",
+    padding: 12,
+    borderRadius: 5,
+    alignItems: "center",
+    marginTop: 15,
+    minWidth: 200,
+  },
   buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: "#fff",
+    fontWeight: "bold",
     fontSize: 14,
-  }
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  emptyText: {
+    fontSize: 18,
+    color: '#666',
+    marginBottom: 15,
+  },
 });
 
 export default MyProjects;

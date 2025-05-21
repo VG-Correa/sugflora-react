@@ -1,4 +1,4 @@
-import React, { use, useRef, useState } from 'react';
+import React, { useRef } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import {
   useWindowDimensions,
   ScrollView,
   KeyboardAvoidingView,
-  Alert
+  Dimensions
 } from 'react-native';
 import Header from '../components/Header';
 import forestImage from '../assets/images/forest.webp';
@@ -20,15 +20,15 @@ import loginApi from '../functions/api/loginApi';
 import usuarioApi from '../functions/api/usuarioApi';
 
 const Login = ({ navigation }) => {
-
-  const usernameRef = useRef(null)
-  const passRef = useRef(null)
+  const usernameRef = useRef(null);
+  const passRef = useRef(null);
+  const windowDimensions = Dimensions.get('window');
 
   const handleLogin = async (event) => {
     event.preventDefault();
 
-    const username = usernameRef.current.value
-    const password = passRef.current.value
+    const username = usernameRef.current.value;
+    const password = passRef.current.value;
     
     const response = await loginApi.login(username, password);
 
@@ -37,21 +37,16 @@ const Login = ({ navigation }) => {
       
       const usuarioLogado = await usuarioApi.getUserByUsername(username);
       if (usuarioLogado != null && usuarioLogado.status === 200) {
-        localStorage.setItem('user_id', usuarioLogado.data.data[0].id)
-        localStorage.setItem('username', usuarioLogado.data.data[0].username)
+        localStorage.setItem('user_id', usuarioLogado.data.data[0].id);
+        localStorage.setItem('username', usuarioLogado.data.data[0].username);
         navigation.navigate('HomePage');
       } else {
-        localStorage.removeItem('token')
+        localStorage.removeItem('token');
       }
-
-
     } else {
-      window.alert("Credenciais inválidas")
+      window.alert("Credenciais inválidas");
     }
-
-    
-
-  }
+  };
 
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const isLargeScreen = screenWidth >= 768;
@@ -62,7 +57,10 @@ const Login = ({ navigation }) => {
       <ImageBackground
         source={forestImage}
         resizeMode="cover"
-        style={styles.background}
+        style={[
+          styles.background,
+          { width: windowDimensions.width, height: windowDimensions.height }
+        ]}
       >
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -120,7 +118,8 @@ const Login = ({ navigation }) => {
 
               <View style={styles.formContainer}>
                 <Text style={styles.label}>EMAIL</Text>
-                <TextInput ref={usernameRef}
+                <TextInput 
+                  ref={usernameRef}
                   style={[
                     styles.input,
                     { paddingVertical: isSmallDevice ? 10 : 12 }
@@ -132,7 +131,8 @@ const Login = ({ navigation }) => {
                 />
 
                 <Text style={styles.label}>SENHA</Text>
-                <TextInput ref={passRef}
+                <TextInput 
+                  ref={passRef}
                   style={[
                     styles.input,
                     { paddingVertical: isSmallDevice ? 10 : 12 }
@@ -180,6 +180,7 @@ const styles = StyleSheet.create({
   },
   background: {
     flex: 1,
+    justifyContent: 'center',
   },
   flex: {
     flex: 1,
@@ -188,6 +189,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingBottom: 20,
   },
   container: {
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
@@ -237,6 +239,7 @@ const styles = StyleSheet.create({
   dividerContainer: {
     flexDirection: 'row',
     marginVertical: 20,
+    alignItems: 'center',
   },
   dividerLine: {
     flex: 1,

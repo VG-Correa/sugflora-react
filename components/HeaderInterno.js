@@ -165,7 +165,7 @@ const HeaderInterno = () => {
 
         <TouchableOpacity 
           onPress={() => {
-            navigation.navigate('Perfil');
+            navigation.navigate('Profile');
             closeAllMenus();
           }} 
           style={styles.iconButton}

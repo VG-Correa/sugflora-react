@@ -149,6 +149,9 @@ const ProjectScreen = () => {
         <TouchableOpacity style={[styles.button, styles.editButton]} onPress={handleEditProject}>
           <Text style={styles.buttonText}>EDITAR PROJETO</Text>
         </TouchableOpacity>
+        <TouchableOpacity style={[styles.button, styles.deleteButton]} onPress={handleEditProject}>
+          <Text style={styles.buttonText}>EXCLUIR PROJETO</Text>
+        </TouchableOpacity>
       </View>
     </View>
   );
@@ -219,6 +222,7 @@ const styles = StyleSheet.create({
   },
   addButton: { backgroundColor: '#2e7d32' },
   editButton: { backgroundColor: '#1565c0' },
+  deleteButton: { backgroundColor: 'rgb(255 4 4)' },
   buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 14 },
 });
 

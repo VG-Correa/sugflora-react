@@ -70,7 +70,7 @@ const SpeciesSearchScreen = () => {
           <View style={styles.resultContainer}>
             {/* Imagem */}
             <Image
-              source={require('../assets/images/sem-imagem.jpg')}
+              source={require('../assets/images/sem-imagem.webp')}
               style={styles.speciesImage}
               resizeMode="contain"
             />

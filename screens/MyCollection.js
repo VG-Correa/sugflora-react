@@ -6,34 +6,37 @@ import {
   Image,
   ScrollView,
   Dimensions,
-  TextInput,
   TouchableOpacity
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import HeaderInterno from "../components/HeaderInterno";
 
-const FieldScreen = () => {
+const MyCollectionsScreen = () => {
   const navigation = useNavigation();
   const screenWidth = Dimensions.get('window').width;
   const isMobile = screenWidth < 768;
 
   const tableColumnSizes = isMobile
-    ? { id: 180, family: 250, genus: 190, species: 290, date: 230, field: 230 }
-    : { id: 200, family: 290, genus: 250, species: 330, date: 250, field: 250 };
+    ? { id: 210, family: 270, genus: 230, species: 270, date: 250, field: 250 }
+    : { id: 230, family: 300, genus: 270, species: 330, date: 270, field: 300 };
 
   const collectionsData = [
     { id: '0001', family: 'ROSACEAE', genus: 'ROSA', species: 'ROSA GALLICA', date: '02/03/2023', field: 'CAMPO 1' },
     { id: '0002', family: 'ROSACEAE', genus: 'ROSA', species: 'ROSA DAMASCENA', date: '10/03/2023', field: 'CAMPO 1' },
     { id: '0003', family: 'ROSACEAE', genus: 'ROSA', species: 'ROSA CANINA', date: '10/03/2023', field: 'CAMPO 1' },
     { id: '0004', family: 'ROSACEAE', genus: 'ROSA', species: 'ROSA DAMASCENA', date: '15/03/2023', field: 'CAMPO 1' },
+    { id: '0005', family: 'ROSACEAE', genus: 'ROSA', species: 'ROSA GALLICA', date: '02/03/2023', field: 'CAMPO 2' },
+    { id: '0006', family: 'ROSACEAE', genus: 'ROSA', species: 'ROSA DAMASCENA', date: '10/03/2023', field: 'CAMPO 2' },
+    { id: '0007', family: 'ROSACEAE', genus: 'ROSA', species: 'ROSA CANINA', date: '10/03/2023', field: 'CAMPO 2' },
+    { id: '0008', family: 'ROSACEAE', genus: 'ROSA', species: 'ROSA DAMASCENA', date: '15/03/2023', field: 'CAMPO 2' },
+    { id: '0009', family: 'ROSACEAE', genus: 'ROSA', species: 'ROSA GALLICA', date: '02/03/2023', field: 'CAMPO 2' },
   ];
 
   const handleAddCollection = () => {
     navigation.navigate('AddCollection');
   };
 
-  const handleEditField = () => {
-    console.log('Editar campo');
+  const handleGenerateReport = () => {
+    console.log('Gerar relatório');
   };
 
   const handleBack = () => {
@@ -42,59 +45,38 @@ const FieldScreen = () => {
 
   return (
     <View style={styles.container}>
-
-      {/* Cabeçalho */}
-      <HeaderInterno />
-      <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.pageTitle}>PROJETO - EXEMPLO - CAMPO 1</Text>
-
-        <View style={styles.fieldGroup}>
-          <Text style={styles.label}>Nome do campo</Text>
-          <TextInput style={styles.textInput} placeholder="Campo 1" />
-        </View>
-
-        <View style={styles.fieldGroup}>
-          <Text style={styles.label}>Data de início</Text>
-          <TextInput style={[styles.textInput, { width: 180 }]} placeholder="19/01/2023" />
-        </View>
-
-        <View style={styles.fieldGroup}>
-          <Text style={styles.label}>Descrição</Text>
-          <TextInput
-            style={[styles.textInput, { height: 80 }]}
-            placeholder="Descrição do campo"
-            multiline
+      {/* Header */}
+      <View style={styles.headerContainer}>
+        <Image
+          source={require('../assets/images/cabecalho.jpg')}
+          style={styles.headerBackgroundImage}
+          resizeMode="cover"
+        />
+        <View style={styles.headerContent}>
+          <Image
+            source={require('../assets/images/logo.png')}
+            style={styles.logoImage}
+            resizeMode="contain"
           />
-        </View>
-
-        <View style={styles.rowFields}>
-          <View style={[styles.fieldGroup, { flex: 1, marginRight: 10 }]}>
-            <Text style={styles.label}>País</Text>
-            <TextInput style={styles.textInput} placeholder="Brasil" />
-          </View>
-          <View style={[styles.fieldGroup, { flex: 1, marginRight: 10 }]}>
-            <Text style={styles.label}>Estado</Text>
-            <TextInput style={styles.textInput} placeholder="SP" />
-          </View>
-          <View style={[styles.fieldGroup, { flex: 1 }]}>
-            <Text style={styles.label}>Cidade</Text>
-            <TextInput style={styles.textInput} placeholder="Ferraz de Vasconcelos" />
+          <Text style={styles.logoText}>SUG - FLORA</Text>
+          <View style={styles.menuTop}>
+            <Text style={styles.menuText} onPress={() => navigation.navigate('HomePage')}>PÁGINA INICIAL</Text>
+            <Text style={styles.menuText}>SOBRE</Text>
+            <Text style={styles.menuText}>CONTATO</Text>
+            <Text style={styles.menuText}>SAIR</Text>
           </View>
         </View>
+      </View>
 
-        <View style={styles.fieldGroup}>
-          <Text style={styles.label}>Endereço</Text>
-          <TextInput style={styles.textInput} placeholder="Rua Exemplo, 123" />
-        </View>
+      <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
+        <Text style={styles.pageTitle}>MINHAS COLETAS</Text>
 
-        <View style={styles.fieldGroup}>
-          <Text style={styles.label}>Previsão de conclusão</Text>
-          <TextInput style={[styles.textInput, { width: 180 }]} placeholder="01/04/2026" />
-        </View>
-
-        <Text style={styles.collectionsTitle}>Coletas</Text>
-
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tableScrollContainer}>
+        {/* Tabela de Coletas */}
+        <ScrollView 
+          horizontal 
+          showsHorizontalScrollIndicator={false} 
+          contentContainerStyle={styles.tableScrollContainer}
+        >
           <View>
             <View style={styles.tableHeader}>
               <Text style={[styles.tableHeaderText, { width: tableColumnSizes.id }]}>ID</Text>
@@ -119,24 +101,22 @@ const FieldScreen = () => {
         </ScrollView>
       </ScrollView>
 
+      {/* Action buttons */}
       <View style={styles.buttonContainer}>
         <TouchableOpacity 
           style={[styles.button, styles.addButton]} 
           onPress={handleAddCollection}
           activeOpacity={0.7}
-          accessible={true}
-          accessibilityLabel="Adicionar nova coleta"
-          accessibilityHint="Navega para a tela de criação de nova coleta"
         >
           <Text style={styles.buttonText}>ADICIONAR COLETA</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
-          style={[styles.button, styles.editButton]} 
-          onPress={handleEditField}
+          style={[styles.button, styles.reportButton]} 
+          onPress={handleGenerateReport}
           activeOpacity={0.7}
         >
-          <Text style={styles.buttonText}>EDITAR CAMPO</Text>
+          <Text style={styles.buttonText}>GERAR RELATÓRIO</Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
@@ -172,32 +152,6 @@ const styles = StyleSheet.create({
     textAlign: 'left'
   },
 
-  fieldGroup: { marginBottom: 15 },
-  label: { fontSize: 14, fontWeight: 'bold', marginBottom: 5, color: '#2e7d32' },
-  textInput: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 5,
-    backgroundColor: '#fff',
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    fontSize: 14,
-    color: '#000'
-  },
-
-  rowFields: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-
-  collectionsTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#2e7d32',
-    marginVertical: 15,
-    textAlign: 'left',
-  },
-
   tableScrollContainer: { minWidth: '100%' },
   tableHeader: {
     flexDirection: 'row',
@@ -205,7 +159,12 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 35,
   },
-  tableHeaderText: { fontWeight: 'bold', textAlign: 'left', fontSize: 14 },
+  tableHeaderText: { 
+    fontWeight: 'bold', 
+    textAlign: 'left', 
+    fontSize: 14,
+    color: '#2e7d32'
+  },
   tableRow: {
     flexDirection: 'row',
     paddingVertical: 14,
@@ -213,7 +172,11 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },
-  tableCell: { textAlign: 'left', fontSize: 14 },
+  tableCell: { 
+    textAlign: 'left', 
+    fontSize: 14,
+    color: '#333'
+  },
 
   buttonContainer: {
     flexDirection: 'row',
@@ -240,7 +203,7 @@ const styles = StyleSheet.create({
     marginVertical: 5,
   },
   addButton: { backgroundColor: '#2e7d32' },
-  editButton: { backgroundColor: '#1565c0' },
+  reportButton: { backgroundColor: '#1565c0' },
   backButton: { backgroundColor: '#999' },
   buttonText: {
     color: '#fff',
@@ -249,4 +212,4 @@ const styles = StyleSheet.create({
   }
 });
 
-export default FieldScreen;
+export default MyCollectionsScreen;

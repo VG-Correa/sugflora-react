@@ -42,7 +42,6 @@ const FieldScreen = () => {
 
   return (
     <View style={styles.container}>
-
       {/* Cabeçalho */}
       <HeaderInterno />
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>

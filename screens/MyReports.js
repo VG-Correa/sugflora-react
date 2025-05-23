@@ -52,7 +52,7 @@ const MyReportsScreen = () => {
     <View style={styles.container}>
       <View style={styles.headerContainer}>
         <Image
-          source={require('../assets/images/cabecalho.jpg')}
+          source={require('../assets/images/cabecalho.webp')}
           style={styles.headerBackgroundImage}
           resizeMode="cover"
         />

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Image, ScrollView, Dimensions, TouchableOpacity } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import CampoApi from '../functions/api/CampoApi';
+import HeaderInterno from "../components/HeaderInterno";
 
 const ProjectScreen = () => {
   const navigation = useNavigation();
@@ -60,29 +61,7 @@ const ProjectScreen = () => {
   return (
     <View style={styles.container}>
       {/* Header */}
-      <View style={styles.headerContainer}>
-        <Image 
-          source={require('../assets/images/cabecalho.webp')} 
-
-          style={styles.headerBackgroundImage}
-          resizeMode="cover"
-        />
-        <View style={styles.headerContent}>
-          <Image 
-            source={require('../assets/images/logo.webp')}
-            style={styles.logoImage}
-            resizeMode="contain"
-          />
-          <Text style={styles.logoText}>SUG - FLORA</Text>
-          <View style={styles.menuTop}>
-            <Text style={styles.menuText} onPress={() => navigation.navigate('HomePage')}>PÁGINA INICIAL</Text>
-            <Text style={styles.menuText}>SOBRE</Text>
-            <Text style={styles.menuText}>CONTATO</Text>
-            <Text style={styles.menuText}>SAIR</Text>
-          </View>
-        </View>
-      </View>
-
+            <HeaderInterno />
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
         <Text style={styles.pageTitle}>{projeto.nome}</Text>
 

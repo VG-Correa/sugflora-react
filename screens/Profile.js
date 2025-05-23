@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Image, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native'; // Adicione esta importação
-import Header from '../components/Header';
+import HeaderInterno from "../components/HeaderInterno";
 
 const Profile = () => {
   const navigation = useNavigation(); // Adicione este hook
@@ -9,38 +9,8 @@ const Profile = () => {
   return (
     <View style={styles.container}>
       {/* Cabeçalho igual ao da HomePage */}
-      <View style={styles.headerContainer}>
-        <Image 
-          source={require('../assets/images/cabecalho.webp')} 
-          style={styles.headerBackgroundImage}
-          resizeMode="cover"
-        />
-        <View style={styles.headerContent}>
-          <Image 
-            source={require('../assets/images/logo.webp')}
-            style={styles.logoImage}
-            resizeMode="contain"
-          />
-          <Text style={styles.logoText}>SUG - FLORA</Text>
-          <View style={styles.menuTop}>
-            <TouchableOpacity 
-              style={styles.menuItem}
-              onPress={() => navigation.navigate('HomePage')} // Adicione esta linha
-            >
-              <Text style={styles.menuText}>PÁGINA INICIAL</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem}>
-              <Text style={styles.menuText}>SOBRE</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem}>
-              <Text style={styles.menuText}>CONTATO</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem}>
-              <Text style={styles.menuText}>SAIR</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
+           <HeaderInterno />
+
 
       <ScrollView style={styles.content}>
         <Text style={styles.pageTitle}>EDITAR PERFIL</Text>

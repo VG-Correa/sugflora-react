@@ -1,45 +1,49 @@
-import React, { useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, TextInput, Image, ScrollView } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import Header from '../components/Header';
-import projetoApi from '../functions/api/projetoApi';
-
+import React, { useRef } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  TextInput,
+  Image,
+  ScrollView,
+} from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import HeaderInterno from "../components/HeaderInterno";
+import projetoApi from "../functions/api/projetoApi";
 
 const NewProject = () => {
-  const navigation = useNavigation(); 
+  const navigation = useNavigation();
 
-  const nomeProjetoRef = useRef()
-  const descricaoProjetoRef = useRef()
+  const nomeProjetoRef = useRef();
+  const descricaoProjetoRef = useRef();
 
   async function postProjeto() {
     try {
-      
       const response = await projetoApi.create({
         id: null,
         nome: nomeProjetoRef.current.value,
         descricao: descricaoProjetoRef.current.value,
         usuario_dono_uuid: localStorage.getItem("user_id"),
-        public: false
-      })
+        public: false,
+      });
 
       if (response.status === 201) {
-        navigation.navigate('MyProjects')
+        navigation.navigate("MyProjects");
       } else {
-        window.alert("Erro ao salvar projeto")
+        window.alert("Erro ao salvar projeto");
       }
-
     } catch (error) {
       console.log("Erro ao salvar o projeto ", error);
-      
     }
   }
 
   return (
     <View style={styles.container}>
-      <Header navigation={navigation}/>
+      <HeaderInterno />
       <ScrollView style={styles.content}>
         <Text style={styles.pageTitle}>CRIAR PROJETO</Text>
-        
+
         <View style={styles.profileSection}>
           {/* Seção Foto à esquerda */}
           <View style={styles.photoSection}>
@@ -49,12 +53,13 @@ const NewProject = () => {
               <Text style={styles.changePhotoText}>Adicionar imagem</Text>
             </TouchableOpacity>
           </View>
-          
+
           {/* Dados do projeto à direita */}
           <View style={styles.dataSection}>
             <View style={styles.fieldGroup}>
               <Text style={styles.fieldLabel}>NOME DO PROJETO</Text>
-              <TextInput ref={nomeProjetoRef}
+              <TextInput
+                ref={nomeProjetoRef}
                 style={styles.input}
                 placeholder=""
               />
@@ -62,8 +67,9 @@ const NewProject = () => {
 
             <View style={styles.fieldGroup}>
               <Text style={styles.fieldLabel}>DESCRIÇÃO</Text>
-              <TextInput ref={descricaoProjetoRef}
-                style={[styles.input, {height: 100}]}
+              <TextInput
+                ref={descricaoProjetoRef}
+                style={[styles.input, { height: 100 }]}
                 placeholder="Digite aqui"
                 multiline
               />
@@ -97,7 +103,12 @@ const NewProject = () => {
             />
           </View> */}
 
-          <TouchableOpacity style={styles.createButton} onPress={() => {postProjeto()}}>
+          <TouchableOpacity
+            style={styles.createButton}
+            onPress={() => {
+              postProjeto();
+            }}
+          >
             <Text style={styles.createButtonText}>CRIAR PROJETO</Text>
           </TouchableOpacity>
         </View>
@@ -109,23 +120,23 @@ const NewProject = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   // Estilos do cabeçalho (iguais ao da HomePage)
   headerContainer: {
-    width: '100%',
+    width: "100%",
     height: 220,
-    position: 'relative',
+    position: "relative",
   },
   headerBackgroundImage: {
-    width: '100%',
-    height: '100%',
-    position: 'absolute',
+    width: "100%",
+    height: "100%",
+    position: "absolute",
   },
   headerContent: {
-    position: 'absolute',
-    width: '100%',
-    alignItems: 'center',
+    position: "absolute",
+    width: "100%",
+    alignItems: "center",
     paddingTop: 20,
   },
   logoImage: {
@@ -135,14 +146,14 @@ const styles = StyleSheet.create({
   },
   logoText: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontWeight: "bold",
+    color: "#fff",
     marginBottom: 15,
   },
   menuTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
+    flexDirection: "row",
+    justifyContent: "space-around",
+    width: "100%",
     paddingVertical: 10,
   },
   menuItem: {
@@ -150,48 +161,48 @@ const styles = StyleSheet.create({
   },
   menuText: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff'
+    fontWeight: "bold",
+    color: "#fff",
   },
   content: {
     flex: 1,
   },
   pageTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
+    fontWeight: "bold",
+    textAlign: "center",
     marginVertical: 20,
-    color: '#2e7d32',
+    color: "#2e7d32",
   },
   profileSection: {
-    flexDirection: 'row',
+    flexDirection: "row",
     paddingHorizontal: 20,
     marginBottom: 20,
   },
   photoSection: {
-    width: '30%',
-    alignItems: 'center',
+    width: "30%",
+    alignItems: "center",
     marginRight: 20,
   },
   photoLabel: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 10,
-    color: '#2e7d32',
+    color: "#2e7d32",
   },
   photoPlaceholder: {
     width: 100,
     height: 100,
-    backgroundColor: '#e8f5e9',
+    backgroundColor: "#e8f5e9",
     marginBottom: 10,
   },
   changePhotoButton: {
-    backgroundColor: '#2e7d32',
+    backgroundColor: "#2e7d32",
     padding: 8,
     borderRadius: 5,
   },
   changePhotoText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 12,
   },
   dataSection: {
@@ -205,29 +216,29 @@ const styles = StyleSheet.create({
   },
   fieldLabel: {
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 5,
-    color: '#2e7d32',
+    color: "#2e7d32",
   },
   input: {
     height: 40,
-    borderColor: '#ddd',
+    borderColor: "#ddd",
     borderWidth: 1,
     borderRadius: 5,
     paddingHorizontal: 10,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: "#f9f9f9",
   },
   createButton: {
-    backgroundColor: '#2e7d32',
+    backgroundColor: "#2e7d32",
     padding: 15,
     borderRadius: 5,
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 20,
     marginBottom: 30,
   },
   createButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: "#fff",
+    fontWeight: "bold",
     fontSize: 16,
   },
 });

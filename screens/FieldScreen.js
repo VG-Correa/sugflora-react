@@ -10,6 +10,7 @@ import {
   TouchableOpacity
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import HeaderInterno from "../components/HeaderInterno";
 
 const FieldScreen = () => {
   const navigation = useNavigation();
@@ -41,28 +42,9 @@ const FieldScreen = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerContainer}>
-        <Image
-          source={require('../assets/images/cabecalho.jpg')}
-          style={styles.headerBackgroundImage}
-          resizeMode="cover"
-        />
-        <View style={styles.headerContent}>
-          <Image
-            source={require('../assets/images/logo.png')}
-            style={styles.logoImage}
-            resizeMode="contain"
-          />
-          <Text style={styles.logoText}>SUG - FLORA</Text>
-          <View style={styles.menuTop}>
-            <Text style={styles.menuText} onPress={() => navigation.navigate('HomePage')}>PÁGINA INICIAL</Text>
-            <Text style={styles.menuText}>SOBRE</Text>
-            <Text style={styles.menuText}>CONTATO</Text>
-            <Text style={styles.menuText}>SAIR</Text>
-          </View>
-        </View>
-      </View>
 
+      {/* Cabeçalho */}
+      <HeaderInterno />
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
         <Text style={styles.pageTitle}>PROJETO - EXEMPLO - CAMPO 1</Text>
 

@@ -12,7 +12,8 @@ import {
   useWindowDimensions,
   ScrollView,
   KeyboardAvoidingView,
-  Dimensions
+  Dimensions, 
+  Alert
 } from 'react-native';
 import Header from '../components/Header';
 import forestImage from '../assets/images/forest.webp';
@@ -20,6 +21,7 @@ import loginApi from '../functions/api/loginApi';
 import usuarioApi from '../functions/api/usuarioApi';
 
 const Login = ({ navigation }) => {
+
   const usernameRef = useRef(null);
   const passRef = useRef(null);
   const windowDimensions = Dimensions.get('window');
@@ -30,22 +32,31 @@ const Login = ({ navigation }) => {
     const username = usernameRef.current.value;
     const password = passRef.current.value;
     
-    const response = await loginApi.login(username, password);
+    try {
+      const response = await loginApi.login(username, password);
 
-    if (response.status === 200) {
-      localStorage.setItem('token', response.data.token);
-      
-      const usuarioLogado = await usuarioApi.getUserByUsername(username);
-      if (usuarioLogado != null && usuarioLogado.status === 200) {
-        localStorage.setItem('user_id', usuarioLogado.data.data[0].id);
-        localStorage.setItem('username', usuarioLogado.data.data[0].username);
-        navigation.navigate('HomePage');
+      if (response.status === 200) {
+        localStorage.setItem('token', response.data.token);
+        
+        const usuarioLogado = await usuarioApi.getUserByUsername(username);
+        if (usuarioLogado != null && usuarioLogado.status === 200) {
+          localStorage.setItem('user_id', usuarioLogado.data.data[0].id);
+          localStorage.setItem('username', usuarioLogado.data.data[0].username);
+          navigation.navigate('HomePage');
+        } else {
+          localStorage.removeItem('token');
+        }
       } else {
-        localStorage.removeItem('token');
+        Alert.alert("Credenciais inválidas")
       }
-    } else {
-      window.alert("Credenciais inválidas");
+
+    } catch (error) {
+      console.log(error)
+      Alert.alert("Atenção!", "Ocorreu um erro inesperado ao tentar logar")
+      Alert.alert("Olha só!", error)
     }
+
+
   };
 
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();

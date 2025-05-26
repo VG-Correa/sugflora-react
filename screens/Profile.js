@@ -1,4 +1,3 @@
-import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, TextInput, Image, ScrollView } from 'react-native';
 import { useNavigation } from '@react-navigation/native'; // Adicione esta importação
 import HeaderInterno from "../components/HeaderInterno";
@@ -124,54 +123,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#fff',
-  },
-  // Estilos do cabeçalho (iguais ao da HomePage)
-  headerContainer: {
-    width: '100%',
-    height: 220,
-    position: 'relative',
-  },
-  headerBackgroundImage: {
-    width: '100%',
-    height: '100%',
-    position: 'absolute',
-  },
-  headerContent: {
-    position: 'absolute',
-    width: '100%',
-    alignItems: 'center',
-    paddingTop: 20,
-  },
-  logoImage: {
-    width: 80,
-    height: 80,
-    marginBottom: 5,
-  },
-  logoText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    // textShadowColor: 'rgba(0,0,0,0.8)',
-    // textShadowOffset: {width: 1, height: 1},
-    // textShadowRadius: 5,
-    marginBottom: 15,
-  },
-  menuTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-    paddingVertical: 10,
-  },
-  menuItem: {
-    paddingHorizontal: 10,
-  },
-  menuText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff',
-    // textShadowColor: 'rgba(0,0,0,0.8)',
-    // textShadowOffset: {width: 1, height: 1},
-    // textShadowRadius: 5,
   },
   content: {
     flex: 1,

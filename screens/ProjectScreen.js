@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, Dimensions, TouchableOpacity } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Dimensions, TouchableOpacity } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import CampoApi from '../functions/api/CampoApi';
 import HeaderInterno from "../components/HeaderInterno";
@@ -56,7 +56,7 @@ const ProjectScreen = () => {
   useEffect(() => {
     const loadCampos = async () => {await fetchCampos()}
     loadCampos();
-  }, [])
+  })
 
   return (
     <View style={styles.container}>
@@ -159,13 +159,6 @@ const ProjectScreen = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
-  headerContainer: { height: 220, width: '100%', position: 'relative' },
-  headerBackgroundImage: { width: '100%', height: '100%', position: 'absolute' },
-  headerContent: { position: 'absolute', width: '100%', alignItems: 'center', paddingTop: 40 },
-  logoImage: { width: 80, height: 80 },
-  logoText: { fontSize: 24, fontWeight: 'bold', color: '#fff', marginTop: 10 },
-  menuTop: { flexDirection: 'row', justifyContent: 'space-around', width: '100%', marginTop: 20 },
-  menuText: { color: '#fff', fontWeight: 'bold', fontSize: 12 },
   content: { flex: 1 },
   scrollContent: { padding: 15, paddingBottom: 80 },
   pageTitle: { fontSize: 20, fontWeight: 'bold', color: '#2e7d32', marginBottom: 15, textAlign: 'left' },
@@ -183,10 +176,7 @@ const styles = StyleSheet.create({
   },
 
   projectInfoContainer: { flexDirection: 'row', alignItems: 'flex-start' },
-  imageContainer: { marginRight: 15 },
   mobileProjectInfoContainer: { flexDirection: 'column', alignItems: 'flex-start' },
-  mobileImageContainer: { marginRight: 0, marginBottom: 10 },
-  projectImage: { width: 150, height: 150, borderRadius: 10 },
   textContainer: { flex: 1 },
   detailRow: { flexDirection: 'row', marginBottom: 4, alignItems: 'center', flexWrap: 'wrap' },
   detailLabel: { fontWeight: 'bold', color: '#2e7d32', fontSize: 14, textAlign: 'left', marginRight: 5 },

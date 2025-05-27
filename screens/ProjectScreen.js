@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Dimensions, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Dimensions, TouchableOpacity, Alert } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import CampoApi from '../functions/api/CampoApi';
 import HeaderInterno from "../components/HeaderInterno";
+import DeleteConfirmationModal from '../components/DeleteComponent';
+import projetoApi from '../functions/api/projetoApi';
 
 const ProjectScreen = () => {
   const navigation = useNavigation();
@@ -12,6 +14,7 @@ const ProjectScreen = () => {
   const { projeto } = route.params;
 
   const [campos, setCampos] = useState([])
+  const [modalVisible, setModalVisible] = useState(false)
 
   async function fetchCampos() {
     try {
@@ -36,12 +39,40 @@ const ProjectScreen = () => {
     : { name: 220, others: 120 };
 
   const handleAddField = () => {
-    navigation.navigate('NewField', {projeto: projeto});
+    navigation.navigate('NewField', { projeto: projeto });
   };
 
   const handleEditProject = () => {
-    console.log("Editar projeto clicado");
+    navigation.navigate('EditProject', { projeto: projeto })
   };
+
+  const handleDeleteProject = () => {
+    setModalVisible(true);
+  };
+
+  const confirmDelete = async () => {
+    setModalVisible(false); 
+
+    try {
+      const response = await projetoApi.delete(projeto.id)
+
+      console.log("Response Delet: ", response)
+
+      if (response.status === 200) {
+        console.log("Deletado")
+        navigation.navigate("MyProjects")
+      }
+    } catch (error) {
+      console.log("Erro ao cancelar");
+      
+    }
+
+    console.log("Projeto deletado");
+  }
+
+  const cancelDelete = () => {
+    setModalVisible(false)
+  }
 
   async function getColetas(campo) {
     return "Não Implementado"
@@ -54,14 +85,16 @@ const ProjectScreen = () => {
   }
 
   useEffect(() => {
-    const loadCampos = async () => {await fetchCampos()}
+    const loadCampos = async () => {
+      await fetchCampos();
+    };
     loadCampos();
-  })
+  }, []);
 
   return (
     <View style={styles.container}>
       {/* Header */}
-            <HeaderInterno />
+      <HeaderInterno />
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
         <Text style={styles.pageTitle}>{projeto.nome}</Text>
 
@@ -149,10 +182,17 @@ const ProjectScreen = () => {
         <TouchableOpacity style={[styles.button, styles.editButton]} onPress={handleEditProject}>
           <Text style={styles.buttonText}>EDITAR PROJETO</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.button, styles.deleteButton]} onPress={handleEditProject}>
+        <TouchableOpacity style={[styles.button, styles.deleteButton]} onPress={handleDeleteProject}>
           <Text style={styles.buttonText}>EXCLUIR PROJETO</Text>
         </TouchableOpacity>
       </View>
+      <DeleteConfirmationModal
+        visible={modalVisible}
+        title="Atenção!!"
+        message="Tem certeza que deseja excluir o projeto atual?"
+        onConfirm={confirmDelete} 
+        onCancel={cancelDelete}
+      />
     </View>
   );
 };

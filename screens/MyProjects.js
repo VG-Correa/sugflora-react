@@ -37,7 +37,9 @@ const MyProjects = () => {
       const response = await projetoApi.getProjetos(user_id);
 
       if (response.status === 200) {
-        setProjetos(response.data.data || []);
+        const projetosAtivos = response.data.data || [] 
+
+        setProjetos(projetosAtivos.filter((projeto) => !projeto.deleted));
       } else {
         throw new Error("Erro ao carregar projetos");
       }

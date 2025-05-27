@@ -7,28 +7,34 @@ import {
   TextInput,
   ScrollView,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import HeaderInterno from "../components/HeaderInterno";
 import projetoApi from "../functions/api/projetoApi";
 
 const EditProject = () => {
   const navigation = useNavigation();
-
+  
+  const route = useRoute(); 
+  const { projeto } = route.params;
+ 
   const nomeProjetoRef = useRef();
   const descricaoProjetoRef = useRef();
 
-  async function postProjeto() {
+  async function postEditProjeto() {
+    console.log("Projeto: ", projeto)
     try {
-      const response = await projetoApi.create({
-        id: null,
+      const response = await projetoApi.update({
+        id: projeto.id,
         nome: nomeProjetoRef.current.value,
         descricao: descricaoProjetoRef.current.value,
         usuario_dono_uuid: localStorage.getItem("user_id"),
-        public: false,
+        public: projeto.public,
       });
 
-      if (response.status === 201) {
-        navigation.navigate("MyProjects");
+      if (response.status === 200) {
+        console.log("Response: ", response.data.data)
+
+        navigation.navigate("ProjectScreen", {projeto: response.data.data[0]});
       } else {
         window.alert("Erro ao salvar projeto");
       }
@@ -41,17 +47,9 @@ const EditProject = () => {
     <View style={styles.container}>
       <HeaderInterno />
       <ScrollView style={styles.content}>
-        <Text style={styles.pageTitle}>CRIAR PROJETO</Text>
+        <Text style={styles.pageTitle}>EDITAR PROJETO</Text>
 
         <View style={styles.profileSection}>
-          {/* Seção Foto à esquerda */}
-          <View style={styles.photoSection}>
-            <Text style={styles.photoLabel}>IMAGEM</Text>
-            <View style={styles.photoPlaceholder}></View>
-            <TouchableOpacity style={styles.changePhotoButton}>
-              <Text style={styles.changePhotoText}>Adicionar imagem</Text>
-            </TouchableOpacity>
-          </View>
 
           {/* Dados do projeto à direita */}
           <View style={styles.dataSection}>
@@ -61,6 +59,7 @@ const EditProject = () => {
                 ref={nomeProjetoRef}
                 style={styles.input}
                 placeholder=""
+                defaultValue={projeto.nome}
               />
             </View>
 
@@ -71,6 +70,7 @@ const EditProject = () => {
                 style={[styles.input, { height: 100 }]}
                 placeholder="Digite aqui"
                 multiline
+                defaultValue={projeto.descricao}
               />
             </View>
           </View>
@@ -105,10 +105,10 @@ const EditProject = () => {
           <TouchableOpacity
             style={styles.createButton}
             onPress={() => {
-              postProjeto();
+              postEditProjeto();
             }}
           >
-            <Text style={styles.createButtonText}>CRIAR PROJETO</Text>
+            <Text style={styles.createButtonText}>SALVAR EDIÇÃO</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>

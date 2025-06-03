@@ -5,6 +5,9 @@ import CampoApi from '../functions/api/CampoApi';
 import HeaderInterno from "../components/HeaderInterno";
 import DeleteConfirmationModal from '../components/DeleteComponent';
 import projetoApi from '../functions/api/projetoApi';
+import { parseISO, format } from 'date-fns';
+
+
 
 const ProjectScreen = () => {
   const navigation = useNavigation();
@@ -15,6 +18,15 @@ const ProjectScreen = () => {
 
   const [campos, setCampos] = useState([])
   const [modalVisible, setModalVisible] = useState(false)
+
+  const data_inicio = () => {
+    const data = projeto.inicio
+    const ano = data[0]
+    const mes = data[1]
+    const dia = data[2]
+
+    return dia + '/' + mes + '/' + ano
+  }
 
   async function fetchCampos() {
     try {
@@ -51,7 +63,7 @@ const ProjectScreen = () => {
   };
 
   const confirmDelete = async () => {
-    setModalVisible(false); 
+    setModalVisible(false);
 
     try {
       const response = await projetoApi.delete(projeto.id)
@@ -64,7 +76,7 @@ const ProjectScreen = () => {
       }
     } catch (error) {
       console.log("Erro ao cancelar");
-      
+
     }
 
     console.log("Projeto deletado");
@@ -110,11 +122,11 @@ const ProjectScreen = () => {
               />
             </View> */}
             <View style={styles.textContainer}>
-              {/* <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>DATA DE INÍCIO:</Text>
-                <Text style={styles.detailValue}> 19/01/2023</Text>
-              </View>
               <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>DATA DE INÍCIO:</Text>
+                <Text style={styles.detailValue}>{data_inicio()}</Text>
+              </View>
+              {/* <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>PREVISÃO DE CONCLUSÃO:</Text>
                 <Text style={styles.detailValue}> 01/04/2026</Text>
               </View> */}
@@ -154,7 +166,7 @@ const ProjectScreen = () => {
                 campos.map(campo => {
                   return (
                     <View key={campo.id} style={styles.tableRow}>
-                      <TouchableOpacity onPress={() => navigation.navigate('FieldScreen')}>
+                      <TouchableOpacity onPress={() => navigation.navigate('FieldScreen', {campo: campo})}>
                         <Text style={[styles.tableCell, { width: tableColumnSizes.name, color: '#2e7d32', fontWeight: 'bold', textDecorationLine: 'underline' }]}>
                           {campo.nome}
                         </Text>
@@ -190,7 +202,7 @@ const ProjectScreen = () => {
         visible={modalVisible}
         title="Atenção!!"
         message="Tem certeza que deseja excluir o projeto atual?"
-        onConfirm={confirmDelete} 
+        onConfirm={confirmDelete}
         onCancel={cancelDelete}
       />
     </View>

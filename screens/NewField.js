@@ -48,13 +48,14 @@ const NewField = () => {
       if (response.status === 200) {
         window.alert("Campo criado com sucesso")
         console.log("Campo criado com sucesso", response.data.data)
+        navigation.navigate('ProjectScreen', { projeto: projeto })
       } else {
-        window.alert("Erro ao criar campo")
+        window.alert(error.response.data.message)
         console.log("Erro ao criar campo", response.data.data)
       }
 
     } catch (error) {
-      console.error("Erro ao fazer POST do Campo")
+      window.alert(error.response.data.message)
     }
 
     console.log("Campo: ", campoJson)
@@ -63,7 +64,7 @@ const NewField = () => {
   return (
     <View style={styles.container}>
       {/* Cabeçalho igual ao da HomePage */}
-          <HeaderInterno />
+      <HeaderInterno />
 
 
       <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 30 }}>

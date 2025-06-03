@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import {
   View,
   Text,
@@ -10,12 +10,17 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import HeaderInterno from "../components/HeaderInterno";
 import projetoApi from "../functions/api/projetoApi";
+import DateMonthYearField from "react-native-datefield";
+import DatePicker from "@dietime/react-native-date-picker";
 
 const NewProject = () => {
   const navigation = useNavigation();
 
+  const [data_inicio, setData_inicio] = useState(new Date)
+
   const nomeProjetoRef = useRef();
   const descricaoProjetoRef = useRef();
+  const inicioRef = useRef();
 
   async function postProjeto() {
     try {
@@ -23,6 +28,7 @@ const NewProject = () => {
         id: null,
         nome: nomeProjetoRef.current.value,
         descricao: descricaoProjetoRef.current.value,
+        inicio: data_inicio,
         usuario_dono_uuid: localStorage.getItem("user_id"),
         public: false,
       });
@@ -33,6 +39,7 @@ const NewProject = () => {
         window.alert("Erro ao salvar projeto");
       }
     } catch (error) {
+      window.alert("Erro ao tentar salvar projeto: ", error.response.data.message)
       console.log("Erro ao salvar o projeto ", error);
     }
   }
@@ -45,13 +52,13 @@ const NewProject = () => {
 
         <View style={styles.profileSection}>
           {/* Seção Foto à esquerda */}
-          <View style={styles.photoSection}>
+          {/* <View style={styles.photoSection}>
             <Text style={styles.photoLabel}>IMAGEM</Text>
             <View style={styles.photoPlaceholder}></View>
             <TouchableOpacity style={styles.changePhotoButton}>
               <Text style={styles.changePhotoText}>Adicionar imagem</Text>
             </TouchableOpacity>
-          </View>
+          </View> */}
 
           {/* Dados do projeto à direita */}
           <View style={styles.dataSection}>
@@ -71,6 +78,18 @@ const NewProject = () => {
                 style={[styles.input, { height: 100 }]}
                 placeholder="Digite aqui"
                 multiline
+              />
+            </View>
+            <View style={{display: 'flex', alignItems: 'center'}}>
+              <Text style={styles.dataLabel}>Data de início</Text>
+              <DatePicker
+                value={data_inicio}
+                onChange={(value) => setData_inicio(value)}
+                format="dd-mm-YY"
+                height={300}
+                width={300}
+                startYear={2025}
+                endYear={2030}
               />
             </View>
           </View>
@@ -117,6 +136,10 @@ const NewProject = () => {
 };
 
 const styles = StyleSheet.create({
+  dataLabel: {
+    alignSelf: 'center',
+    fontSize: 30
+  },
   container: {
     flex: 1,
     backgroundColor: "#fff",

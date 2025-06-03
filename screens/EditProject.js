@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import {
   View,
   Text,
@@ -10,10 +10,13 @@ import {
 import { useNavigation, useRoute } from "@react-navigation/native";
 import HeaderInterno from "../components/HeaderInterno";
 import projetoApi from "../functions/api/projetoApi";
+import DatePicker from "@dietime/react-native-date-picker";
 
 const EditProject = () => {
   const navigation = useNavigation();
   
+  const [data_inicio, setData_inicio] = useState(new Date)
+
   const route = useRoute(); 
   const { projeto } = route.params;
  
@@ -27,6 +30,7 @@ const EditProject = () => {
         id: projeto.id,
         nome: nomeProjetoRef.current.value,
         descricao: descricaoProjetoRef.current.value,
+        inicio: data_inicio,
         usuario_dono_uuid: localStorage.getItem("user_id"),
         public: projeto.public,
       });
@@ -75,6 +79,18 @@ const EditProject = () => {
             </View>
           </View>
         </View>
+          <View style={{display: 'flex', alignItems: 'center'}}>
+              <Text style={styles.dataLabel}>Data de início</Text>
+              <DatePicker
+                value={data_inicio}
+                onChange={(value) => setData_inicio(value)}
+                format="dd-mm-YY"
+                height={300}
+                width={300}
+                startYear={2025}
+                endYear={2030}
+              />
+            </View>
 
         {/* Seção de datas e responsável */}
         <View style={styles.bottomSection}>
@@ -117,6 +133,10 @@ const EditProject = () => {
 };
 
 const styles = StyleSheet.create({
+  dataLabel: {
+    alignSelf: 'center',
+    fontSize: 30
+  },
   container: {
     flex: 1,
     backgroundColor: "#fff",

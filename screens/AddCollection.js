@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -9,65 +9,49 @@ import {
   ScrollView
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import HeaderInterno from '../components/HeaderInterno';
+import FamiliaApi from '../functions/api/FamiliaApi';
+import CustomPicker from '../components/CustomPicker';
 
 const AddCollection = () => {
   const navigation = useNavigation();
 
+  const [familias, setFamilias] = useState([])
+  const [generos, setGeneros] = useState([])
+  const [especies, setEspecies] = useState([])
+
+  const [familia, setFamilia] = useState(null);
+  const [genero, setGenero] = useState(null);
+  const [especie, setEspecie] = useState(null);
+
+  useEffect(() => {
+    const fetchFamilias = async () => {
+      try {
+        const response = await FamiliaApi.getAll()
+        setFamilias(response.data.data)
+      } catch (error) {
+        window.alert("Erro ao carregar familias: ", error.response.data.message)
+      }
+    }
+  }, [])
+
+
   return (
     <View style={styles.container}>
-      {/* Cabeçalho igual ao da HomePage */}
-      <View style={styles.headerContainer}>
-        <Image 
-          source={require('../assets/images/cabecalho.webp')} 
-          style={styles.headerBackgroundImage}
-          resizeMode="cover"
-        />
-        <View style={styles.headerContent}>
-          <Image 
-            source={require('../assets/images/logo.png')}
-            style={styles.logoImage}
-            resizeMode="contain"
-          />
-          <Text style={styles.logoText}>SUG - FLORA</Text>
-          <View style={styles.menuTop}>
-            <TouchableOpacity 
-              style={styles.menuItem}
-              onPress={() => navigation.navigate('HomePage')}
-            >
-              <Text style={styles.menuText}>PÁGINA INICIAL</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem}>
-              <Text style={styles.menuText}>SOBRE</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem}>
-              <Text style={styles.menuText}>CONTATO</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem}>
-              <Text style={styles.menuText}>SAIR</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
+      <HeaderInterno />
 
       <ScrollView style={styles.content} contentContainerStyle={{paddingBottom: 30}}>
         <Text style={styles.pageTitle}>ADICIONAR COLETA</Text>
 
-        {/* Nome do campo */}
-        <View style={styles.fieldGroup}>
-          <Text style={styles.fieldLabel}>NOME DO CAMPO</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Compo 1"
-          />
-        </View>
-
         {/* Família */}
         <View style={styles.fieldGroup}>
           <Text style={styles.fieldLabel}>FAMÍLIA</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Escolher"
-            editable={false}
+          
+          <CustomPicker 
+            items={familias.map(f => ({id: f.id, valor: f.nome}))}
+            defaultValue={familia?.id}
+            onChange={(item) => setFamilia(item)}
+            placeholder='Não identificado...'
           />
         </View>
 

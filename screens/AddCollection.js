@@ -7,47 +7,17 @@ import {
   TextInput,
   Image,
   ScrollView
-} from 'react-native';
+  } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import HeaderInterno from '../components/HeaderInterno'; // importando o HeaderInterno
 
 const AddCollection = () => {
   const navigation = useNavigation();
 
   return (
     <View style={styles.container}>
-      {/* Cabeçalho igual ao da HomePage */}
-      <View style={styles.headerContainer}>
-        <Image 
-          source={require('../assets/images/cabecalho.webp')} 
-          style={styles.headerBackgroundImage}
-          resizeMode="cover"
-        />
-        <View style={styles.headerContent}>
-          <Image 
-            source={require('../assets/images/logo.png')}
-            style={styles.logoImage}
-            resizeMode="contain"
-          />
-          <Text style={styles.logoText}>SUG - FLORA</Text>
-          <View style={styles.menuTop}>
-            <TouchableOpacity 
-              style={styles.menuItem}
-              onPress={() => navigation.navigate('HomePage')}
-            >
-              <Text style={styles.menuText}>PÁGINA INICIAL</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem}>
-              <Text style={styles.menuText}>SOBRE</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem}>
-              <Text style={styles.menuText}>CONTATO</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem}>
-              <Text style={styles.menuText}>SAIR</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
+      {/* Substitui o header pelo componente HeaderInterno */}
+      <HeaderInterno />
 
       <ScrollView style={styles.content} contentContainerStyle={{paddingBottom: 30}}>
         <Text style={styles.pageTitle}>ADICIONAR COLETA</Text>
@@ -57,7 +27,7 @@ const AddCollection = () => {
           <Text style={styles.fieldLabel}>NOME DO CAMPO</Text>
           <TextInput
             style={styles.input}
-            placeholder="Compo 1"
+            placeholder="Campo 1"
           />
         </View>
 
@@ -145,6 +115,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
+
   headerContainer: {
     width: '100%',
     height: 220,

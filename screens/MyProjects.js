@@ -97,7 +97,7 @@ const MyProjects = () => {
             <Text style={styles.emptyText}>Nenhum projeto encontrado</Text>
             <TouchableOpacity 
               style={styles.createButton}
-              onPress={() => navigation.navigate('CreateProject')}
+              onPress={() => navigation.navigate('NewProject')}
             >
               <Text style={styles.buttonText}>Criar novo projeto</Text>
             </TouchableOpacity>

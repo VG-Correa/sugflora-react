@@ -18,10 +18,12 @@ import {
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Header from "../components/Header";
 import forestImage from "../assets/images/forest.webp";
+import loginApi from "../functions/api/loginApi";
+import UsuarioApi from "../functions/api/usuarioApi";
 
 const Login = ({ navigation }) => {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("adm");
+  const [password, setPassword] = useState("adm");
   const [loading, setLoading] = useState(false);
   const windowDimensions = Dimensions.get("window");
 
@@ -35,85 +37,40 @@ const Login = ({ navigation }) => {
     try {
       console.log("Tentando login com:", { username, password });
 
-      const loginResponse = await fetch(
-        "http://localhost:8080/api/auth/login",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            username: username,
-            password: password,
-          }),
-        }
-      );
+      const loginResponse = await loginApi.login(username, password)
 
-      const loginData = await loginResponse.json();
-      console.log("Resposta do login:", loginData);
+      console.log("Resposta do login:", loginResponse.data.data[0]);
 
-      if (loginResponse.ok) {
-        const token = loginData.token;
+      if (loginResponse.data.status === 200) {
+        const token = loginResponse.data.data[0].token
 
-        // Buscar dados do usuário
-        const userResponse = await fetch(
-          `http://localhost:8080/api/usuario/username/${username}`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Content-Type": "application/json",
-            },
-          }
-        );
+        localStorage.setItem("user_id", loginResponse.data.data[0].usuario.id);
+        localStorage.setItem("nome", loginResponse.data.data[0].usuario.nome);
+        localStorage.setItem("sobrenome", loginResponse.data.data[0].usuario.sobrenome);
+        localStorage.setItem("username", loginResponse.data.data[0].usuario.username);
+        localStorage.setItem("rg", loginResponse.data.data[0].usuario.rg);
+        localStorage.setItem("cpf", loginResponse.data.data[0].usuario.cpf);
+        localStorage.setItem("email", loginResponse.data.data[0].usuario.email);
 
-        const userData = await userResponse.json();
-        console.log("Dados do usuário:", userData);
+        localStorage.setItem("token", token)
 
-        if (userResponse.ok) {
-          try {
-            // Armazena os dados do usuário
-            await AsyncStorage.setItem("userToken", token);
-            // Garantindo que estamos armazenando os dados corretos do usuário
-            const userDataToStore = {
-              nome: userData.nome || userData.data?.nome,
-              email: userData.email || userData.data?.email,
-              sobrenome: userData.sobrenome || userData.data?.sobrenome,
-              // outros dados que você queira armazenar
-            };
-            await AsyncStorage.setItem(
-              "userData",
-              JSON.stringify(userDataToStore)
-            );
-            await AsyncStorage.setItem("userEmail", username);
+        setUsername("");
+        setPassword("");
 
-            // Limpa os campos do formulário
-            setUsername("");
-            setPassword("");
-
-            // Navega para a HomePage
-            navigation.reset({
-              index: 0,
-              routes: [{ name: "HomePage" }],
-            });
-          } catch (error) {
-            console.error("Erro ao salvar dados:", error);
-            Alert.alert("Erro", "Erro ao salvar dados do usuário");
-          }
-        } else {
-          Alert.alert("Erro", "Erro ao buscar dados do usuário");
-        }
-      } else {
-        Alert.alert("Erro", loginData.erro || "Credenciais inválidas");
+        setLoading(false);
       }
+
+      // Navega para a HomePage
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "HomePage" }],
+      });
     } catch (error) {
-      console.error("Erro ao fazer login:", error);
-      Alert.alert(
-        "Erro",
-        "Erro ao conectar com o servidor. Verifique sua conexão e se o servidor está rodando."
-      );
-    } finally {
-      setLoading(false);
+      console.error("Erro ao salvar dados:", error);
+      Alert.alert("Erro", "Erro ao salvar dados do usuário");
     }
+
+
   };
 
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
@@ -166,15 +123,15 @@ const Login = ({ navigation }) => {
               </Text>
 
               <View style={styles.formContainer}>
-                <Text style={styles.label}>EMAIL</Text>
+                <Text style={styles.label}>USUÁRIO</Text>
                 <TextInput
                   style={[
                     styles.input,
                     { paddingVertical: isSmallDevice ? 10 : 12 },
                   ]}
-                  placeholder="nome@exemplo.com"
+                  placeholder="Nome de Usuário"
                   placeholderTextColor="#888"
-                  keyboardType="email-address"
+                  keyboardType="text"
                   value={username}
                   onChangeText={setUsername}
                   autoCapitalize="none"

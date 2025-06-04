@@ -26,6 +26,7 @@ import AddCollection from './screens/AddCollection';
 import ReportScreenQuantitativo from './screens/ReportScreenQuantitativo';
 import SearchSpecies from './screens/SearchSpecies';
 import MyReports from './screens/MyReports';
+import EditProject from './screens/EditProject';
 
 const Stack = createNativeStackNavigator();
 
@@ -92,6 +93,11 @@ const App = () => {
         <Stack.Screen 
           name="ProjectScreen" 
           component={ProjectScreen} 
+          options={{ headerShown: false, gestureEnabled: true }}
+        />
+        <Stack.Screen 
+          name="EditProject" 
+          component={EditProject} 
           options={{ headerShown: false, gestureEnabled: true }}
         />
         <Stack.Screen 

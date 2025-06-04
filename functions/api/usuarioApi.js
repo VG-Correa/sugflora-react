@@ -1,7 +1,7 @@
 import api from "./api"
 
 
-export default UsuarioApi = {
+const UsuarioApi = {
 
     async getUserByUsername(username) {
         try {
@@ -12,6 +12,8 @@ export default UsuarioApi = {
             console.log(error);
             return null;
         }
-    }
+    },
 
 }
+
+export default UsuarioApi

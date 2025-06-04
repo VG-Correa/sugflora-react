@@ -40,7 +40,7 @@ const ProjectScreen = () => {
   };
 
   const handleEditProject = () => {
-    console.log("Editar projeto clicado");
+    navigation.navigate("EditProject", {projeto: projeto})
   };
 
   async function getColetas(campo) {

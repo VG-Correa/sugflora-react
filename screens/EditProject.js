@@ -12,7 +12,7 @@ import { useNavigation } from "@react-navigation/native";
 import HeaderInterno from "../components/HeaderInterno";
 import projetoApi from "../functions/api/projetoApi";
 
-const NewProject = () => {
+const EditProject = () => {
   const navigation = useNavigation();
 
   const nomeProjetoRef = useRef();
@@ -243,4 +243,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default NewProject;
+export default EditProject;

@@ -1,4 +1,4 @@
-import React, { use, useRef, useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -12,46 +12,109 @@ import {
   useWindowDimensions,
   ScrollView,
   KeyboardAvoidingView,
-  Alert
-} from 'react-native';
-import Header from '../components/Header';
-import forestImage from '../assets/images/forest.webp';
-import loginApi from '../functions/api/loginApi';
-import usuarioApi from '../functions/api/usuarioApi';
+  Dimensions,
+  Alert,
+} from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import Header from "../components/Header";
+import forestImage from "../assets/images/forest.webp";
 
 const Login = ({ navigation }) => {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const windowDimensions = Dimensions.get("window");
 
-  const usernameRef = useRef(null)
-  const passRef = useRef(null)
-
-  const handleLogin = async (event) => {
-    event.preventDefault();
-
-    const username = usernameRef.current.value
-    const password = passRef.current.value
-    
-    const response = await loginApi.login(username, password);
-
-    if (response.status === 200) {
-      localStorage.setItem('token', response.data.token);
-      
-      const usuarioLogado = await usuarioApi.getUserByUsername(username);
-      if (usuarioLogado != null && usuarioLogado.status === 200) {
-        localStorage.setItem('user_id', usuarioLogado.data.data[0].id)
-        localStorage.setItem('username', usuarioLogado.data.data[0].username)
-        navigation.navigate('HomePage');
-      } else {
-        localStorage.removeItem('token')
-      }
-
-
-    } else {
-      window.alert("Credenciais inválidas")
+  const handleLogin = async () => {
+    if (!username || !password) {
+      Alert.alert("Erro", "Por favor, preencha todos os campos");
+      return;
     }
 
-    
+    setLoading(true);
+    try {
+      console.log("Tentando login com:", { username, password });
 
-  }
+      const loginResponse = await fetch(
+        "http://localhost:8080/api/auth/login",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            username: username,
+            password: password,
+          }),
+        }
+      );
+
+      const loginData = await loginResponse.json();
+      console.log("Resposta do login:", loginData);
+
+      if (loginResponse.ok) {
+        const token = loginData.token;
+
+        // Buscar dados do usuário
+        const userResponse = await fetch(
+          `http://localhost:8080/api/usuario/username/${username}`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        const userData = await userResponse.json();
+        console.log("Dados do usuário:", userData);
+
+        if (userResponse.ok) {
+          try {
+            // Armazena os dados do usuário
+            await AsyncStorage.setItem("userToken", token);
+            // Garantindo que estamos armazenando os dados corretos do usuário
+            const userDataToStore = {
+              nome: userData.nome || userData.data?.nome,
+              email: userData.email || userData.data?.email,
+              sobrenome: userData.sobrenome || userData.data?.sobrenome,
+              // outros dados que você queira armazenar
+            };
+            await AsyncStorage.setItem(
+              "userData",
+              JSON.stringify(userDataToStore)
+            );
+            await AsyncStorage.setItem("userEmail", username);
+
+            // Limpa os campos do formulário
+            setUsername("");
+            setPassword("");
+
+            // Navega para a HomePage
+            navigation.reset({
+              index: 0,
+              routes: [{ name: "HomePage" }],
+            });
+          } catch (error) {
+            console.error("Erro ao salvar dados:", error);
+            Alert.alert("Erro", "Erro ao salvar dados do usuário");
+          }
+        } else {
+          Alert.alert("Erro", "Erro ao buscar dados do usuário");
+        }
+      } else {
+        Alert.alert("Erro", loginData.erro || "Credenciais inválidas");
+      }
+    } catch (error) {
+      console.error("Erro ao fazer login:", error);
+      Alert.alert(
+        "Erro",
+        "Erro ao conectar com o servidor. Verifique sua conexão e se o servidor está rodando."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const isLargeScreen = screenWidth >= 768;
@@ -62,10 +125,13 @@ const Login = ({ navigation }) => {
       <ImageBackground
         source={forestImage}
         resizeMode="cover"
-        style={styles.background}
+        style={[
+          styles.background,
+          { width: windowDimensions.width, height: windowDimensions.height },
+        ]}
       >
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={styles.flex}
         >
           <ScrollView
@@ -74,82 +140,71 @@ const Login = ({ navigation }) => {
           >
             <Header navigation={navigation} />
 
-            <View style={[
-              styles.container,
-              {
-                width: isLargeScreen ? '40%' : '90%',
-                marginVertical: isLargeScreen ? 40 : 20,
-                padding: isLargeScreen ? 30 : 20,
-              }
-            ]}>
-              <Text style={[
-                styles.title,
-                { fontSize: isLargeScreen ? 28 : 24 }
-              ]}>
+            <View
+              style={[
+                styles.container,
+                {
+                  width: isLargeScreen ? "40%" : "90%",
+                  marginVertical: isLargeScreen ? 40 : 20,
+                  padding: isLargeScreen ? 30 : 20,
+                },
+              ]}
+            >
+              <Text
+                style={[styles.title, { fontSize: isLargeScreen ? 28 : 24 }]}
+              >
                 Login
               </Text>
-              
-              <Text style={[
-                styles.welcomeText,
-                { fontSize: isLargeScreen ? 20 : 16 }
-              ]}>
+
+              <Text
+                style={[
+                  styles.welcomeText,
+                  { fontSize: isLargeScreen ? 20 : 16 },
+                ]}
+              >
                 Bem-Vindo de Volta!
               </Text>
 
-              <View style={styles.socialOptions}>
-                <TouchableOpacity 
-                  style={[styles.socialButton, styles.unselectedSocial]}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.socialText}>Entre com Google</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity 
-                  style={[styles.socialButton, styles.selectedSocial]}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[styles.socialText, styles.socialSelectedText]}>Entre com Facebook</Text>
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.dividerContainer}>
-                <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>Ou</Text>
-                <View style={styles.dividerLine} />
-              </View>
-
               <View style={styles.formContainer}>
                 <Text style={styles.label}>EMAIL</Text>
-                <TextInput ref={usernameRef}
+                <TextInput
                   style={[
                     styles.input,
-                    { paddingVertical: isSmallDevice ? 10 : 12 }
+                    { paddingVertical: isSmallDevice ? 10 : 12 },
                   ]}
-                  placeholder="home@exemplo.com"
+                  placeholder="nome@exemplo.com"
                   placeholderTextColor="#888"
                   keyboardType="email-address"
-                  defaultValue='VG'
+                  value={username}
+                  onChangeText={setUsername}
+                  autoCapitalize="none"
                 />
 
                 <Text style={styles.label}>SENHA</Text>
-                <TextInput ref={passRef}
+                <TextInput
                   style={[
                     styles.input,
-                    { paddingVertical: isSmallDevice ? 10 : 12 }
+                    { paddingVertical: isSmallDevice ? 10 : 12 },
                   ]}
                   placeholder="*****"
                   placeholderTextColor="#888"
                   secureTextEntry={true}
-                  defaultValue='test'
+                  value={password}
+                  onChangeText={setPassword}
                 />
 
-                <TouchableOpacity style={styles.forgotPasswordButton}>
+                <TouchableOpacity
+                  style={styles.forgotPasswordButton}
+                  onPress={() => navigation.navigate("Password")}
+                >
                   <Text style={styles.forgotPassword}>Esqueceu sua senha?</Text>
                 </TouchableOpacity>
 
                 <View style={styles.registerContainer}>
                   <Text style={styles.registerText}>Não tem uma conta? </Text>
-                  <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate("Register")}
+                  >
                     <Text style={styles.createAccount}>Cadastre-se</Text>
                   </TouchableOpacity>
                 </View>
@@ -157,12 +212,16 @@ const Login = ({ navigation }) => {
                 <TouchableOpacity
                   style={[
                     styles.loginButton,
-                    { marginTop: isSmallDevice ? 10 : 20 }
+                    { marginTop: isSmallDevice ? 10 : 20 },
+                    loading && styles.disabledButton,
                   ]}
-                  onPress={(event) => {handleLogin(event)}}
+                  onPress={handleLogin}
+                  disabled={loading}
                   activeOpacity={0.9}
                 >
-                  <Text style={styles.loginText}>ENTRAR</Text>
+                  <Text style={styles.loginText}>
+                    {loading ? "ENTRANDO..." : "ENTRAR"}
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -176,134 +235,100 @@ const Login = ({ navigation }) => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
   },
   background: {
     flex: 1,
+    justifyContent: "center",
   },
   flex: {
     flex: 1,
   },
   scrollContainer: {
     flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
+    paddingBottom: 20,
   },
   container: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
     borderRadius: 16,
     elevation: 8,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 6,
   },
   title: {
-    fontWeight: 'bold',
-    color: '#2d5a27',
-    textAlign: 'center',
+    fontWeight: "bold",
+    color: "#2d5a27",
+    textAlign: "center",
     marginBottom: 8,
   },
   welcomeText: {
-    textAlign: 'center',
-    color: '#444',
+    textAlign: "center",
+    color: "#444",
     marginBottom: 25,
-  },
-  socialOptions: {
-    marginBottom: 25,
-    gap: 12,
-  },
-  socialButton: {
-    padding: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-    borderWidth: 1,
-  },
-  selectedSocial: {
-    backgroundColor: '#4267B2',
-    borderColor: '#4267B2',
-  },
-  unselectedSocial: {
-    backgroundColor: '#fff',
-    borderColor: '#ddd',
-  },
-  socialText: {
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  socialSelectedText: {
-    color: '#fff',
-  },
-  dividerContainer: {
-    flexDirection: 'row',
-    marginVertical: 20,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#ddd',
-  },
-  dividerText: {
-    marginHorizontal: 10,
-    color: '#666',
-    fontSize: 14,
   },
   formContainer: {
     gap: 15,
   },
   label: {
-    fontWeight: '600',
-    color: '#444',
+    fontWeight: "600",
+    color: "#444",
     fontSize: 14,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: "#ddd",
     borderRadius: 8,
     paddingHorizontal: 15,
     fontSize: 15,
-    backgroundColor: '#fff',
-    color: '#333',
+    backgroundColor: "#fff",
+    color: "#333",
   },
   forgotPasswordButton: {
-    alignSelf: 'flex-end',
+    alignSelf: "flex-end",
     marginTop: 5,
   },
   forgotPassword: {
-    color: '#648C47',
+    color: "#648C47",
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   registerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     marginTop: 15,
   },
   registerText: {
-    color: '#666',
+    color: "#666",
     fontSize: 14,
   },
   createAccount: {
-    color: '#648C47',
-    fontWeight: '600',
-    textDecorationLine: 'underline',
+    color: "#648C47",
+    fontWeight: "600",
+    textDecorationLine: "underline",
   },
   loginButton: {
-    backgroundColor: '#648C47',
+    backgroundColor: "#648C47",
     padding: 15,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
     elevation: 3,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 3,
   },
   loginText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: "#fff",
+    fontWeight: "bold",
     fontSize: 16,
     letterSpacing: 0.5,
+  },
+  disabledButton: {
+    opacity: 0.7,
   },
 });
 

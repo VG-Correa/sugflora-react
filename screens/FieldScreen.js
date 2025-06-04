@@ -10,6 +10,7 @@ import {
   TouchableOpacity
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import HeaderInterno from "../components/HeaderInterno";
 
 const FieldScreen = () => {
   const navigation = useNavigation();
@@ -17,15 +18,24 @@ const FieldScreen = () => {
   const isMobile = screenWidth < 768;
 
   const tableColumnSizes = isMobile
-    ? { name: 140, others: 80 }
-    : { name: 220, others: 120 };
+    ? { id: 180, family: 250, genus: 190, species: 290, date: 230, field: 230 }
+    : { id: 200, family: 290, genus: 250, species: 330, date: 250, field: 250 };
+
+  const collectionsData = [
+    { id: '0001', family: 'ROSACEAE', genus: 'ROSA', species: 'ROSA GALLICA', date: '02/03/2023', field: 'CAMPO 1' },
+    { id: '0002', family: 'ROSACEAE', genus: 'ROSA', species: 'ROSA DAMASCENA', date: '10/03/2023', field: 'CAMPO 1' },
+    { id: '0003', family: 'ROSACEAE', genus: 'ROSA', species: 'ROSA CANINA', date: '10/03/2023', field: 'CAMPO 1' },
+    { id: '0004', family: 'ROSACEAE', genus: 'ROSA', species: 'ROSA DAMASCENA', date: '15/03/2023', field: 'CAMPO 1' },
+  ];
 
   const handleAddCollection = () => {
-    console.log('Adicionar coleta');
+    navigation.navigate('AddCollection');
   };
+
   const handleEditField = () => {
     console.log('Editar campo');
   };
+
   const handleBack = () => {
     navigation.goBack();
   };
@@ -33,32 +43,10 @@ const FieldScreen = () => {
   return (
     <View style={styles.container}>
       {/* Cabeçalho */}
-      <View style={styles.headerContainer}>
-        <Image
-          source={require('../assets/images/cabecalho.webp')}
-          style={styles.headerBackgroundImage}
-          resizeMode="cover"
-        />
-        <View style={styles.headerContent}>
-          <Image
-            source={require('../assets/images/logo.webp')}
-            style={styles.logoImage}
-            resizeMode="contain"
-          />
-          <Text style={styles.logoText}>SUG - FLORA</Text>
-          <View style={styles.menuTop}>
-            <Text style={styles.menuText} onPress={() => navigation.navigate('HomePage')}>PÁGINA INICIAL</Text>
-            <Text style={styles.menuText}>SOBRE</Text>
-            <Text style={styles.menuText}>CONTATO</Text>
-            <Text style={styles.menuText}>SAIR</Text>
-          </View>
-        </View>
-      </View>
-
+      <HeaderInterno />
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
         <Text style={styles.pageTitle}>PROJETO - EXEMPLO - CAMPO 1</Text>
 
-        {/* Campos de formulário */}
         <View style={styles.fieldGroup}>
           <Text style={styles.label}>Nome do campo</Text>
           <TextInput style={styles.textInput} placeholder="Campo 1" />
@@ -108,33 +96,53 @@ const FieldScreen = () => {
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.tableScrollContainer}>
           <View>
             <View style={styles.tableHeader}>
-              <Text style={[styles.tableHeaderText, { width: tableColumnSizes.name }]}>Data</Text>
-              <Text style={[styles.tableHeaderText, { width: tableColumnSizes.others }]}>Quantidade</Text>
-              <Text style={[styles.tableHeaderText, { width: tableColumnSizes.others }]}>Status</Text>
+              <Text style={[styles.tableHeaderText, { width: tableColumnSizes.id }]}>ID</Text>
+              <Text style={[styles.tableHeaderText, { width: tableColumnSizes.family }]}>FAMÍLIA</Text>
+              <Text style={[styles.tableHeaderText, { width: tableColumnSizes.genus }]}>GÊNERO</Text>
+              <Text style={[styles.tableHeaderText, { width: tableColumnSizes.species }]}>ESPÉCIE</Text>
+              <Text style={[styles.tableHeaderText, { width: tableColumnSizes.date }]}>DATA DA COLETA</Text>
+              <Text style={[styles.tableHeaderText, { width: tableColumnSizes.field }]}>CAMPO</Text>
             </View>
 
-            <View style={styles.tableRow}>
-              <Text style={[styles.tableCell, { width: tableColumnSizes.name }]}>20/04/2025</Text>
-              <Text style={[styles.tableCell, { width: tableColumnSizes.others }]}>10</Text>
-              <Text style={[styles.tableCell, { width: tableColumnSizes.others }]}>Completo</Text>
-            </View>
-            <View style={styles.tableRow}>
-              <Text style={[styles.tableCell, { width: tableColumnSizes.name }]}>22/04/2025</Text>
-              <Text style={[styles.tableCell, { width: tableColumnSizes.others }]}>8</Text>
-              <Text style={[styles.tableCell, { width: tableColumnSizes.others }]}>Pendente</Text>
-            </View>
+            {collectionsData.map((item, index) => (
+              <View key={index} style={styles.tableRow}>
+                <Text style={[styles.tableCell, { width: tableColumnSizes.id }]}>{item.id}</Text>
+                <Text style={[styles.tableCell, { width: tableColumnSizes.family }]}>{item.family}</Text>
+                <Text style={[styles.tableCell, { width: tableColumnSizes.genus }]}>{item.genus}</Text>
+                <Text style={[styles.tableCell, { width: tableColumnSizes.species }]}>{item.species}</Text>
+                <Text style={[styles.tableCell, { width: tableColumnSizes.date }]}>{item.date}</Text>
+                <Text style={[styles.tableCell, { width: tableColumnSizes.field }]}>{item.field}</Text>
+              </View>
+            ))}
           </View>
         </ScrollView>
       </ScrollView>
 
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={[styles.button, styles.addButton]} onPress={handleAddCollection}>
+        <TouchableOpacity 
+          style={[styles.button, styles.addButton]} 
+          onPress={handleAddCollection}
+          activeOpacity={0.7}
+          accessible={true}
+          accessibilityLabel="Adicionar nova coleta"
+          accessibilityHint="Navega para a tela de criação de nova coleta"
+        >
           <Text style={styles.buttonText}>ADICIONAR COLETA</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.button, styles.editButton]} onPress={handleEditField}>
+        
+        <TouchableOpacity 
+          style={[styles.button, styles.editButton]} 
+          onPress={handleEditField}
+          activeOpacity={0.7}
+        >
           <Text style={styles.buttonText}>EDITAR CAMPO</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.button, styles.backButton]} onPress={handleBack}>
+        
+        <TouchableOpacity 
+          style={[styles.button, styles.backButton]} 
+          onPress={handleBack}
+          activeOpacity={0.7}
+        >
           <Text style={styles.buttonText}>VOLTAR</Text>
         </TouchableOpacity>
       </View>
@@ -190,9 +198,20 @@ const styles = StyleSheet.create({
   },
 
   tableScrollContainer: { minWidth: '100%' },
-  tableHeader: { flexDirection: 'row', backgroundColor: '#e8f5e9', paddingVertical: 10, paddingHorizontal: 8 },
+  tableHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#e8f5e9',
+    paddingVertical: 14,
+    paddingHorizontal: 35,
+  },
   tableHeaderText: { fontWeight: 'bold', textAlign: 'left', fontSize: 14 },
-  tableRow: { flexDirection: 'row', paddingVertical: 10, paddingHorizontal: 8, borderBottomWidth: 1, borderBottomColor: '#eee' },
+  tableRow: {
+    flexDirection: 'row',
+    paddingVertical: 14,
+    paddingHorizontal: 35,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
   tableCell: { textAlign: 'left', fontSize: 14 },
 
   buttonContainer: {

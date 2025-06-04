@@ -10,6 +10,8 @@
   "dependencies": {
     "@expo/metro-runtime": "~5.0.4",
     "@expo/vector-icons": "^14.0.2",
+    "@react-native-async-storage/async-storage": "^2.1.2",
+    "@react-native-picker/picker": "^2.11.0",
     "@react-navigation/native": "*",
     "@react-navigation/native-stack": "*",
     "axios": "^1.9.0",
@@ -19,13 +21,15 @@
     "react-dom": "19.0.0",
     "react-native": "0.79.2",
     "react-native-gesture-handler": "~2.24.0",
+    "react-native-mask-input": "^1.2.3",
     "react-native-paper": "4.9.2",
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.10.0",
     "react-native-web": "^0.20.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.20.0"
+    "@babel/core": "^7.20.0",
+    "@react-native-community/cli": "^11.4.1"
   },
   "private": true
 }

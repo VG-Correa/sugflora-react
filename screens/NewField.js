@@ -1,11 +1,10 @@
-import React, { useRef } from 'react';
+import { useRef } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   TextInput,
-  Image,
   ScrollView
 } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -51,12 +50,12 @@ const NewField = () => {
         console.log("Campo criado com sucesso", response.data.data)
         navigation.navigate("ProjectScreen", {projeto: projeto})
       } else {
-        window.alert("Erro ao criar campo")
+        window.alert(error.response.data.message)
         console.log("Erro ao criar campo", response.data.data)
       }
 
     } catch (error) {
-      console.error("Erro ao fazer POST do Campo")
+      window.alert(error.response.data.message)
     }
 
     console.log("Campo: ", campoJson)
@@ -65,7 +64,7 @@ const NewField = () => {
   return (
     <View style={styles.container}>
       {/* Cabeçalho igual ao da HomePage */}
-          <HeaderInterno />
+      <HeaderInterno />
 
 
       <ScrollView style={styles.content} contentContainerStyle={{ paddingBottom: 30 }}>
@@ -146,54 +145,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  // Estilos do cabeçalho (iguais ao da HomePage)
-  headerContainer: {
-    width: '100%',
-    height: 220,
-    position: 'relative',
-  },
-  headerBackgroundImage: {
-    width: '100%',
-    height: '100%',
-    position: 'absolute',
-  },
-  headerContent: {
-    position: 'absolute',
-    width: '100%',
-    alignItems: 'center',
-    paddingTop: 20,
-  },
-  logoImage: {
-    width: 80,
-    height: 80,
-    marginBottom: 5,
-  },
-  logoText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    textShadowColor: 'rgba(0,0,0,0.8)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 5,
-    marginBottom: 15,
-  },
-  menuTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-    paddingVertical: 10,
-  },
-  menuItem: {
-    paddingHorizontal: 10,
-  },
-  menuText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff',
-    textShadowColor: 'rgba(0,0,0,0.8)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 5,
-  },
   content: {
     flex: 1,
     paddingHorizontal: 20,
@@ -221,13 +172,6 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     paddingHorizontal: 10,
     backgroundColor: '#f9f9f9',
-  },
-  rowFields: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  smallField: {
-    width: '48%',
   },
   createButton: {
     backgroundColor: '#2e7d32',

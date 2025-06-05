@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -9,14 +9,36 @@ import {
   ScrollView
   } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import HeaderInterno from '../components/HeaderInterno'; // importando o HeaderInterno
+import HeaderInterno from '../components/HeaderInterno';
+import FamiliaApi from '../functions/api/FamiliaApi';
+import CustomPicker from '../components/CustomPicker';
+
 
 const AddCollection = () => {
   const navigation = useNavigation();
 
+  const [familias, setFamilias] = useState([])
+  const [generos, setGeneros] = useState([])
+  const [especies, setEspecies] = useState([])
+
+  const [familia, setFamilia] = useState(null);
+  const [genero, setGenero] = useState(null);
+  const [especie, setEspecie] = useState(null);
+
+  useEffect(() => {
+    const fetchFamilias = async () => {
+      try {
+        const response = await FamiliaApi.getAll()
+        setFamilias(response.data.data)
+      } catch (error) {
+        window.alert("Erro ao carregar familias: ", error.response.data.message)
+      }
+    }
+  }, [])
+
+
   return (
     <View style={styles.container}>
-      {/* Substitui o header pelo componente HeaderInterno */}
       <HeaderInterno />
 
       <ScrollView style={styles.content} contentContainerStyle={{paddingBottom: 30}}>
@@ -34,10 +56,12 @@ const AddCollection = () => {
         {/* Família */}
         <View style={styles.fieldGroup}>
           <Text style={styles.fieldLabel}>FAMÍLIA</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Escolher"
-            editable={false}
+          
+          <CustomPicker 
+            items={familias.map(f => ({id: f.id, valor: f.nome}))}
+            defaultValue={familia?.id}
+            onChange={(item) => setFamilia(item)}
+            placeholder='Não identificado...'
           />
         </View>
 

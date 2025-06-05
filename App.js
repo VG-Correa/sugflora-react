@@ -17,6 +17,7 @@ import HomePage from './screens/HomePage';
 import Profile from './screens/Profile';
 import NewProject from './screens/NewProject';
 import MyProjects from './screens/MyProjects';
+import EditProject from './screens/EditProject';
 import ProjectScreen from './screens/ProjectScreen';
 
 import NewField from './screens/NewField';       // Nova tela NewField
@@ -88,6 +89,11 @@ const App = () => {
         <Stack.Screen 
           name="MyProjects" 
           component={MyProjects} 
+          options={{ headerShown: false, gestureEnabled: true }}
+        />
+        <Stack.Screen 
+          name="EditProject" 
+          component={EditProject} 
           options={{ headerShown: false, gestureEnabled: true }}
         />
         <Stack.Screen 

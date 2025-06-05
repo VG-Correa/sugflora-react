@@ -1,22 +1,26 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   TextInput,
-  Image,
   ScrollView,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import HeaderInterno from "../components/HeaderInterno";
 import projetoApi from "../functions/api/projetoApi";
+import DateMonthYearField from "react-native-datefield";
+import DatePicker from "@dietime/react-native-date-picker";
 
 const NewProject = () => {
   const navigation = useNavigation();
 
+  const [data_inicio, setData_inicio] = useState(new Date)
+
   const nomeProjetoRef = useRef();
   const descricaoProjetoRef = useRef();
+  const inicioRef = useRef();
 
   async function postProjeto() {
     try {
@@ -24,6 +28,7 @@ const NewProject = () => {
         id: null,
         nome: nomeProjetoRef.current.value,
         descricao: descricaoProjetoRef.current.value,
+        inicio: data_inicio,
         usuario_dono_uuid: localStorage.getItem("user_id"),
         public: false,
       });
@@ -34,6 +39,7 @@ const NewProject = () => {
         window.alert("Erro ao salvar projeto");
       }
     } catch (error) {
+      window.alert("Erro ao tentar salvar projeto: ", error.response.data.message)
       console.log("Erro ao salvar o projeto ", error);
     }
   }
@@ -64,6 +70,18 @@ const NewProject = () => {
                 style={[styles.input, { height: 100 }]}
                 placeholder="Digite aqui"
                 multiline
+              />
+            </View>
+            <View style={{display: 'flex', alignItems: 'center'}}>
+              <Text style={styles.dataLabel}>Data de início</Text>
+              <DatePicker
+                value={data_inicio}
+                onChange={(value) => setData_inicio(value)}
+                format="dd-mm-YY"
+                height={300}
+                width={300}
+                startYear={2025}
+                endYear={2030}
               />
             </View>
           </View>
@@ -110,51 +128,13 @@ const NewProject = () => {
 };
 
 const styles = StyleSheet.create({
+  dataLabel: {
+    alignSelf: 'center',
+    fontSize: 30
+  },
   container: {
     flex: 1,
     backgroundColor: "#fff",
-  },
-  // Estilos do cabeçalho (iguais ao da HomePage)
-  headerContainer: {
-    width: "100%",
-    height: 220,
-    position: "relative",
-  },
-  headerBackgroundImage: {
-    width: "100%",
-    height: "100%",
-    position: "absolute",
-  },
-  headerContent: {
-    position: "absolute",
-    width: "100%",
-    alignItems: "center",
-    paddingTop: 20,
-  },
-  logoImage: {
-    width: 80,
-    height: 80,
-    marginBottom: 5,
-  },
-  logoText: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#fff",
-    marginBottom: 15,
-  },
-  menuTop: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    width: "100%",
-    paddingVertical: 10,
-  },
-  menuItem: {
-    paddingHorizontal: 10,
-  },
-  menuText: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#fff",
   },
   content: {
     flex: 1,

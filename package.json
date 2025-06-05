@@ -8,6 +8,7 @@
     "web": "expo start --web"
   },
   "dependencies": {
+    "@dietime/react-native-date-picker": "^1.2.1",
     "@expo/metro-runtime": "~5.0.4",
     "@expo/vector-icons": "^14.0.2",
     "@react-native-async-storage/async-storage": "^2.1.2",
@@ -15,11 +16,14 @@
     "@react-navigation/native": "*",
     "@react-navigation/native-stack": "*",
     "axios": "^1.9.0",
+    "date-fns": "^4.1.0",
+    "expo-linear-gradient": "^14.1.4",
     "expo": "^53.0.9",
     "expo-status-bar": "~2.2.3",
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-native": "0.79.2",
+    "react-native-datefield": "^0.3.6",
     "react-native-gesture-handler": "~2.24.0",
     "react-native-mask-input": "^1.2.3",
     "react-native-paper": "4.9.2",

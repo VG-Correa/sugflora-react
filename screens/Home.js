@@ -58,7 +58,7 @@ const Home = ({ navigation }) => {
       style={styles.smallImage}
     />
     <Image
-      source={require('../assets/images/forest3.webp')}
+      source={require('../assets/images/forest2.webp')}
       style={styles.smallImage}
     />
   </View>

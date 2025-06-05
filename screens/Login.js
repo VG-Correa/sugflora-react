@@ -12,6 +12,7 @@ import {
   useWindowDimensions,
   ScrollView,
   KeyboardAvoidingView,
+
   Dimensions,
   Alert,
 } from "react-native";
@@ -26,7 +27,7 @@ const Login = ({ navigation }) => {
   const [password, setPassword] = useState("adm");
   const [loading, setLoading] = useState(false);
   const windowDimensions = Dimensions.get("window");
-
+  
   const handleLogin = async () => {
     if (!username || !password) {
       Alert.alert("Erro", "Por favor, preencha todos os campos");

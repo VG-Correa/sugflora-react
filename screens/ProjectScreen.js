@@ -1,8 +1,13 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Image, ScrollView, Dimensions, TouchableOpacity } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Dimensions, TouchableOpacity, Alert } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import CampoApi from '../functions/api/CampoApi';
 import HeaderInterno from "../components/HeaderInterno";
+import DeleteConfirmationModal from '../components/DeleteComponent';
+import projetoApi from '../functions/api/projetoApi';
+import { parseISO, format } from 'date-fns';
+
+
 
 const ProjectScreen = () => {
   const navigation = useNavigation();
@@ -12,6 +17,16 @@ const ProjectScreen = () => {
   const { projeto } = route.params;
 
   const [campos, setCampos] = useState([])
+  const [modalVisible, setModalVisible] = useState(false)
+
+  const data_inicio = () => {
+    const data = projeto.inicio
+    const ano = data[0]
+    const mes = data[1]
+    const dia = data[2]
+
+    return dia + '/' + mes + '/' + ano
+  }
 
   async function fetchCampos() {
     try {
@@ -36,12 +51,40 @@ const ProjectScreen = () => {
     : { name: 220, others: 120 };
 
   const handleAddField = () => {
-    navigation.navigate('NewField', {projeto: projeto});
+    navigation.navigate('NewField', { projeto: projeto });
   };
 
   const handleEditProject = () => {
-    navigation.navigate("EditProject", {projeto: projeto})
+    navigation.navigate('EditProject', { projeto: projeto })
   };
+
+  const handleDeleteProject = () => {
+    setModalVisible(true);
+  };
+
+  const confirmDelete = async () => {
+    setModalVisible(false);
+
+    try {
+      const response = await projetoApi.delete(projeto.id)
+
+      console.log("Response Delet: ", response)
+
+      if (response.status === 200) {
+        console.log("Deletado")
+        navigation.navigate("MyProjects")
+      }
+    } catch (error) {
+      console.log("Erro ao cancelar");
+
+    }
+
+    console.log("Projeto deletado");
+  }
+
+  const cancelDelete = () => {
+    setModalVisible(false)
+  }
 
   async function getColetas(campo) {
     return "Não Implementado"
@@ -54,14 +97,16 @@ const ProjectScreen = () => {
   }
 
   useEffect(() => {
-    const loadCampos = async () => {await fetchCampos()}
+    const loadCampos = async () => {
+      await fetchCampos();
+    };
     loadCampos();
-  }, [])
+  }, []);
 
   return (
     <View style={styles.container}>
       {/* Header */}
-            <HeaderInterno />
+      <HeaderInterno />
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
         <Text style={styles.pageTitle}>{projeto.nome}</Text>
 
@@ -77,11 +122,11 @@ const ProjectScreen = () => {
               />
             </View> */}
             <View style={styles.textContainer}>
-              {/* <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>DATA DE INÍCIO:</Text>
-                <Text style={styles.detailValue}> 19/01/2023</Text>
-              </View>
               <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>DATA DE INÍCIO:</Text>
+                <Text style={styles.detailValue}>{data_inicio()}</Text>
+              </View>
+              {/* <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>PREVISÃO DE CONCLUSÃO:</Text>
                 <Text style={styles.detailValue}> 01/04/2026</Text>
               </View> */}
@@ -121,7 +166,7 @@ const ProjectScreen = () => {
                 campos.map(campo => {
                   return (
                     <View key={campo.id} style={styles.tableRow}>
-                      <TouchableOpacity onPress={() => navigation.navigate('FieldScreen')}>
+                      <TouchableOpacity onPress={() => navigation.navigate('FieldScreen', {campo: campo})}>
                         <Text style={[styles.tableCell, { width: tableColumnSizes.name, color: '#2e7d32', fontWeight: 'bold', textDecorationLine: 'underline' }]}>
                           {campo.nome}
                         </Text>
@@ -149,23 +194,23 @@ const ProjectScreen = () => {
         <TouchableOpacity style={[styles.button, styles.editButton]} onPress={handleEditProject}>
           <Text style={styles.buttonText}>EDITAR PROJETO</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={[styles.button, styles.deleteButton]} onPress={handleEditProject}>
+        <TouchableOpacity style={[styles.button, styles.deleteButton]} onPress={handleDeleteProject}>
           <Text style={styles.buttonText}>EXCLUIR PROJETO</Text>
         </TouchableOpacity>
       </View>
+      <DeleteConfirmationModal
+        visible={modalVisible}
+        title="Atenção!!"
+        message="Tem certeza que deseja excluir o projeto atual?"
+        onConfirm={confirmDelete}
+        onCancel={cancelDelete}
+      />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
-  headerContainer: { height: 220, width: '100%', position: 'relative' },
-  headerBackgroundImage: { width: '100%', height: '100%', position: 'absolute' },
-  headerContent: { position: 'absolute', width: '100%', alignItems: 'center', paddingTop: 40 },
-  logoImage: { width: 80, height: 80 },
-  logoText: { fontSize: 24, fontWeight: 'bold', color: '#fff', marginTop: 10 },
-  menuTop: { flexDirection: 'row', justifyContent: 'space-around', width: '100%', marginTop: 20 },
-  menuText: { color: '#fff', fontWeight: 'bold', fontSize: 12 },
   content: { flex: 1 },
   scrollContent: { padding: 15, paddingBottom: 80 },
   pageTitle: { fontSize: 20, fontWeight: 'bold', color: '#2e7d32', marginBottom: 15, textAlign: 'left' },
@@ -183,10 +228,7 @@ const styles = StyleSheet.create({
   },
 
   projectInfoContainer: { flexDirection: 'row', alignItems: 'flex-start' },
-  imageContainer: { marginRight: 15 },
   mobileProjectInfoContainer: { flexDirection: 'column', alignItems: 'flex-start' },
-  mobileImageContainer: { marginRight: 0, marginBottom: 10 },
-  projectImage: { width: 150, height: 150, borderRadius: 10 },
   textContainer: { flex: 1 },
   detailRow: { flexDirection: 'row', marginBottom: 4, alignItems: 'center', flexWrap: 'wrap' },
   detailLabel: { fontWeight: 'bold', color: '#2e7d32', fontSize: 14, textAlign: 'left', marginRight: 5 },

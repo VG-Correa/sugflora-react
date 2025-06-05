@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,11 +9,13 @@ import {
   Modal,
   Animated,
   Platform,
-  Dimensions,
+  Dimensions
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const HeaderInterno = ({ onLogout, userData }) => {
+
+const HeaderInterno = ({ onLogout }) => {
   const navigation = useNavigation();
   const [activeSubmenu, setActiveSubmenu] = useState(null);
   const [menuAberto, setMenuAberto] = useState(false);
@@ -22,6 +24,11 @@ const HeaderInterno = ({ onLogout, userData }) => {
 
   const windowWidth = Dimensions.get("window").width;
   const isMobile = windowWidth < 768;
+
+  const [nome, setNome] = useState("");
+  const [sobrenome, setSobrenome] = useState("");
+  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
 
   const toggleSubmenu = (menuName) => {
     setActiveSubmenu(activeSubmenu === menuName ? null : menuName);
@@ -53,6 +60,37 @@ const HeaderInterno = ({ onLogout, userData }) => {
       useNativeDriver: true,
     }).start();
   };
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const token = await AsyncStorage.getItem("token");
+        const nomeStored = await AsyncStorage.getItem("nome");
+        const sobrenomeStored = await AsyncStorage.getItem("sobrenome");
+        const emailStored = await AsyncStorage.getItem("email");
+        const usernameStored = await AsyncStorage.getItem("username");
+
+        if (!token) {
+          Alert.alert("Erro", "Sessão expirada");
+          navigation.reset({
+            index: 0,
+            routes: [{ name: "Login" }],
+          });
+          return;
+        }
+
+        setNome(nomeStored || "");
+        setSobrenome(sobrenomeStored || "");
+        setEmail(emailStored || "");
+        setUsername(usernameStored || "");
+      } catch (error) {
+        console.error("Erro ao carregar dados:", error);
+        Alert.alert("Erro", "Erro ao carregar dados do usuário");
+      }
+    };
+
+    fetchUserData();
+  }, []);
 
   const renderMenuItems = (isMobileView) => (
     <>
@@ -231,12 +269,12 @@ const HeaderInterno = ({ onLogout, userData }) => {
         </TouchableOpacity>
       </View>
 
-      {userData && (
+      {username && (
         <View style={styles.userInfo}>
           <Text style={styles.userName}>
-            {userData.nome} {userData.sobrenome}
+            {nome} {sobrenome}
           </Text>
-          <Text style={styles.userEmail}>{userData.email}</Text>
+          <Text style={styles.userEmail}>{email}</Text>
         </View>
       )}
     </>

@@ -17,10 +17,9 @@ import HomePage from './screens/HomePage';
 import Profile from './screens/Profile';
 import NewProject from './screens/NewProject';
 import MyProjects from './screens/MyProjects';
-import EditProject from './screens/EditProject';
 import ProjectScreen from './screens/ProjectScreen';
 
-import NewField from './screens/NewField';       // Nova tela NewField
+import NewField from './screens/NewField';       
 import FieldScreen from './screens/FieldScreen'; 
 import MyCollection from './screens/MyCollection';
 import AddCollection from './screens/AddCollection';
@@ -69,8 +68,6 @@ const App = () => {
           component={Contact} 
           options={{ headerShown: false }}
         />
-
-        {/* Telas do aplicativo */}
         <Stack.Screen 
           name="HomePage" 
           component={HomePage} 
@@ -99,11 +96,6 @@ const App = () => {
         <Stack.Screen 
           name="ProjectScreen" 
           component={ProjectScreen} 
-          options={{ headerShown: false, gestureEnabled: true }}
-        />
-        <Stack.Screen 
-          name="EditProject" 
-          component={EditProject} 
           options={{ headerShown: false, gestureEnabled: true }}
         />
         <Stack.Screen 

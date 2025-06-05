@@ -13,19 +13,46 @@ import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import HeaderInterno from "../components/HeaderInterno";
 
-const HomeScreen = () => {
+const HomePage = () => {
   const navigation = useNavigation();
   const windowWidth = Dimensions.get("window").width;
   const isMobile = windowWidth < 768;
-  const [userData, setUserData] = useState(null);
+const [nome, setNome] = useState("");
+const [sobrenome, setSobrenome] = useState("");
+
+useEffect(() => {
+  const fetchUserData = async () => {
+    try {
+      const token = await AsyncStorage.getItem("token");
+      const nomeStored = await AsyncStorage.getItem("nome");
+      const sobrenomeStored = await AsyncStorage.getItem("sobrenome");
+
+      if (!token) {
+        Alert.alert("Erro", "Sessão expirada");
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "Login" }],
+        });
+        return;
+      }
+
+      setNome(nomeStored || "");
+      setSobrenome(sobrenomeStored || "");
+    } catch (error) {
+      console.error("Erro ao carregar dados:", error);
+      Alert.alert("Erro", "Erro ao carregar dados do usuário");
+    }
+  };
+
+  fetchUserData();
+}, []);
 
   useEffect(() => {
     const checkUserData = async () => {
       try {
-        const storedUserData = await AsyncStorage.getItem("userData");
-        const userToken = await AsyncStorage.getItem("userToken");
+        const userToken = await AsyncStorage.getItem("token");
 
-        if (!storedUserData || !userToken) {
+        if (!userToken) {
           Alert.alert("Erro", "Sessão expirada");
           navigation.reset({
             index: 0,
@@ -34,7 +61,6 @@ const HomeScreen = () => {
           return;
         }
 
-        setUserData(JSON.parse(storedUserData));
       } catch (error) {
         console.error("Erro ao carregar dados do usuário:", error);
         Alert.alert("Erro", "Erro ao carregar dados do usuário");
@@ -56,23 +82,15 @@ const HomeScreen = () => {
     }
   };
 
-  if (!userData) {
-    return (
-      <View style={styles.loadingContainer}>
-        <Text>Carregando...</Text>
-      </View>
-    );
-  }
-
   return (
     <View style={styles.container}>
-      <HeaderInterno onLogout={handleLogout} userData={userData} />
+      <HeaderInterno onLogout={handleLogout} />
       <ScrollView style={styles.content}>
         <View style={styles.mainContent}>
           {/* Seção de boas-vindas */}
           <View style={styles.welcomeSection}>
             <Text style={styles.welcomeText}>
-              Bem-vindo(a), {userData?.nome} {userData?.sobrenome}!
+              Bem-vindo(a), {nome} {sobrenome}!
             </Text>
           </View>
 
@@ -259,4 +277,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default HomeScreen;
+export default HomePage;

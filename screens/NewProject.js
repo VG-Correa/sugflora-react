@@ -51,14 +51,6 @@ const NewProject = () => {
         <Text style={styles.pageTitle}>CRIAR PROJETO</Text>
 
         <View style={styles.profileSection}>
-          {/* Seção Foto à esquerda */}
-          {/* <View style={styles.photoSection}>
-            <Text style={styles.photoLabel}>IMAGEM</Text>
-            <View style={styles.photoPlaceholder}></View>
-            <TouchableOpacity style={styles.changePhotoButton}>
-              <Text style={styles.changePhotoText}>Adicionar imagem</Text>
-            </TouchableOpacity>
-          </View> */}
 
           {/* Dados do projeto à direita */}
           <View style={styles.dataSection}>

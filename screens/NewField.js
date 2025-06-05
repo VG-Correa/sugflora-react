@@ -48,7 +48,7 @@ const NewField = () => {
       if (response.status === 200) {
         window.alert("Campo criado com sucesso")
         console.log("Campo criado com sucesso", response.data.data)
-        navigation.navigate('ProjectScreen', { projeto: projeto })
+        navigation.navigate("ProjectScreen", {projeto: projeto})
       } else {
         window.alert(error.response.data.message)
         console.log("Erro ao criar campo", response.data.data)
@@ -94,6 +94,7 @@ const NewField = () => {
           <TextInput ref={paisRef}
             style={styles.input}
             placeholder="Brasil"
+            defaultValue='Brasil'
             editable={false}
           />
         </View>
@@ -102,7 +103,7 @@ const NewField = () => {
           <Text style={styles.fieldLabel}>ESTADO</Text>
           <TextInput ref={estadoRef}
             style={styles.input}
-            placeholder="SP"
+            placeholder="Estado"
           />
         </View>
 
@@ -110,7 +111,7 @@ const NewField = () => {
           <Text style={styles.fieldLabel}>CIDADE</Text>
           <TextInput ref={cidadeRef}
             style={styles.input}
-            placeholder="Ferraz de Vasconcelos"
+            placeholder="Cidade"
           />
         </View>
 
@@ -118,7 +119,7 @@ const NewField = () => {
           <Text style={styles.fieldLabel}>ENDEREÇO</Text>
           <TextInput ref={enderecoRef}
             style={styles.input}
-            placeholder="Rua Exemplo, 123"
+            placeholder="Logradouro, número"
           />
         </View>
 
@@ -126,7 +127,7 @@ const NewField = () => {
           <Text style={styles.fieldLabel}>CEP</Text>
           <TextInput ref={cepRef}
             style={styles.input}
-            placeholder=""
+            placeholder="CEP"
           />
         </View>
 

@@ -9,7 +9,8 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { Ionicons } from '@expo/vector-icons'; // Ícone de lupa (certifique-se que @expo/vector-icons está instalado)
+import { Ionicons } from '@expo/vector-icons';
+
 
 const SpeciesSearchScreen = () => {
   const navigation = useNavigation();
@@ -19,7 +20,7 @@ const SpeciesSearchScreen = () => {
       {/* Cabeçalho */}
       <View style={styles.headerContainer}>
         <Image
-          source={require('../assets/images/cabecalho.webp')}
+          source={require('../assets/images/cabecalho.webp')}  // Alterei para webp
           style={styles.headerBackgroundImage}
           resizeMode="cover"
         />
@@ -115,6 +116,7 @@ const SpeciesSearchScreen = () => {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
+
 
   // Header
   headerContainer: { height: 220, width: '100%', position: 'relative' },

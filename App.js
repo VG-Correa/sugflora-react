@@ -19,12 +19,15 @@ import NewProject from './screens/NewProject';
 import MyProjects from './screens/MyProjects';
 import EditProject from './screens/EditProject';
 import ProjectScreen from './screens/ProjectScreen';
-import NewField from './screens/NewField';
-import FieldScreen from './screens/FieldScreen';
-import AddCollection from './screens/AddCollection';
+
+import NewField from './screens/NewField';       // Nova tela NewField
+import FieldScreen from './screens/FieldScreen'; 
 import MyCollection from './screens/MyCollection';
+import AddCollection from './screens/AddCollection';
+import ReportScreenQuantitativo from './screens/ReportScreenQuantitativo';
 import SearchSpecies from './screens/SearchSpecies';
 import MyReports from './screens/MyReports';
+import EditProject from './screens/EditProject';
 
 const Stack = createNativeStackNavigator();
 
@@ -99,6 +102,11 @@ const App = () => {
           options={{ headerShown: false, gestureEnabled: true }}
         />
         <Stack.Screen 
+          name="EditProject" 
+          component={EditProject} 
+          options={{ headerShown: false, gestureEnabled: true }}
+        />
+        <Stack.Screen 
           name="NewField" 
           component={NewField} 
           options={{ headerShown: false, gestureEnabled: true }}
@@ -109,26 +117,50 @@ const App = () => {
           options={{ headerShown: false, gestureEnabled: true }}
         />
         <Stack.Screen 
-          name="AddCollection" 
-          component={AddCollection} 
-          options={{ headerShown: false, gestureEnabled: true }}
-        />
-        <Stack.Screen 
-          name="MyCollection" 
-          component={MyCollection} 
-          options={{ headerShown: false, gestureEnabled: true }}
-        />
-        <Stack.Screen 
-          name="SearchSpecies" 
-          component={SearchSpecies} 
-          options={{ headerShown: false, gestureEnabled: true }}
-        />
-        <Stack.Screen 
           name="MyReports" 
           component={MyReports} 
           options={{ headerShown: false, gestureEnabled: true }}
+        />          
+        {/* Tela Adicionar Coleta */}
+        <Stack.Screen 
+          name="AddCollection" 
+          component={AddCollection} 
+          options={{ 
+            headerShown: false,
+            gestureEnabled: true,
+          }}
         />
-        
+          
+        {/* Tela Minhas Coletas */}
+        <Stack.Screen 
+          name="MyCollection" 
+          component={MyCollection} 
+          options={{ 
+            headerShown: false,
+            gestureEnabled: true,
+
+            }}
+        />
+          
+        {/* Tela Relatório Quantitativo */}
+        <Stack.Screen 
+          name="ReportScreenQuantitativo" 
+          component={ReportScreenQuantitativo} 
+          options={{ 
+            headerShown: false,
+            gestureEnabled: true,
+            }}
+        />
+          
+        {/* Tela Pesquisar Espécie */}
+        <Stack.Screen 
+          name="SearchSpecies" 
+          component={SearchSpecies} 
+          options={{ 
+            headerShown: false,
+            gestureEnabled: true,
+          }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

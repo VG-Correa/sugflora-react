@@ -7,11 +7,12 @@ import {
   TextInput,
   Image,
   ScrollView
-} from 'react-native';
+  } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import HeaderInterno from '../components/HeaderInterno';
 import FamiliaApi from '../functions/api/FamiliaApi';
 import CustomPicker from '../components/CustomPicker';
+
 
 const AddCollection = () => {
   const navigation = useNavigation();
@@ -42,6 +43,15 @@ const AddCollection = () => {
 
       <ScrollView style={styles.content} contentContainerStyle={{paddingBottom: 30}}>
         <Text style={styles.pageTitle}>ADICIONAR COLETA</Text>
+
+        {/* Nome do campo */}
+        <View style={styles.fieldGroup}>
+          <Text style={styles.fieldLabel}>NOME DO CAMPO</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Campo 1"
+          />
+        </View>
 
         {/* Família */}
         <View style={styles.fieldGroup}>
@@ -129,6 +139,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
+
   headerContainer: {
     width: '100%',
     height: 220,

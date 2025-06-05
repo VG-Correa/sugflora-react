@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -12,48 +12,63 @@ import {
   useWindowDimensions,
   ScrollView,
   KeyboardAvoidingView,
-  Dimensions, 
-  Alert
-} from 'react-native';
-import Header from '../components/Header';
-import forestImage from '../assets/images/forest.webp';
-import loginApi from '../functions/api/loginApi';
-import usuarioApi from '../functions/api/usuarioApi';
+
+  Dimensions,
+  Alert,
+} from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import Header from "../components/Header";
+import forestImage from "../assets/images/forest.webp";
+import loginApi from "../functions/api/loginApi";
+import UsuarioApi from "../functions/api/usuarioApi";
 
 const Login = ({ navigation }) => {
+  const [username, setUsername] = useState("adm");
+  const [password, setPassword] = useState("adm");
+  const [loading, setLoading] = useState(false);
+  const windowDimensions = Dimensions.get("window");
+  
+  const handleLogin = async () => {
+    if (!username || !password) {
+      Alert.alert("Erro", "Por favor, preencha todos os campos");
+      return;
+    }
 
-  const usernameRef = useRef(null);
-  const passRef = useRef(null);
-  const windowDimensions = Dimensions.get('window');
-
-  const handleLogin = async (event) => {
-    event.preventDefault();
-
-    const username = usernameRef.current.value;
-    const password = passRef.current.value;
-    
+    setLoading(true);
     try {
-      const response = await loginApi.login(username, password);
+      console.log("Tentando login com:", { username, password });
 
-      if (response.status === 200) {
-        localStorage.setItem('token', response.data.token);
-        
-        const usuarioLogado = await usuarioApi.getUserByUsername(username);
-        if (usuarioLogado != null && usuarioLogado.status === 200) {
-          localStorage.setItem('user_id', usuarioLogado.data.data[0].id);
-          localStorage.setItem('username', usuarioLogado.data.data[0].username);
-          navigation.navigate('HomePage');
-        } else {
-          localStorage.removeItem('token');
-        }
-      } else {
-        Alert.alert("Credenciais inválidas")
+      const loginResponse = await loginApi.login(username, password)
+
+      console.log("Resposta do login:", loginResponse.data.data[0]);
+
+      if (loginResponse.data.status === 200) {
+        const token = loginResponse.data.data[0].token
+
+        localStorage.setItem("user_id", loginResponse.data.data[0].usuario.id);
+        localStorage.setItem("nome", loginResponse.data.data[0].usuario.nome);
+        localStorage.setItem("sobrenome", loginResponse.data.data[0].usuario.sobrenome);
+        localStorage.setItem("username", loginResponse.data.data[0].usuario.username);
+        localStorage.setItem("rg", loginResponse.data.data[0].usuario.rg);
+        localStorage.setItem("cpf", loginResponse.data.data[0].usuario.cpf);
+        localStorage.setItem("email", loginResponse.data.data[0].usuario.email);
+
+        localStorage.setItem("token", token)
+
+        setUsername("");
+        setPassword("");
+
+        setLoading(false);
       }
 
+      // Navega para a HomePage
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "HomePage" }],
+      });
     } catch (error) {
-      console.log(error)
-      Alert.alert("Atenção!", "Ocorreu um erro inesperado ao tentar logar")
-      Alert.alert("Olha só!", error)
+      console.error("Erro ao salvar dados:", error);
+      Alert.alert("Erro", "Erro ao salvar dados do usuário");
     }
 
 
@@ -70,11 +85,11 @@ const Login = ({ navigation }) => {
         resizeMode="cover"
         style={[
           styles.background,
-          { width: windowDimensions.width, height: windowDimensions.height }
+          { width: windowDimensions.width, height: windowDimensions.height },
         ]}
       >
         <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={styles.flex}
         >
           <ScrollView
@@ -83,84 +98,71 @@ const Login = ({ navigation }) => {
           >
             <Header navigation={navigation} />
 
-            <View style={[
-              styles.container,
-              {
-                width: isLargeScreen ? '40%' : '90%',
-                marginVertical: isLargeScreen ? 40 : 20,
-                padding: isLargeScreen ? 30 : 20,
-              }
-            ]}>
-              <Text style={[
-                styles.title,
-                { fontSize: isLargeScreen ? 28 : 24 }
-              ]}>
+            <View
+              style={[
+                styles.container,
+                {
+                  width: isLargeScreen ? "40%" : "90%",
+                  marginVertical: isLargeScreen ? 40 : 20,
+                  padding: isLargeScreen ? 30 : 20,
+                },
+              ]}
+            >
+              <Text
+                style={[styles.title, { fontSize: isLargeScreen ? 28 : 24 }]}
+              >
                 Login
               </Text>
-              
-              <Text style={[
-                styles.welcomeText,
-                { fontSize: isLargeScreen ? 20 : 16 }
-              ]}>
+
+              <Text
+                style={[
+                  styles.welcomeText,
+                  { fontSize: isLargeScreen ? 20 : 16 },
+                ]}
+              >
                 Bem-Vindo de Volta!
               </Text>
 
-              <View style={styles.socialOptions}>
-                <TouchableOpacity 
-                  style={[styles.socialButton, styles.unselectedSocial]}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.socialText}>Entre com Google</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity 
-                  style={[styles.socialButton, styles.selectedSocial]}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[styles.socialText, styles.socialSelectedText]}>Entre com Facebook</Text>
-                </TouchableOpacity>
-              </View>
-
-              <View style={styles.dividerContainer}>
-                <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>Ou</Text>
-                <View style={styles.dividerLine} />
-              </View>
-
               <View style={styles.formContainer}>
-                <Text style={styles.label}>EMAIL</Text>
-                <TextInput 
-                  ref={usernameRef}
+                <Text style={styles.label}>USUÁRIO</Text>
+                <TextInput
                   style={[
                     styles.input,
-                    { paddingVertical: isSmallDevice ? 10 : 12 }
+                    { paddingVertical: isSmallDevice ? 10 : 12 },
                   ]}
-                  placeholder="home@exemplo.com"
+                  placeholder="Nome de Usuário"
                   placeholderTextColor="#888"
-                  keyboardType="email-address"
-                  defaultValue='Victor-ADM'
+                  keyboardType="text"
+                  value={username}
+                  onChangeText={setUsername}
+                  autoCapitalize="none"
                 />
 
                 <Text style={styles.label}>SENHA</Text>
-                <TextInput 
-                  ref={passRef}
+                <TextInput
                   style={[
                     styles.input,
-                    { paddingVertical: isSmallDevice ? 10 : 12 }
+                    { paddingVertical: isSmallDevice ? 10 : 12 },
                   ]}
                   placeholder="*****"
                   placeholderTextColor="#888"
                   secureTextEntry={true}
-                  defaultValue='adm'
+                  value={password}
+                  onChangeText={setPassword}
                 />
 
-                <TouchableOpacity style={styles.forgotPasswordButton}>
+                <TouchableOpacity
+                  style={styles.forgotPasswordButton}
+                  onPress={() => navigation.navigate("Password")}
+                >
                   <Text style={styles.forgotPassword}>Esqueceu sua senha?</Text>
                 </TouchableOpacity>
 
                 <View style={styles.registerContainer}>
                   <Text style={styles.registerText}>Não tem uma conta? </Text>
-                  <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+                  <TouchableOpacity
+                    onPress={() => navigation.navigate("Register")}
+                  >
                     <Text style={styles.createAccount}>Cadastre-se</Text>
                   </TouchableOpacity>
                 </View>
@@ -168,12 +170,16 @@ const Login = ({ navigation }) => {
                 <TouchableOpacity
                   style={[
                     styles.loginButton,
-                    { marginTop: isSmallDevice ? 10 : 20 }
+                    { marginTop: isSmallDevice ? 10 : 20 },
+                    loading && styles.disabledButton,
                   ]}
-                  onPress={(event) => {handleLogin(event)}}
+                  onPress={handleLogin}
+                  disabled={loading}
                   activeOpacity={0.9}
                 >
-                  <Text style={styles.loginText}>ENTRAR</Text>
+                  <Text style={styles.loginText}>
+                    {loading ? "ENTRANDO..." : "ENTRAR"}
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -187,137 +193,100 @@ const Login = ({ navigation }) => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
   },
   background: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   flex: {
     flex: 1,
   },
   scrollContainer: {
     flexGrow: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingBottom: 20,
   },
   container: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    backgroundColor: "rgba(255, 255, 255, 0.95)",
     borderRadius: 16,
     elevation: 8,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 6,
   },
   title: {
-    fontWeight: 'bold',
-    color: '#2d5a27',
-    textAlign: 'center',
+    fontWeight: "bold",
+    color: "#2d5a27",
+    textAlign: "center",
     marginBottom: 8,
   },
   welcomeText: {
-    textAlign: 'center',
-    color: '#444',
+    textAlign: "center",
+    color: "#444",
     marginBottom: 25,
-  },
-  socialOptions: {
-    marginBottom: 25,
-    gap: 12,
-  },
-  socialButton: {
-    padding: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-    borderWidth: 1,
-  },
-  selectedSocial: {
-    backgroundColor: '#4267B2',
-    borderColor: '#4267B2',
-  },
-  unselectedSocial: {
-    backgroundColor: '#fff',
-    borderColor: '#ddd',
-  },
-  socialText: {
-    fontWeight: '600',
-    fontSize: 14,
-  },
-  socialSelectedText: {
-    color: '#fff',
-  },
-  dividerContainer: {
-    flexDirection: 'row',
-    marginVertical: 20,
-    alignItems: 'center',
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#ddd',
-  },
-  dividerText: {
-    marginHorizontal: 10,
-    color: '#666',
-    fontSize: 14,
   },
   formContainer: {
     gap: 15,
   },
   label: {
-    fontWeight: '600',
-    color: '#444',
+    fontWeight: "600",
+    color: "#444",
     fontSize: 14,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: "#ddd",
     borderRadius: 8,
     paddingHorizontal: 15,
     fontSize: 15,
-    backgroundColor: '#fff',
-    color: '#333',
+    backgroundColor: "#fff",
+    color: "#333",
   },
   forgotPasswordButton: {
-    alignSelf: 'flex-end',
+    alignSelf: "flex-end",
     marginTop: 5,
   },
   forgotPassword: {
-    color: '#648C47',
+    color: "#648C47",
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   registerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     marginTop: 15,
   },
   registerText: {
-    color: '#666',
+    color: "#666",
     fontSize: 14,
   },
   createAccount: {
-    color: '#648C47',
-    fontWeight: '600',
-    textDecorationLine: 'underline',
+    color: "#648C47",
+    fontWeight: "600",
+    textDecorationLine: "underline",
   },
   loginButton: {
-    backgroundColor: '#648C47',
+    backgroundColor: "#648C47",
     padding: 15,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
     elevation: 3,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 3,
   },
   loginText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: "#fff",
+    fontWeight: "bold",
     fontSize: 16,
     letterSpacing: 0.5,
+  },
+  disabledButton: {
+    opacity: 0.7,
   },
 });
 

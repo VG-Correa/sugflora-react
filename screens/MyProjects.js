@@ -7,7 +7,7 @@ import {
   TextInput,
   ScrollView,
   useWindowDimensions,
-  ActivityIndicator
+  ActivityIndicator,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import projetoApi from "../functions/api/projetoApi";
@@ -20,16 +20,27 @@ const MyProjects = () => {
   const navigation = useNavigation();
   const { width } = useWindowDimensions();
 
+  const formatarData = (data) => {
+    if (!data) return "Não definida";
+    try {
+      const dataObj = new Date(data);
+      if (isNaN(dataObj.getTime())) return "Data inválida";
+      return dataObj.toLocaleDateString("pt-BR");
+    } catch (error) {
+      return "Data inválida";
+    }
+  };
+
   // Calcula a quantidade de colunas baseado na largura da tela
   const numColumns = width > 768 ? 3 : width > 480 ? 2 : 1;
-  const cardWidth = width > 768 ? '30%' : width > 480 ? '45%' : '90%';
+  const cardWidth = width > 768 ? "30%" : width > 480 ? "45%" : "90%";
 
   async function fetchProjetos() {
     try {
       setLoading(true);
       setError(null);
       const user_id = localStorage.getItem("user_id");
-      
+
       if (!user_id) {
         throw new Error("Usuário não autenticado");
       }
@@ -37,7 +48,7 @@ const MyProjects = () => {
       const response = await projetoApi.getProjetos(user_id);
 
       if (response.status === 200) {
-        const projetosAtivos = response.data.data || [] 
+        const projetosAtivos = response.data.data || [];
 
         setProjetos(projetosAtivos.filter((projeto) => !projeto.deleted));
       } else {
@@ -73,10 +84,7 @@ const MyProjects = () => {
         <HeaderInterno />
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity 
-            style={styles.retryButton} 
-            onPress={fetchProjetos}
-          >
+          <TouchableOpacity style={styles.retryButton} onPress={fetchProjetos}>
             <Text style={styles.buttonText}>Tentar novamente</Text>
           </TouchableOpacity>
         </View>
@@ -87,8 +95,8 @@ const MyProjects = () => {
   return (
     <View style={styles.container}>
       <HeaderInterno />
-      
-      <ScrollView 
+
+      <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
@@ -97,31 +105,50 @@ const MyProjects = () => {
         {projetos.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>Nenhum projeto encontrado</Text>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.createButton}
-              onPress={() => navigation.navigate('NewProject')}
+              onPress={() => navigation.navigate("NewProject")}
             >
               <Text style={styles.buttonText}>Criar novo projeto</Text>
             </TouchableOpacity>
           </View>
         ) : (
-          <View style={[styles.projectsGrid, { width: '100%' }]}>
+          <View style={[styles.projectsGrid, { width: "100%" }]}>
             {projetos.map((projeto) => (
-              <View 
-                key={projeto.id} 
+              <View
+                key={projeto.id}
                 style={[styles.projectContainer, { width: cardWidth }]}
               >
                 <Text style={styles.projectHeader}>{projeto.nome}</Text>
 
-                <TextInput
-                  style={styles.inputField}
-                  editable={false}
-                  value={projeto.deleted ? "Privado" : "Publicado"}
-                />
+                <View style={styles.projectInfo}>
+                  <Text style={styles.infoLabel}>Data de Início:</Text>
+                  <Text style={styles.infoValue}>
+                    {formatarData(projeto.inicio)}
+                  </Text>
+
+                  {projeto.previsaoConclusao && (
+                    <>
+                      <Text style={styles.infoLabel}>
+                        Previsão de Conclusão:
+                      </Text>
+                      <Text style={styles.infoValue}>
+                        {formatarData(projeto.previsaoConclusao)}
+                      </Text>
+                    </>
+                  )}
+
+                  <Text style={styles.infoLabel}>Status:</Text>
+                  <Text style={styles.infoValue}>
+                    {projeto.public ? "Publicado" : "Privado"}
+                  </Text>
+                </View>
 
                 <TouchableOpacity
                   style={styles.openButton}
-                  onPress={() => navigation.navigate("ProjectScreen", { projeto })}
+                  onPress={() =>
+                    navigation.navigate("ProjectScreen", { projeto })
+                  }
                 >
                   <Text style={styles.buttonText}>Abrir Projeto</Text>
                 </TouchableOpacity>
@@ -142,28 +169,28 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     padding: 20,
-    alignItems: 'center',
+    alignItems: "center",
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   loadingText: {
     marginTop: 15,
-    color: '#2e7d32',
+    color: "#2e7d32",
     fontSize: 16,
   },
   errorContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 20,
   },
   errorText: {
-    color: '#d32f2f',
+    color: "#d32f2f",
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 20,
   },
   pageTitle: {
@@ -208,7 +235,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     marginBottom: 15,
     color: "#333",
-    textAlign: 'center',
+    textAlign: "center",
   },
   openButton: {
     backgroundColor: "#2e7d32",
@@ -238,14 +265,27 @@ const styles = StyleSheet.create({
   },
   emptyContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     padding: 20,
   },
   emptyText: {
     fontSize: 18,
-    color: '#666',
+    color: "#666",
     marginBottom: 15,
+  },
+  projectInfo: {
+    marginBottom: 15,
+  },
+  infoLabel: {
+    fontSize: 12,
+    color: "#666",
+    marginBottom: 2,
+  },
+  infoValue: {
+    fontSize: 14,
+    color: "#333",
+    marginBottom: 8,
   },
 });
 

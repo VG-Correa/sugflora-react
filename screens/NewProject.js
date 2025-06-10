@@ -12,6 +12,7 @@ import HeaderInterno from "../components/HeaderInterno";
 import projetoApi from "../functions/api/projetoApi";
 import DateMonthYearField from "react-native-datefield";
 import DatePicker from "@dietime/react-native-date-picker";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const NewProject = () => {
   const navigation = useNavigation();
@@ -29,7 +30,7 @@ const NewProject = () => {
         nome: nomeProjetoRef.current.value,
         descricao: descricaoProjetoRef.current.value,
         inicio: data_inicio,
-        usuario_dono_uuid: localStorage.getItem("user_id"),
+        usuario_dono_uuid: AsyncStorage.getItem("user_id"),
         public: false,
       });
 

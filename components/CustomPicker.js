@@ -11,73 +11,81 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-const CustomPicker = ({
-  items,
-  defaultValue,
-  onChange,
-  placeholder = "Selecione",
+/**
+ * Props:
+ * items: [{ id: any, label: string }]
+ * defaultValue: id selecionado inicialmente
+ * onChange: callback ao selecionar item
+ * placeholder: texto padrão
+ * style: estilos adicionais
+ */
+export default function CustomPicker({
+  items = [],
+  value = null,
+  onChange = () => {},
+  placeholder = 'Selecione',
   style
-}) => {
+}) {
   const [selectedItem, setSelectedItem] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [searchText, setSearchText] = useState('');
-  
-  // Filtrar itens baseado no texto de pesquisa
-  const filteredItems = items.filter(item => 
-    item.valor.toLowerCase().includes(searchText.toLowerCase())
-  );
 
-  // Definir valor padrão
+  // Filtrar itens baseado no texto de pesquisa
+  const filteredItems = items.filter(item => {
+    const text = (item.label ?? '').toString().toLowerCase();
+    return text.includes(searchText.toLowerCase());
+  });
+
+  // Atualiza o item selecionado quando value ou items mudam
   useEffect(() => {
-    if (defaultValue) {
-      const defaultItem = items.find(item => item.id === defaultValue);
-      if (defaultItem) {
-        setSelectedItem(defaultItem);
-        onChange(defaultItem);
+    if (value !== null && value !== undefined) {
+      const newSelectedItem = items.find(item => item.id === value);
+      if (newSelectedItem) {
+        setSelectedItem(newSelectedItem);
       }
+    } else {
+      setSelectedItem(null);
     }
-  }, [defaultValue, items]);
+  }, [value, items]);
 
   const handleSelect = (item) => {
     setSelectedItem(item);
-    onChange(item);
+    onChange(item); // Só chama onChange na seleção manual
     setModalVisible(false);
     setSearchText('');
   };
 
   return (
     <View style={[styles.container, style]}>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.pickerButton}
         onPress={() => setModalVisible(true)}
       >
         <Text style={selectedItem ? styles.selectedText : styles.placeholderText}>
-          {selectedItem ? selectedItem.valor : placeholder}
+          {selectedItem ? selectedItem.label : placeholder}
         </Text>
-        <Ionicons 
-          name={modalVisible ? "chevron-up" : "chevron-down"} 
-          size={18} 
-          color="#666" 
+        <Ionicons
+          name={modalVisible ? 'chevron-up' : 'chevron-down'}
+          size={18}
+          color="#666"
         />
       </TouchableOpacity>
 
       <Modal
         visible={modalVisible}
         animationType="slide"
-        transparent={true}
+        transparent
         onRequestClose={() => setModalVisible(false)}
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
-            {/* Header da Modal */}
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Selecione um item</Text>
               <TouchableOpacity onPress={() => setModalVisible(false)}>
                 <Ionicons name="close" size={24} color="#666" />
               </TouchableOpacity>
             </View>
-            
-            {/* Campo de Pesquisa */}
+
             <View style={styles.searchContainer}>
               <Ionicons name="search" size={20} color="#999" style={styles.searchIcon} />
               <TextInput
@@ -86,20 +94,19 @@ const CustomPicker = ({
                 placeholderTextColor="#999"
                 value={searchText}
                 onChangeText={setSearchText}
-                autoFocus={true}
+                autoFocus
               />
             </View>
-            
-            {/* Lista de Itens */}
+
             <FlatList
               data={filteredItems}
-              keyExtractor={(item) => item.id.toString()}
+              keyExtractor={item => item.id.toString()}
               renderItem={({ item }) => (
                 <TouchableOpacity
                   style={styles.itemContainer}
                   onPress={() => handleSelect(item)}
                 >
-                  <Text style={styles.itemText}>{item.valor}</Text>
+                  <Text style={styles.itemText}>{item.label}</Text>
                   {selectedItem?.id === item.id && (
                     <Ionicons name="checkmark" size={18} color="#2e7d32" />
                   )}
@@ -113,12 +120,10 @@ const CustomPicker = ({
       </Modal>
     </View>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: {
-    marginBottom: 15,
-  },
+  container: { marginBottom: 15 },
   pickerButton: {
     height: 40,
     borderColor: '#ddd',
@@ -128,27 +133,21 @@ const styles = StyleSheet.create({
     backgroundColor: '#f9f9f9',
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    justifyContent: 'space-between'
   },
-  selectedText: {
-    flex: 1,
-    color: '#333',
-  },
-  placeholderText: {
-    flex: 1,
-    color: '#999',
-  },
+  selectedText: { flex: 1, color: '#333' },
+  placeholderText: { flex: 1, color: '#999' },
   modalContainer: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
+    justifyContent: 'flex-end'
   },
   modalContent: {
     backgroundColor: 'white',
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
     maxHeight: '80%',
-    paddingBottom: Platform.OS === 'ios' ? 30 : 20,
+    paddingBottom: Platform.OS === 'ios' ? 30 : 20
   },
   modalHeader: {
     flexDirection: 'row',
@@ -156,13 +155,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#eee'
   },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-  },
+  modalTitle: { fontSize: 18, fontWeight: 'bold', color: '#333' },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -170,33 +165,17 @@ const styles = StyleSheet.create({
     marginVertical: 10,
     backgroundColor: '#f5f5f5',
     borderRadius: 8,
-    marginHorizontal: 16,
+    marginHorizontal: 16
   },
-  searchIcon: {
-    marginRight: 8,
-  },
-  searchInput: {
-    flex: 1,
-    height: 40,
-    color: '#333',
-  },
+  searchIcon: { marginRight: 8 },
+  searchInput: { flex: 1, height: 40, color: '#333' },
   itemContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 14,
-    paddingHorizontal: 24,
+    paddingHorizontal: 24
   },
-  itemText: {
-    fontSize: 16,
-    color: '#333',
-    flex: 1,
-  },
-  separator: {
-    height: 1,
-    backgroundColor: '#f0f0f0',
-    marginHorizontal: 16,
-  },
+  itemText: { fontSize: 16, color: '#333', flex: 1 },
+  separator: { height: 1, backgroundColor: '#f0f0f0', marginHorizontal: 16 }
 });
-
-export default CustomPicker;

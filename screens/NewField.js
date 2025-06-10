@@ -10,6 +10,7 @@ import {
 import { useNavigation, useRoute } from '@react-navigation/native';
 import CampoApi from '../functions/api/CampoApi';
 import HeaderInterno from "../components/HeaderInterno";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 
 
@@ -18,7 +19,7 @@ const NewField = () => {
   const router = useRoute();
 
   const { projeto } = router.params
-  const user_id = localStorage.getItem('user_id')
+  const user_id = AsyncStorage.getItem('user_id')
 
   const nomeRef = useRef()
   const descricaoRef = useRef()

@@ -27,7 +27,7 @@ const FieldScreen = () => {
     : { id: 200, family: 290, genus: 250, species: 330, date: 250, field: 250 };
 
   const handleAddCollection = () => {
-    navigation.navigate('AddCollection');
+    navigation.navigate('AddCollection', {campo: campo});
   };
 
   const handleEditField = () => {

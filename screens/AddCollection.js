@@ -1,261 +1,270 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
+  SafeAreaView,
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   TextInput,
-  Image,
-  ScrollView
-  } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import HeaderInterno from '../components/HeaderInterno'; // importando o HeaderInterno
+  ScrollView,
+  Dimensions
+} from 'react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import HeaderInterno from '../components/HeaderInterno';
+import FamiliaApi from '../functions/api/FamiliaApi';
+import GeneroApi from '../functions/api/GeneroApi';
+import EspecieApi from '../functions/api/EspecieApi';
+import CustomPicker from '../components/CustomPicker';
+import ImageSelector from '../components/ImageSelector';
+import ColetaApi from '../functions/api/ColetaApi';
 
-const AddCollection = () => {
+const { width } = Dimensions.get('window');
+
+export default function AddCollection() {
   const navigation = useNavigation();
+  const route = useRoute();
+  const { campo } = route.params;
+
+  const [nomeColeta, setNomeColeta] = useState('');
+  const [dataColeta, setDataColeta] = useState('');
+  const [familias, setFamilias] = useState([]);
+  const [generos, setGeneros] = useState([]);
+  const [especies, setEspecies] = useState([]);
+  const [familia, setFamilia] = useState(null);
+  const [genero, setGenero] = useState(null);
+  const [especie, setEspecie] = useState(null);
+  const [nomeComum, setNomeComum] = useState('');
+  const [images, setImages] = useState([]);
+
+  const toISODate = (ddmmaaaa) => {
+    const [dd, mm, yyyy] = ddmmaaaa.split('/');
+    return `${yyyy}-${mm}-${dd}`;
+  };
+
+  // Função para formatar a data enquanto o usuário digita
+  const formatDate = (input) => {
+    // Remove tudo que não é dígito
+    let cleaned = input.replace(/\D/g, '');
+
+    // Limita o tamanho máximo
+    if (cleaned.length > 8) {
+      cleaned = cleaned.substring(0, 8);
+    }
+
+    // Aplica a formatação
+    let formatted = '';
+    for (let i = 0; i < cleaned.length; i++) {
+      if (i === 2 || i === 4) {
+        formatted += '/';
+      }
+      formatted += cleaned[i];
+    }
+
+    return formatted;
+  };
+
+  const handleDateChange = (text) => {
+    const formatted = formatDate(text);
+    setDataColeta(formatted);
+  };
+
+  // Carrega famílias
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await FamiliaApi.getAll();
+        setFamilias(res.data.data);
+      } catch (e) {
+        alert('Erro ao carregar famílias');
+      }
+    })();
+  }, []);
+
+  // Carrega gêneros quando família muda
+  useEffect(() => {
+    const famId = familia?.id;
+    if (!famId) {
+      setGeneros([]);
+      setGenero(null);
+      return;
+    }
+
+    (async () => {
+      try {
+        const res = await GeneroApi.getByFamilia(famId);
+        setGeneros(res.data.data);
+      } catch {
+        alert('Erro ao carregar gêneros');
+      }
+    })();
+  }, [familia?.id]);
+
+  // Carrega espécies quando gênero muda
+  useEffect(() => {
+    const genId = genero?.id;
+    if (!genId) {
+      setEspecies([]);
+      setEspecie(null);
+      return;
+    }
+
+    (async () => {
+      try {
+        const res = await EspecieApi.getByGenero(genId);
+        setEspecies(res.data.data);
+      } catch {
+        alert('Erro ao carregar espécies');
+      }
+    })();
+  }, [genero?.id]);
+
+  // Sincroniza família e gênero quando espécie é alterada
+  useEffect(() => {
+    if (!especie) return;
+
+    if (especie.genero?.id !== genero?.id) {
+      setGenero(especie.genero);
+    }
+
+    if (especie.genero?.familia?.id !== familia?.id) {
+      setFamilia(especie.genero.familia);
+    }
+  }, [especie]);
+
+  const handleEspecieSelect = (item) => {
+    setEspecie(item);
+  };
+
+  const saveCollection = async () => {
+    // Valida a data antes de enviar
+    if (dataColeta && dataColeta.length !== 10) {
+      alert('Por favor, insira uma data válida no formato DD/MM/AAAA');
+      return;
+    }
+
+    const payload = {
+      id: null,
+      nome: nomeColeta,
+      campo_id: campo.id,
+      data_coleta: toISODate(dataColeta),
+      familia_id: familia?.id,
+      genero_id: genero?.id,
+      especie_id: especie?.id,
+      // imagens: images,
+    };
+
+    console.log('Payload:', payload);
+    try {
+      const response = await ColetaApi.create(payload)
+      console.log(response)
+    } catch (error) {
+      console.log(error);
+
+    }
+
+  };
 
   return (
-    <View style={styles.container}>
-      {/* Substitui o header pelo componente HeaderInterno */}
+    <SafeAreaView style={styles.container}>
       <HeaderInterno />
+      <ScrollView contentContainerStyle={styles.content}>
+        <Text style={styles.title}>Adicionar Coleta</Text>
 
-      <ScrollView style={styles.content} contentContainerStyle={{paddingBottom: 30}}>
-        <Text style={styles.pageTitle}>ADICIONAR COLETA</Text>
+        <TextInput
+          style={styles.input}
+          placeholder="Nome da coleta"
+          value={nomeColeta}
+          onChangeText={setNomeColeta}
+        />
 
-        {/* Nome do campo */}
-        <View style={styles.fieldGroup}>
-          <Text style={styles.fieldLabel}>NOME DO CAMPO</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Campo 1"
-          />
+        <TextInput
+          style={styles.input}
+          placeholder="Data da coleta (DD/MM/AAAA)"
+          value={dataColeta}
+          onChangeText={handleDateChange}
+          keyboardType="numeric"
+          maxLength={10} // DD/MM/AAAA tem 10 caracteres
+        />
+
+        <CustomPicker
+          items={familias.map(f => ({ id: f.id, label: f.nome }))}
+          placeholder="Selecione a família"
+          searchable
+          value={familia?.id}
+          onChange={setFamilia}
+        />
+
+        <CustomPicker
+          items={generos.map(g => ({ id: g.id, label: g.nome }))}
+          placeholder="Selecione o gênero"
+          searchable
+          value={genero?.id}
+          onChange={setGenero}
+        />
+
+        <CustomPicker
+          items={especies.map(e => ({
+            id: e.id,
+            label: e.nome,
+            genero: e.genero,
+            familia: e.genero.familia
+          }))}
+          placeholder="Selecione a espécie"
+          searchable
+          value={especie?.id}
+          onChange={handleEspecieSelect}
+        />
+
+        <ImageSelector
+          images={images}
+          onAddImage={uri => setImages(prev => [...prev, uri])}
+          onRemoveImage={uri => setImages(prev => prev.filter(i => i !== uri))}
+        />
+
+        <View style={styles.buttonsRow}>
+          <TouchableOpacity style={styles.cancelBtn} onPress={() => navigation.goBack()}>
+            <Text style={styles.btnText}>Cancelar</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.saveBtn} onPress={async () => { await saveCollection() }}>
+            <Text style={[styles.btnText, { color: '#fff' }]}>Salvar</Text>
+          </TouchableOpacity>
         </View>
-
-        {/* Família */}
-        <View style={styles.fieldGroup}>
-          <Text style={styles.fieldLabel}>FAMÍLIA</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Escolher"
-            editable={false}
-          />
-        </View>
-
-        {/* Data da coleta */}
-        <View style={styles.fieldGroup}>
-          <Text style={styles.fieldLabel}>DATA DA COLETA</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="dd/mm/aa"
-          />
-        </View>
-
-        {/* Nome da espécie */}
-        <View style={styles.fieldGroup}>
-          <Text style={styles.fieldLabel}>NOME DA ESPÉCIE</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Insira aqui"
-          />
-        </View>
-
-        {/* Gênero e Espécie lado a lado */}
-        <View style={styles.rowFields}>
-          <View style={[styles.fieldGroup, styles.smallField]}>
-            <Text style={styles.fieldLabel}>GÊNERO</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Escolher"
-              editable={false}
-            />
-          </View>
-
-          <View style={[styles.fieldGroup, styles.smallField]}>
-            <Text style={styles.fieldLabel}>ESPÉCIE</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Escolher"
-              editable={false}
-            />
-          </View>
-        </View>
-
-        {/* Sistema de correspondência - movido para o final */}
-        <View style={styles.divider}>
-          <Text style={styles.dividerText}>SISTEMA DE CORRESPONDÊNCIA DE ESPÉCIES</Text>
-        </View>
-
-        <View style={styles.fieldGroup}>
-          <Text style={styles.fieldLabel}>SUGESTÃO DE CORRESPONDÊNCIA</Text>
-          <View style={styles.percentageBox}>
-            <Text style={styles.percentageNumber}>87</Text>
-            <Text style={styles.percentageSymbol}>%</Text>
-          </View>
-        </View>
-
-        {/* Botão voltar */}
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.backButtonText}>VOLTAR</Text>
-        </TouchableOpacity>
-
-        {/* Botão salvar */}
-        <TouchableOpacity style={styles.createButton}>
-          <Text style={styles.createButtonText}>SALVAR COLETA</Text>
-        </TouchableOpacity>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
-};
+}
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-
-  headerContainer: {
-    width: '100%',
-    height: 220,
-    position: 'relative',
-  },
-  headerBackgroundImage: {
-    width: '100%',
-    height: '100%',
-    position: 'absolute',
-  },
-  headerContent: {
-    position: 'absolute',
-    width: '100%',
-    alignItems: 'center',
-    paddingTop: 20,
-  },
-  logoImage: {
-    width: 80,
-    height: 80,
-    marginBottom: 5,
-  },
-  logoText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    textShadowColor: 'rgba(0,0,0,0.8)',
-    textShadowOffset: {width: 1, height: 1},
-    textShadowRadius: 5,
-    marginBottom: 15,
-  },
-  menuTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
-    paddingVertical: 10,
-  },
-  menuItem: {
-    paddingHorizontal: 10,
-  },
-  menuText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff',
-    textShadowColor: 'rgba(0,0,0,0.8)',
-    textShadowOffset: {width: 1, height: 1},
-    textShadowRadius: 5,
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
-  pageTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginVertical: 20,
-    color: '#2e7d32',
-  },
-  fieldGroup: {
-    marginBottom: 15,
-  },
-  fieldLabel: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginBottom: 5,
-    color: '#2e7d32',
-  },
+  container: { flex: 1, backgroundColor: '#f7f7f7' },
+  content: { padding: 20, paddingBottom: 40 },
+  title: { fontSize: 22, fontWeight: '600', textAlign: 'center', marginBottom: 20, color: '#333' },
   input: {
-    height: 40,
-    borderColor: '#ddd',
-    borderWidth: 1,
-    borderRadius: 5,
-    paddingHorizontal: 10,
-    backgroundColor: '#f9f9f9',
-  },
-  rowFields: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  smallField: {
-    width: '48%',
-  },
-  divider: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#ddd',
-    marginVertical: 20,
-    alignItems: 'center',
-    paddingBottom: 10,
-  },
-  dividerText: {
+    height: 48,
+    backgroundColor: '#fff',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    marginBottom: 15,
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#2e7d32',
-    textAlign: 'center',
-  },
-  percentageBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderColor: '#ddd',
     borderWidth: 1,
-    borderRadius: 5,
-    padding: 10,
-    backgroundColor: '#f1f8f2',
+    borderColor: '#ddd'
   },
-  percentageNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#2e7d32',
-  },
-  percentageSymbol: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#2e7d32',
-    marginLeft: 4,
-  },
-  backButton: {
-    backgroundColor: '#888',
-    padding: 10,
-    borderRadius: 5,
+  buttonsRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 30 },
+  cancelBtn: {
+    flex: 1,
+    height: 48,
+    borderRadius: 8,
+    backgroundColor: '#ccc',
+    justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 10,
+    marginRight: 10
   },
-  backButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 14,
+  saveBtn: {
+    flex: 1,
+    height: 48,
+    borderRadius: 8,
+    backgroundColor: '#4CAF50',
+    justifyContent: 'center',
+    alignItems: 'center'
   },
-  createButton: {
-    backgroundColor: '#2e7d32',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-    alignItems: 'center',
-  },
-  createButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
+  btnText: { fontSize: 16, fontWeight: '500', color: '#333' }
 });
-
-export default AddCollection;

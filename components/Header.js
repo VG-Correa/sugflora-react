@@ -1,34 +1,49 @@
 import React, { useState } from 'react';
 import { View, Image, Text, StyleSheet, TouchableOpacity, useWindowDimensions, Modal } from 'react-native';
+import {useRoute} from '@react-navigation/native'
 
 const Header = ({ navigation }) => {
   const { width: screenWidth } = useWindowDimensions();
   const isLargeScreen = screenWidth > 611;
+  
+  const route = useRoute()
+  const screenName = route.name
+  const isLoginScreen = screenName === 'Login';
 
   const [menuVisible, setMenuVisible] = useState(false);
 
   const renderNavItems = (isVertical = false) => (
     <>
       <TouchableOpacity onPress={() => { navigation.navigate('Home'); setMenuVisible(false); }}>
-        <Text style={[styles.navItem, isVertical && styles.verticalItem]}>HOME</Text>
+        <Text style={[styles.navItem, isVertical && styles.verticalItem, isLoginScreen && isLargeScreen && {color: 'white'}]}>HOME</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={() => { navigation.navigate('Register'); setMenuVisible(false); }}>
-        <Text style={[styles.navItem, isVertical && styles.verticalItem]}>CADASTRE-SE</Text>
+        <Text style={[styles.navItem, isVertical && styles.verticalItem, isLoginScreen && isLargeScreen && {color: 'white'}]}>CADASTRE-SE</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={() => { navigation.navigate('Login'); setMenuVisible(false); }}>
-        <Text style={[styles.navItem, isVertical && styles.verticalItem]}>LOGIN</Text>
+        <Text style={[styles.navItem, isVertical && styles.verticalItem, isLoginScreen &&  isLargeScreen && {color: 'white'}]}>LOGIN</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={() => { navigation.navigate('About'); setMenuVisible(false); }}>
-        <Text style={[styles.navItem, isVertical && styles.verticalItem]}>SOBRE</Text>
+        <Text style={[styles.navItem, isVertical && styles.verticalItem, isLoginScreen &&  isLargeScreen && {color: 'white'}]}>SOBRE</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={() => { navigation.navigate('Contact'); setMenuVisible(false); }}>
-        <Text style={[styles.navItem, isVertical && styles.verticalItem]}>CONTATO</Text>
+        <Text style={[styles.navItem, isVertical && styles.verticalItem, isLoginScreen &&  isLargeScreen && {color: 'white'}]}>CONTATO</Text>
       </TouchableOpacity>
     </>
   );
+  
+
 
   return (
-    <View style={styles.header}>
+
+    <View
+      style={[
+        styles.header,
+        { 
+          backgroundColor: isLoginScreen ? '#00000000' : 'white',
+        },
+      ]}
+    >
       <Image source={require('../assets/images/logo.webp')} style={styles.logo} />
 
       {isLargeScreen ? (
@@ -61,7 +76,6 @@ const styles = StyleSheet.create({
   header: {
     paddingVertical: 16,
     paddingHorizontal: 20,
-    backgroundColor: '#fff',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',

@@ -1,39 +1,77 @@
-import React, { useRef } from "react";
+import { useRef, useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   TextInput,
-  Image,
   ScrollView,
 } from "react-native";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useRoute } from "@react-navigation/native";
 import HeaderInterno from "../components/HeaderInterno";
 import projetoApi from "../functions/api/projetoApi";
+import DatePicker from "@dietime/react-native-date-picker";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const EditProject = () => {
   const navigation = useNavigation();
+  const route = useRoute();
+  const { projeto } = route.params;
+
+  const [data_inicio, setData_inicio] = useState(() => {
+    try {
+      if (!projeto.inicio) return new Date();
+      const [dataPart, horaPart] = projeto.inicio.split(" ");
+      const [ano, mes, dia] = dataPart.split("-");
+      const [hora, minuto, segundo] = horaPart.split(":");
+      return new Date(ano, mes - 1, dia, hora, minuto, segundo);
+    } catch (error) {
+      console.error("Erro ao inicializar data de início:", error);
+      return new Date();
+    }
+  });
+
+  const [data_previsao, setData_previsao] = useState(() => {
+    try {
+      if (!projeto.previsaoConclusao) return new Date();
+      const [dataPart, horaPart] = projeto.previsaoConclusao.split(" ");
+      const [ano, mes, dia] = dataPart.split("-");
+      const [hora, minuto, segundo] = horaPart.split(":");
+      return new Date(ano, mes - 1, dia, hora, minuto, segundo);
+    } catch (error) {
+      console.error("Erro ao inicializar data de previsão:", error);
+      return new Date();
+    }
+  });
 
   const nomeProjetoRef = useRef();
   const descricaoProjetoRef = useRef();
 
-  async function postProjeto() {
+  async function postEditProjeto() {
+    console.log("Projeto: ", projeto);
     try {
-      const response = await projetoApi.create({
-        id: null,
+      const response = await projetoApi.update({
+        id: projeto.id,
         nome: nomeProjetoRef.current.value,
         descricao: descricaoProjetoRef.current.value,
+        inicio: data_inicio.toISOString(),
+        previsaoConclusao: data_previsao.toISOString(),
         usuario_dono_uuid: localStorage.getItem("user_id"),
-        public: false,
+        public: projeto.public,
       });
 
-      if (response.status === 201) {
-        navigation.navigate("MyProjects");
+      if (response.status === 200) {
+        console.log("Response: ", response.data.data);
+        navigation.navigate("ProjectScreen", {
+          projeto: response.data.data[0],
+        });
       } else {
         window.alert("Erro ao salvar projeto");
       }
     } catch (error) {
+      window.alert(
+        "Erro ao tentar salvar projeto: " + error.response?.data?.message
+      );
       console.log("Erro ao salvar o projeto ", error);
     }
   }
@@ -42,19 +80,9 @@ const EditProject = () => {
     <View style={styles.container}>
       <HeaderInterno />
       <ScrollView style={styles.content}>
-        <Text style={styles.pageTitle}>CRIAR PROJETO</Text>
+        <Text style={styles.pageTitle}>EDITAR PROJETO</Text>
 
         <View style={styles.profileSection}>
-          {/* Seção Foto à esquerda */}
-          <View style={styles.photoSection}>
-            <Text style={styles.photoLabel}>IMAGEM</Text>
-            <View style={styles.photoPlaceholder}></View>
-            <TouchableOpacity style={styles.changePhotoButton}>
-              <Text style={styles.changePhotoText}>Adicionar imagem</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Dados do projeto à direita */}
           <View style={styles.dataSection}>
             <View style={styles.fieldGroup}>
               <Text style={styles.fieldLabel}>NOME DO PROJETO</Text>
@@ -62,6 +90,7 @@ const EditProject = () => {
                 ref={nomeProjetoRef}
                 style={styles.input}
                 placeholder=""
+                defaultValue={projeto.nome}
               />
             </View>
 
@@ -72,44 +101,48 @@ const EditProject = () => {
                 style={[styles.input, { height: 100 }]}
                 placeholder="Digite aqui"
                 multiline
+                defaultValue={projeto.descricao}
               />
+            </View>
+
+            <View style={styles.dateSection}>
+              <View style={styles.datePickerContainer}>
+                <Text style={styles.dataLabel}>Data de início</Text>
+                <DatePicker
+                  value={data_inicio}
+                  onChange={(value) => setData_inicio(value)}
+                  format="dd-mm-YY"
+                  height={300}
+                  width={300}
+                  startYear={2025}
+                  endYear={2030}
+                />
+              </View>
+
+              <View style={styles.datePickerContainer}>
+                <Text style={styles.dataLabel}>Previsão de conclusão</Text>
+                <DatePicker
+                  value={data_previsao}
+                  onChange={(value) => setData_previsao(value)}
+                  format="dd-mm-YY"
+                  height={300}
+                  width={300}
+                  startYear={2025}
+                  endYear={2030}
+                />
+              </View>
             </View>
           </View>
         </View>
 
-        {/* Seção de datas e responsável */}
         <View style={styles.bottomSection}>
-          {/* <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>DATA DE INÍCIO</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="dd/mm/aa"
-            />
-          </View> */}
-
-          {/* <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>PREVISÃO DE CONCLUSÃO</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="dd/mm/aa"
-            />
-          </View> */}
-
-          {/* <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>RESPONSÁVEL</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Nome do Responsável"
-            />
-          </View> */}
-
           <TouchableOpacity
             style={styles.createButton}
             onPress={() => {
-              postProjeto();
+              postEditProjeto();
             }}
           >
-            <Text style={styles.createButtonText}>CRIAR PROJETO</Text>
+            <Text style={styles.createButtonText}>SALVAR EDIÇÃO</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -118,51 +151,14 @@ const EditProject = () => {
 };
 
 const styles = StyleSheet.create({
+  dataLabel: {
+    alignSelf: "center",
+    fontSize: 30,
+    marginBottom: 10,
+  },
   container: {
     flex: 1,
     backgroundColor: "#fff",
-  },
-  // Estilos do cabeçalho (iguais ao da HomePage)
-  headerContainer: {
-    width: "100%",
-    height: 220,
-    position: "relative",
-  },
-  headerBackgroundImage: {
-    width: "100%",
-    height: "100%",
-    position: "absolute",
-  },
-  headerContent: {
-    position: "absolute",
-    width: "100%",
-    alignItems: "center",
-    paddingTop: 20,
-  },
-  logoImage: {
-    width: 80,
-    height: 80,
-    marginBottom: 5,
-  },
-  logoText: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#fff",
-    marginBottom: 15,
-  },
-  menuTop: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    width: "100%",
-    paddingVertical: 10,
-  },
-  menuItem: {
-    paddingHorizontal: 10,
-  },
-  menuText: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#fff",
   },
   content: {
     flex: 1,
@@ -179,34 +175,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     marginBottom: 20,
   },
-  photoSection: {
-    width: "30%",
-    alignItems: "center",
-    marginRight: 20,
-  },
-  photoLabel: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 10,
-    color: "#2e7d32",
-  },
-  photoPlaceholder: {
-    width: 100,
-    height: 100,
-    backgroundColor: "#e8f5e9",
-    marginBottom: 10,
-  },
-  changePhotoButton: {
-    backgroundColor: "#2e7d32",
-    padding: 8,
-    borderRadius: 5,
-  },
-  changePhotoText: {
-    color: "#fff",
-    fontSize: 12,
-  },
   dataSection: {
     flex: 1,
+  },
+  dateSection: {
+    marginTop: 20,
+  },
+  datePickerContainer: {
+    marginBottom: 30,
   },
   bottomSection: {
     paddingHorizontal: 20,

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import {
   View,
   Text,
@@ -9,25 +9,27 @@ import {
   TextInput,
   TouchableOpacity
 } from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import HeaderInterno from "../components/HeaderInterno";
-import ColetaApi from '../functions/api/ColetaApi';
 
 const FieldScreen = () => {
   const navigation = useNavigation();
   const screenWidth = Dimensions.get('window').width;
   const isMobile = screenWidth < 768;
 
-  const route = useRoute();
-  const { campo } = route.params;
-  const [coletas, setColetas] = useState([])
-
   const tableColumnSizes = isMobile
     ? { id: 180, family: 250, genus: 190, species: 290, date: 230, field: 230 }
     : { id: 200, family: 290, genus: 250, species: 330, date: 250, field: 250 };
 
+  const collectionsData = [
+    { id: '0001', family: 'ROSACEAE', genus: 'ROSA', species: 'ROSA GALLICA', date: '02/03/2023', field: 'CAMPO 1' },
+    { id: '0002', family: 'ROSACEAE', genus: 'ROSA', species: 'ROSA DAMASCENA', date: '10/03/2023', field: 'CAMPO 1' },
+    { id: '0003', family: 'ROSACEAE', genus: 'ROSA', species: 'ROSA CANINA', date: '10/03/2023', field: 'CAMPO 1' },
+    { id: '0004', family: 'ROSACEAE', genus: 'ROSA', species: 'ROSA DAMASCENA', date: '15/03/2023', field: 'CAMPO 1' },
+  ];
+
   const handleAddCollection = () => {
-    navigation.navigate('AddCollection', {campo: campo});
+    navigation.navigate('AddCollection');
   };
 
   const handleEditField = () => {
@@ -38,55 +40,56 @@ const FieldScreen = () => {
     navigation.goBack();
   };
 
-  useEffect(() => {
-    const fetchColetas = async () => {
-      try {
-        const response = ColetaApi.getColetasByCampoId(campo.id);
-        setColetas((await response).data.data)
-      }catch (error) {
-        window.alert("Erro ao carregar coletas: ", error.response.data.message)
-      }
-    }
-
-    fetchColetas()
-  }, [])
-
   return (
     <View style={styles.container}>
       {/* Cabeçalho */}
       <HeaderInterno />
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.pageTitle}>PROJETO - {campo.nome}</Text>
+        <Text style={styles.pageTitle}>PROJETO - EXEMPLO - CAMPO 1</Text>
 
         <View style={styles.fieldGroup}>
-          <Text style={styles.title}>Nome do campo</Text>
-          <Text style={styles.label} >{campo.nome}</Text>
+          <Text style={styles.label}>Nome do campo</Text>
+          <TextInput style={styles.textInput} placeholder="Campo 1" />
         </View>
 
         <View style={styles.fieldGroup}>
-          <Text style={styles.title}>Descrição</Text>
-          <Text>{campo.descricao}</Text>
+          <Text style={styles.label}>Data de início</Text>
+          <TextInput style={[styles.textInput, { width: 180 }]} placeholder="19/01/2023" />
+        </View>
+
+        <View style={styles.fieldGroup}>
+          <Text style={styles.label}>Descrição</Text>
+          <TextInput
+            style={[styles.textInput, { height: 80 }]}
+            placeholder="Descrição do campo"
+            multiline
+          />
         </View>
 
         <View style={styles.rowFields}>
           <View style={[styles.fieldGroup, { flex: 1, marginRight: 10 }]}>
-            <Text style={styles.title}>País</Text>
-            <Text style={styles.label}>{campo.pais}</Text>
+            <Text style={styles.label}>País</Text>
+            <TextInput style={styles.textInput} placeholder="Brasil" />
           </View>
           <View style={[styles.fieldGroup, { flex: 1, marginRight: 10 }]}>
-            <Text style={styles.title}>Estado</Text>
-            <Text style={styles.label}>{campo.estado}</Text>
+            <Text style={styles.label}>Estado</Text>
+            <TextInput style={styles.textInput} placeholder="SP" />
           </View>
           <View style={[styles.fieldGroup, { flex: 1 }]}>
-            <Text style={styles.title}>Cidade</Text>
-            <Text style={styles.label}>{campo.cidade}</Text>
+            <Text style={styles.label}>Cidade</Text>
+            <TextInput style={styles.textInput} placeholder="Ferraz de Vasconcelos" />
           </View>
         </View>
 
         <View style={styles.fieldGroup}>
-          <Text style={styles.title}>Endereço</Text>
-          <Text style={styles.label}>{campo.endereco}</Text>
+          <Text style={styles.label}>Endereço</Text>
+          <TextInput style={styles.textInput} placeholder="Rua Exemplo, 123" />
         </View>
+
+        {/* <View style={styles.fieldGroup}>
+          <Text style={styles.label}>Previsão de conclusão</Text>
+          <TextInput style={[styles.textInput, { width: 180 }]} placeholder="01/04/2026" />
+        </View> */}
 
         <Text style={styles.collectionsTitle}>Coletas</Text>
 
@@ -98,15 +101,17 @@ const FieldScreen = () => {
               <Text style={[styles.tableHeaderText, { width: tableColumnSizes.genus }]}>GÊNERO</Text>
               <Text style={[styles.tableHeaderText, { width: tableColumnSizes.species }]}>ESPÉCIE</Text>
               <Text style={[styles.tableHeaderText, { width: tableColumnSizes.date }]}>DATA DA COLETA</Text>
+              <Text style={[styles.tableHeaderText, { width: tableColumnSizes.field }]}>CAMPO</Text>
             </View>
 
-            {coletas.map((campo, index) => (
+            {collectionsData.map((item, index) => (
               <View key={index} style={styles.tableRow}>
-                <Text style={[styles.tableCell, { width: tableColumnSizes.id }]}>{campo.id}</Text>
-                <Text style={[styles.tableCell, { width: tableColumnSizes.family }]}>{campo.familia.nome}</Text>
-                <Text style={[styles.tableCell, { width: tableColumnSizes.genus }]}>{campo.genero.nome}</Text>
-                <Text style={[styles.tableCell, { width: tableColumnSizes.species }]}>{campo.especie.nome}</Text>
-                <Text style={[styles.tableCell, { width: tableColumnSizes.date }]}>{campo.data_coleta}</Text>
+                <Text style={[styles.tableCell, { width: tableColumnSizes.id }]}>{item.id}</Text>
+                <Text style={[styles.tableCell, { width: tableColumnSizes.family }]}>{item.family}</Text>
+                <Text style={[styles.tableCell, { width: tableColumnSizes.genus }]}>{item.genus}</Text>
+                <Text style={[styles.tableCell, { width: tableColumnSizes.species }]}>{item.species}</Text>
+                <Text style={[styles.tableCell, { width: tableColumnSizes.date }]}>{item.date}</Text>
+                <Text style={[styles.tableCell, { width: tableColumnSizes.field }]}>{item.field}</Text>
               </View>
             ))}
           </View>
@@ -167,8 +172,11 @@ const styles = StyleSheet.create({
   },
 
   fieldGroup: { marginBottom: 15 },
-  title: { fontSize: 14, fontWeight: 'bold', marginBottom: 5, color: '#2e7d32' },
-  label: {
+  label: { fontSize: 14, fontWeight: 'bold', marginBottom: 5, color: '#2e7d32' },
+  textInput: {
+    // borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: 5,
     backgroundColor: '#fff',
     paddingHorizontal: 10,
     paddingVertical: 8,

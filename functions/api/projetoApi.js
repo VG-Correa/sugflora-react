@@ -22,5 +22,29 @@ export default  ProjetoApi = {
             return null;
         }
 
+    },
+
+    async update(projeto) {
+
+        try {
+            const response = await api.put("projeto", projeto)
+            return response;
+        } catch (error) {
+            console.log("(API) Erro ao salvar projeto ", error);
+            return null;
+        }
+
+    },
+
+    async delete(projeto_id) {
+
+        try {
+            const response = await api.delete("projeto/delete/" + projeto_id)
+            return response;
+        } catch (error) {
+            console.log("(API) Erro ao deletar projeto ", error);
+            return null;
+        }
+
     }
 }

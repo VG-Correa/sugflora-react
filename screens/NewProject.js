@@ -1,29 +1,39 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   TextInput,
-  Image,
   ScrollView,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import HeaderInterno from "../components/HeaderInterno";
 import projetoApi from "../functions/api/projetoApi";
+import DatePicker from "@dietime/react-native-date-picker";
+import { format } from "date-fns";
 
 const NewProject = () => {
   const navigation = useNavigation();
+
+  const [data_inicio, setData_inicio] = useState(new Date());
+  const [data_previsao, setData_previsao] = useState(new Date());
 
   const nomeProjetoRef = useRef();
   const descricaoProjetoRef = useRef();
 
   async function postProjeto() {
     try {
+      // Formata as datas para o formato esperado pelo backend (yyyy-MM-dd)
+      const dataInicioFormatada = format(data_inicio, "yyyy-MM-dd");
+      const dataPrevisaoFormatada = format(data_previsao, "yyyy-MM-dd");
+
       const response = await projetoApi.create({
         id: null,
         nome: nomeProjetoRef.current.value,
         descricao: descricaoProjetoRef.current.value,
+        inicio: dataInicioFormatada,
+        previsaoConclusao: dataPrevisaoFormatada,
         usuario_dono_uuid: localStorage.getItem("user_id"),
         public: false,
       });
@@ -34,6 +44,9 @@ const NewProject = () => {
         window.alert("Erro ao salvar projeto");
       }
     } catch (error) {
+      window.alert(
+        "Erro ao tentar salvar projeto: " + error.response?.data?.message
+      );
       console.log("Erro ao salvar o projeto ", error);
     }
   }
@@ -45,7 +58,6 @@ const NewProject = () => {
         <Text style={styles.pageTitle}>CRIAR PROJETO</Text>
 
         <View style={styles.profileSection}>
-
           {/* Dados do projeto à direita */}
           <View style={styles.dataSection}>
             <View style={styles.fieldGroup}>
@@ -66,35 +78,39 @@ const NewProject = () => {
                 multiline
               />
             </View>
+
+            <View style={styles.dateSection}>
+              <View style={styles.datePickerContainer}>
+                <Text style={styles.dataLabel}>Data de início</Text>
+                <DatePicker
+                  value={data_inicio}
+                  onChange={(value) => setData_inicio(value)}
+                  format="dd-mm-YY"
+                  height={300}
+                  width={300}
+                  startYear={2025}
+                  endYear={2030}
+                />
+              </View>
+
+              <View style={styles.datePickerContainer}>
+                <Text style={styles.dataLabel}>Previsão de conclusão</Text>
+                <DatePicker
+                  value={data_previsao}
+                  onChange={(value) => setData_previsao(value)}
+                  format="dd-mm-YY"
+                  height={300}
+                  width={300}
+                  startYear={2025}
+                  endYear={2030}
+                />
+              </View>
+            </View>
           </View>
         </View>
 
         {/* Seção de datas e responsável */}
         <View style={styles.bottomSection}>
-          {/* <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>DATA DE INÍCIO</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="dd/mm/aa"
-            />
-          </View> */}
-
-          {/* <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>PREVISÃO DE CONCLUSÃO</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="dd/mm/aa"
-            />
-          </View> */}
-
-          {/* <View style={styles.fieldGroup}>
-            <Text style={styles.fieldLabel}>RESPONSÁVEL</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Nome do Responsável"
-            />
-          </View> */}
-
           <TouchableOpacity
             style={styles.createButton}
             onPress={() => {
@@ -110,51 +126,14 @@ const NewProject = () => {
 };
 
 const styles = StyleSheet.create({
+  dataLabel: {
+    alignSelf: "center",
+    fontSize: 30,
+    marginBottom: 10,
+  },
   container: {
     flex: 1,
     backgroundColor: "#fff",
-  },
-  // Estilos do cabeçalho (iguais ao da HomePage)
-  headerContainer: {
-    width: "100%",
-    height: 220,
-    position: "relative",
-  },
-  headerBackgroundImage: {
-    width: "100%",
-    height: "100%",
-    position: "absolute",
-  },
-  headerContent: {
-    position: "absolute",
-    width: "100%",
-    alignItems: "center",
-    paddingTop: 20,
-  },
-  logoImage: {
-    width: 80,
-    height: 80,
-    marginBottom: 5,
-  },
-  logoText: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#fff",
-    marginBottom: 15,
-  },
-  menuTop: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    width: "100%",
-    paddingVertical: 10,
-  },
-  menuItem: {
-    paddingHorizontal: 10,
-  },
-  menuText: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#fff",
   },
   content: {
     flex: 1,
@@ -199,6 +178,12 @@ const styles = StyleSheet.create({
   },
   dataSection: {
     flex: 1,
+  },
+  dateSection: {
+    marginTop: 20,
+  },
+  datePickerContainer: {
+    marginBottom: 30,
   },
   bottomSection: {
     paddingHorizontal: 20,

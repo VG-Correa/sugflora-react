@@ -8,6 +8,7 @@ import {
   Alert,
   ActivityIndicator,
   TextInput,
+  Platform,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -28,48 +29,62 @@ const EditProfile = () => {
     endereco: "",
   });
 
-  useEffect(() => {
-    const loadUserData = async () => {
-      try {
-        const uuid = await AsyncStorage.getItem("uuid");
-        const nome = await AsyncStorage.getItem("nome");
-        const sobrenome = await AsyncStorage.getItem("sobrenome");
-        const email = await AsyncStorage.getItem("email");
-        const username = await AsyncStorage.getItem("username");
-        const cpf = await AsyncStorage.getItem("cpf");
-        const rg = await AsyncStorage.getItem("rg");
-        const endereco = await AsyncStorage.getItem("endereco");
+  const loadUserData = async () => {
+    try {
+      const uuid = await AsyncStorage.getItem("user_id");
+      const nome = await AsyncStorage.getItem("nome");
+      const sobrenome = await AsyncStorage.getItem("sobrenome");
+      const email = await AsyncStorage.getItem("email");
+      const username = await AsyncStorage.getItem("username");
+      const cpf = await AsyncStorage.getItem("cpf");
+      const rg = await AsyncStorage.getItem("rg");
+      const endereco = await AsyncStorage.getItem("endereco");
 
-        if (!uuid || !nome || !email) {
-          Alert.alert("Erro", "Dados do usuário não encontrados");
-          navigation.navigate("Login");
-          return;
-        }
-
-        setUserData({
-          uuid,
-          nome,
-          sobrenome,
-          email,
-          username,
-          cpf,
-          rg,
-          endereco,
-        });
-      } catch (error) {
-        console.error("Erro ao carregar dados:", error);
-        Alert.alert("Erro", "Não foi possível carregar seus dados");
+      if (!uuid || !nome || !email) {
+        Alert.alert("Erro", "Dados do usuário não encontrados");
+        navigation.navigate("Login");
+        return;
       }
-    };
 
+      setUserData({
+        uuid: uuid,
+        nome: nome || "",
+        sobrenome: sobrenome || "",
+        email: email || "",
+        username: username || "",
+        cpf: cpf || "",
+        rg: rg || "",
+        endereco: endereco || "",
+      });
+    } catch (error) {
+      console.error("Erro ao carregar dados:", error);
+      Alert.alert("Erro", "Não foi possível carregar seus dados");
+    }
+  };
+
+  useEffect(() => {
     loadUserData();
   }, []);
+
+  // Adiciona listener para recarregar dados quando a tela receber foco
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("focus", () => {
+      loadUserData();
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   const handleSave = async () => {
     setLoading(true);
     try {
       const token = await AsyncStorage.getItem("token");
-      const API_URL = "http://10.0.2.2:8080"; // URL para Android Emulator
+      // Ajustando a URL para o ambiente correto
+      const API_URL = Platform.select({
+        android: "http://10.0.2.2:8080", // Android Emulator
+        ios: "http://localhost:8080", // iOS Simulator
+        default: "http://localhost:8080", // Fallback
+      });
 
       // Validação básica dos campos
       if (
@@ -84,20 +99,38 @@ const EditProfile = () => {
         return;
       }
 
+      // Validação de email
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(userData.email)) {
+        Alert.alert("Erro", "Por favor, insira um e-mail válido");
+        setLoading(false);
+        return;
+      }
+
+      // Validação de CPF (apenas números)
+      const cpfRegex = /^\d{11}$/;
+      if (!cpfRegex.test(userData.cpf.replace(/\D/g, ""))) {
+        Alert.alert("Erro", "CPF deve conter 11 dígitos numéricos");
+        setLoading(false);
+        return;
+      }
+
       // Prepara os dados para envio
       const userDataToUpdate = {
         uuid: userData.uuid,
-        nome: userData.nome,
-        sobrenome: userData.sobrenome || "",
-        email: userData.email,
-        username: userData.username,
-        cpf: userData.cpf,
-        rg: userData.rg,
-        endereco: userData.endereco || "",
+        nome: userData.nome.trim(),
+        sobrenome: userData.sobrenome?.trim() || "",
+        email: userData.email.trim(),
+        username: userData.username.trim(),
+        cpf: userData.cpf.replace(/\D/g, ""),
+        rg: userData.rg.trim(),
+        endereco: userData.endereco?.trim() || "",
         role: "USER",
       };
 
       console.log("Enviando dados para atualização:", userDataToUpdate);
+      console.log("URL da API:", `${API_URL}/api/usuario`);
+      console.log("Token:", token);
 
       const response = await axios.put(
         `${API_URL}/api/usuario`,
@@ -106,26 +139,45 @@ const EditProfile = () => {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          validateStatus: function (status) {
+            return status < 500;
           },
         }
       );
 
       console.log("Resposta do servidor:", response.data);
 
-      if (response.data && response.data.data) {
-        // Atualiza os dados no AsyncStorage
-        await AsyncStorage.setItem("nome", userData.nome);
-        await AsyncStorage.setItem("sobrenome", userData.sobrenome || "");
-        await AsyncStorage.setItem("email", userData.email);
-        await AsyncStorage.setItem("username", userData.username);
-        await AsyncStorage.setItem("cpf", userData.cpf);
-        await AsyncStorage.setItem("rg", userData.rg);
-        await AsyncStorage.setItem("endereco", userData.endereco || "");
+      if (response.status === 200 && response.data && response.data.data) {
+        // Atualiza os dados no AsyncStorage com os dados retornados do servidor
+        const updatedUser = response.data.data;
+        await AsyncStorage.multiSet([
+          ["nome", updatedUser.nome || ""],
+          ["sobrenome", updatedUser.sobrenome || ""],
+          ["email", updatedUser.email || ""],
+          ["username", updatedUser.username || ""],
+          ["cpf", updatedUser.cpf || ""],
+          ["rg", updatedUser.rg || ""],
+          ["endereco", updatedUser.endereco || ""],
+        ]);
+
+        // Atualiza o estado local com os dados atualizados
+        setUserData({
+          ...userData,
+          nome: updatedUser.nome || "",
+          sobrenome: updatedUser.sobrenome || "",
+          email: updatedUser.email || "",
+          username: updatedUser.username || "",
+          cpf: updatedUser.cpf || "",
+          rg: updatedUser.rg || "",
+          endereco: updatedUser.endereco || "",
+        });
 
         Alert.alert("Sucesso", "Perfil atualizado com sucesso!");
         navigation.goBack();
       } else {
-        throw new Error("Resposta inválida do servidor");
+        throw new Error(response.data?.message || "Erro ao atualizar perfil");
       }
     } catch (error) {
       console.error("Erro ao atualizar perfil:", error);
@@ -134,11 +186,17 @@ const EditProfile = () => {
 
       if (error.response) {
         console.log("Detalhes do erro:", error.response.data);
+        console.log("Status do erro:", error.response.status);
+
         if (error.response.status === 401) {
           errorMessage = "Sua sessão expirou. Por favor, faça login novamente.";
           navigation.navigate("Login");
+        } else if (error.response.status === 403) {
+          errorMessage = "Acesso negado. Verifique suas permissões.";
         } else if (error.response.data && error.response.data.message) {
           errorMessage = error.response.data.message;
+        } else if (error.response.data && error.response.data.error) {
+          errorMessage = error.response.data.error;
         }
       }
 

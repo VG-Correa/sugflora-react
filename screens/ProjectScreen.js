@@ -25,13 +25,30 @@ const ProjectScreen = () => {
   const [campos, setCampos] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
 
-  const formatarData = (data) => {
-    if (!data) return "Não definida";
+  const data_inicio = () => {
+    if (!projeto.inicio) return "Não definida";
     try {
-      const dataObj = new Date(data);
-      if (isNaN(dataObj.getTime())) return "Data inválida";
-      return dataObj.toLocaleDateString("pt-BR");
+      const [dataPart, horaPart] = projeto.inicio.split(" ");
+      const [ano, mes, dia] = dataPart.split("-");
+      const [hora, minuto, segundo] = horaPart.split(":");
+      const data = new Date(ano, mes - 1, dia, hora, minuto, segundo);
+      return data.toLocaleDateString("pt-BR");
     } catch (error) {
+      console.error("Erro ao formatar data de início:", error);
+      return "Data inválida";
+    }
+  };
+
+  const data_previsao = () => {
+    if (!projeto.previsaoConclusao) return "Não definida";
+    try {
+      const [dataPart, horaPart] = projeto.previsaoConclusao.split(" ");
+      const [ano, mes, dia] = dataPart.split("-");
+      const [hora, minuto, segundo] = horaPart.split(":");
+      const data = new Date(ano, mes - 1, dia, hora, minuto, segundo);
+      return data.toLocaleDateString("pt-BR");
+    } catch (error) {
+      console.error("Erro ao formatar data de previsão:", error);
       return "Data inválida";
     }
   };
@@ -136,17 +153,13 @@ const ProjectScreen = () => {
               />
             </View> */}
             <View style={styles.textContainer}>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Data de Início:</Text>
-                <Text style={styles.infoValue}>
-                  {formatarData(projeto.inicio)}
-                </Text>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>DATA DE INÍCIO:</Text>
+                <Text style={styles.detailValue}>{data_inicio()}</Text>
               </View>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Previsão de Conclusão:</Text>
-                <Text style={styles.infoValue}>
-                  {formatarData(projeto.previsaoConclusao)}
-                </Text>
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>PREVISÃO DE CONCLUSÃO:</Text>
+                <Text style={styles.detailValue}>{data_previsao()}</Text>
               </View>
               <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>STATUS:</Text>
@@ -254,7 +267,7 @@ const ProjectScreen = () => {
                         { width: tableColumnSizes.others },
                       ]}
                     >
-                      {formatarData(campo.data_inicio)}
+                      {dataInicio}
                     </Text>
                     <Text
                       style={[
@@ -358,20 +371,20 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
   textContainer: { flex: 1 },
-  infoRow: {
+  detailRow: {
     flexDirection: "row",
     marginBottom: 4,
     alignItems: "center",
     flexWrap: "wrap",
   },
-  infoLabel: {
+  detailLabel: {
     fontWeight: "bold",
     color: "#2e7d32",
     fontSize: 14,
     textAlign: "left",
     marginRight: 5,
   },
-  infoValue: { fontSize: 14, textAlign: "left" },
+  detailValue: { fontSize: 14, textAlign: "left" },
 
   sectionTitle: {
     fontSize: 16,

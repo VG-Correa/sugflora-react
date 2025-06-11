@@ -35,7 +35,6 @@ const NewProject = () => {
         inicio: dataInicioFormatada,
         previsaoConclusao: dataPrevisaoFormatada,
         usuario_dono_uuid: localStorage.getItem("user_id"),
-
         public: false,
       });
 

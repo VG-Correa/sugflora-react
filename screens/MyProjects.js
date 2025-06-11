@@ -12,7 +12,6 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import projetoApi from "../functions/api/projetoApi";
 import HeaderInterno from "../components/HeaderInterno";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const MyProjects = () => {
   const [projetos, setProjetos] = useState([]);
@@ -20,17 +19,6 @@ const MyProjects = () => {
   const [error, setError] = useState(null);
   const navigation = useNavigation();
   const { width } = useWindowDimensions();
-
-  const formatarData = (data) => {
-    if (!data) return "Não definida";
-    try {
-      const dataObj = new Date(data);
-      if (isNaN(dataObj.getTime())) return "Data inválida";
-      return dataObj.toLocaleDateString("pt-BR");
-    } catch (error) {
-      return "Data inválida";
-    }
-  };
 
   // Calcula a quantidade de colunas baseado na largura da tela
   const numColumns = width > 768 ? 3 : width > 480 ? 2 : 1;
@@ -41,6 +29,7 @@ const MyProjects = () => {
       setLoading(true);
       setError(null);
       const user_id = localStorage.getItem("user_id");
+
       if (!user_id) {
         throw new Error("Usuário não autenticado");
       }
@@ -124,7 +113,31 @@ const MyProjects = () => {
                 <View style={styles.projectInfo}>
                   <Text style={styles.infoLabel}>Data de Início:</Text>
                   <Text style={styles.infoValue}>
-                    {formatarData(projeto.inicio)}
+                    {projeto.inicio
+                      ? (() => {
+                          try {
+                            const [dataPart, horaPart] =
+                              projeto.inicio.split(" ");
+                            const [ano, mes, dia] = dataPart.split("-");
+                            const [hora, minuto, segundo] = horaPart.split(":");
+                            const data = new Date(
+                              ano,
+                              mes - 1,
+                              dia,
+                              hora,
+                              minuto,
+                              segundo
+                            );
+                            return data.toLocaleDateString("pt-BR");
+                          } catch (error) {
+                            console.error(
+                              "Erro ao formatar data de início:",
+                              error
+                            );
+                            return "Data inválida";
+                          }
+                        })()
+                      : "Não definida"}
                   </Text>
 
                   {projeto.previsaoConclusao && (
@@ -133,7 +146,29 @@ const MyProjects = () => {
                         Previsão de Conclusão:
                       </Text>
                       <Text style={styles.infoValue}>
-                        {formatarData(projeto.previsaoConclusao)}
+                        {(() => {
+                          try {
+                            const [dataPart, horaPart] =
+                              projeto.previsaoConclusao.split(" ");
+                            const [ano, mes, dia] = dataPart.split("-");
+                            const [hora, minuto, segundo] = horaPart.split(":");
+                            const data = new Date(
+                              ano,
+                              mes - 1,
+                              dia,
+                              hora,
+                              minuto,
+                              segundo
+                            );
+                            return data.toLocaleDateString("pt-BR");
+                          } catch (error) {
+                            console.error(
+                              "Erro ao formatar data de previsão:",
+                              error
+                            );
+                            return "Data inválida";
+                          }
+                        })()}
                       </Text>
                     </>
                   )}

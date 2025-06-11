@@ -362,7 +362,7 @@ const Register = ({ navigation }) => {
                   style={styles.input}
                   placeholder="00000-000"
                   value={formData.cep}
-                  onChangeText={(masked, unmasked) => {
+                  onChange={(masked, unmasked) => {
                     handleInputChange("cep", masked);
                     if (masked.length === 9) {
                       buscarCep(masked);

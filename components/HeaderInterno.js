@@ -88,6 +88,31 @@ const HeaderInterno = ({ onLogout }) => {
     fetchUserData();
   }, []);
 
+  const handleLogout = async () => {
+    try {
+      // Limpar todos os dados do usuário do AsyncStorage
+      await AsyncStorage.multiRemove([
+        "token",
+        "nome",
+        "sobrenome",
+        "email",
+        "username",
+      ]);
+
+      // Redirecionar para a tela de login
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "Login" }],
+      });
+
+      // Fechar o menu se estiver aberto
+      closeAllMenus();
+    } catch (error) {
+      console.error("Erro ao fazer logout:", error);
+      Alert.alert("Erro", "Não foi possível fazer logout. Tente novamente.");
+    }
+  };
+
   const renderMenuItems = (isMobileView) => (
     <>
       <TouchableOpacity
@@ -270,10 +295,7 @@ const HeaderInterno = ({ onLogout }) => {
       <View style={[styles.menuItem]}>
         <TouchableOpacity
           style={[styles.menuItem, styles.logoutButton]}
-          onPress={() => {
-            onLogout();
-            closeAllMenus();
-          }}
+          onPress={handleLogout}
         >
           <Text style={[styles.menuText, styles.logoutText]}>SAIR</Text>
         </TouchableOpacity>

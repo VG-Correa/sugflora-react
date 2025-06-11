@@ -26,6 +26,7 @@
     "react-native": "0.79.2",
     "react-native-datefield": "^0.3.6",
     "react-native-gesture-handler": "~2.24.0",
+    "react-native-image-picker": "^8.2.1",
     "react-native-mask-input": "^1.2.3",
     "react-native-paper": "4.9.2",
     "react-native-safe-area-context": "5.4.0",
@@ -35,7 +36,9 @@
   },
   "devDependencies": {
     "@babel/core": "^7.20.0",
-    "@react-native-community/cli": "^11.4.1"
+    "@react-native-community/cli": "^11.4.1",
+    "@types/react": "~19.0.10",
+    "typescript": "~5.8.3"
   },
   "private": true
 }

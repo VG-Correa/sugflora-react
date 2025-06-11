@@ -12,6 +12,7 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import projetoApi from "../functions/api/projetoApi";
 import HeaderInterno from "../components/HeaderInterno";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const MyProjects = () => {
   const [projetos, setProjetos] = useState([]);
@@ -40,7 +41,6 @@ const MyProjects = () => {
       setLoading(true);
       setError(null);
       const user_id = localStorage.getItem("user_id");
-
       if (!user_id) {
         throw new Error("Usuário não autenticado");
       }

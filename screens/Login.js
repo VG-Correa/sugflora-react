@@ -12,7 +12,6 @@ import {
   useWindowDimensions,
   ScrollView,
   KeyboardAvoidingView,
-
   Dimensions,
   Alert,
 } from "react-native";
@@ -22,9 +21,8 @@ import loginApi from "../functions/api/loginApi";
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-
 const Login = () => {
-  const navigation = useNavigation()
+  const navigation = useNavigation();
   const [username, setUsername] = useState("adm");
   const [password, setPassword] = useState("adm");
   const [loading, setLoading] = useState(false);
@@ -40,24 +38,46 @@ const Login = () => {
     try {
       console.log("Tentando login com:", { username, password });
 
-      const loginResponse = await loginApi.login(username, password)
+      const loginResponse = await loginApi.login(username, password);
 
       console.log("Resposta do login:", loginResponse.data.data[0]);
 
-      console.log("STATUS 200? ", loginResponse.data.status === 200)
+      console.log("STATUS 200? ", loginResponse.data.status === 200);
 
       if (loginResponse.data.status === 200) {
-        const token = loginResponse.data.data[0].token
+        const token = loginResponse.data.data[0].token;
 
-        await AsyncStorage.setItem("user_id", loginResponse.data.data[0].usuario.id);
-        await AsyncStorage.setItem("nome", loginResponse.data.data[0].usuario.nome);
-        await AsyncStorage.setItem("sobrenome", loginResponse.data.data[0].usuario.sobrenome);
-        await AsyncStorage.setItem("username", loginResponse.data.data[0].usuario.username);
+        await AsyncStorage.setItem(
+          "uuid",
+          loginResponse.data.data[0].usuario.uuid
+        );
+        await AsyncStorage.setItem(
+          "user_id",
+          loginResponse.data.data[0].usuario.id
+        );
+        await AsyncStorage.setItem(
+          "nome",
+          loginResponse.data.data[0].usuario.nome
+        );
+        await AsyncStorage.setItem(
+          "sobrenome",
+          loginResponse.data.data[0].usuario.sobrenome
+        );
+        await AsyncStorage.setItem(
+          "username",
+          loginResponse.data.data[0].usuario.username
+        );
         await AsyncStorage.setItem("rg", loginResponse.data.data[0].usuario.rg);
-        await AsyncStorage.setItem("cpf", loginResponse.data.data[0].usuario.cpf);
-        await AsyncStorage.setItem("email", loginResponse.data.data[0].usuario.email);
+        await AsyncStorage.setItem(
+          "cpf",
+          loginResponse.data.data[0].usuario.cpf
+        );
+        await AsyncStorage.setItem(
+          "email",
+          loginResponse.data.data[0].usuario.email
+        );
 
-        await AsyncStorage.setItem("token", token)
+        await AsyncStorage.setItem("token", token);
 
         setUsername("");
         setPassword("");
@@ -65,16 +85,13 @@ const Login = () => {
         setLoading(false);
 
         console.log("Login bem-sucedido, navegando para HomePage");
-        navigation.replace("HomePage")
+        navigation.replace("HomePage");
       }
-
     } catch (error) {
       console.error("Erro ao salvar dados:", error);
       Alert.alert("Erro", "Erro ao salvar dados do usuário");
-      setLoading(false)
+      setLoading(false);
     }
-
-
   };
 
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
@@ -183,9 +200,6 @@ const Login = () => {
                   <Text style={styles.loginText}>
                     {loading ? "ENTRANDO..." : "ENTRAR"}
                   </Text>
-                </TouchableOpacity>
-                <TouchableOpacity onPress={() => navigation.navigate("HomePage")}>
-                  <Text>Ir para HomePage (teste)</Text>
                 </TouchableOpacity>
               </View>
             </View>

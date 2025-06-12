@@ -9,11 +9,12 @@ import {
   Modal,
   Animated,
   Platform,
-  Dimensions
+  Dimensions,
+  Alert,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-
+import Notificacoes from "./Notificacoes";
 
 const HeaderInterno = ({ onLogout }) => {
   const navigation = useNavigation();
@@ -71,11 +72,7 @@ const HeaderInterno = ({ onLogout }) => {
         const usernameStored = await AsyncStorage.getItem("username");
 
         if (!token) {
-          Alert.alert("Erro", "Sessão expirada");
-          navigation.reset({
-            index: 0,
-            routes: [{ name: "Login" }],
-          });
+          console.log("Token não encontrado");
           return;
         }
 
@@ -85,12 +82,36 @@ const HeaderInterno = ({ onLogout }) => {
         setUsername(usernameStored || "");
       } catch (error) {
         console.error("Erro ao carregar dados:", error);
-        Alert.alert("Erro", "Erro ao carregar dados do usuário");
       }
     };
 
     fetchUserData();
   }, []);
+
+  const handleLogout = async () => {
+    try {
+      // Limpar todos os dados do usuário do AsyncStorage
+      await AsyncStorage.multiRemove([
+        "token",
+        "nome",
+        "sobrenome",
+        "email",
+        "username",
+      ]);
+
+      // Redirecionar para a tela de login
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "Login" }],
+      });
+
+      // Fechar o menu se estiver aberto
+      closeAllMenus();
+    } catch (error) {
+      console.error("Erro ao fazer logout:", error);
+      Alert.alert("Erro", "Não foi possível fazer logout. Tente novamente.");
+    }
+  };
 
   const renderMenuItems = (isMobileView) => (
     <>
@@ -154,7 +175,7 @@ const HeaderInterno = ({ onLogout }) => {
           <View style={isMobileView ? styles.submenuMobile : styles.submenu}>
             <TouchableOpacity
               onPress={() => {
-                navigation.navigate("Identificar");
+                navigation.navigate("SearchSpecies");
                 closeAllMenus();
               }}
             >
@@ -169,7 +190,7 @@ const HeaderInterno = ({ onLogout }) => {
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => {
-                navigation.navigate("ConhecoEssa");
+                navigation.navigate("MyCollection");
                 closeAllMenus();
               }}
             >
@@ -195,7 +216,7 @@ const HeaderInterno = ({ onLogout }) => {
           <View style={isMobileView ? styles.submenuMobile : styles.submenu}>
             <TouchableOpacity
               onPress={() => {
-                navigation.navigate("Identificar");
+                navigation.navigate("IdentifyPlant");
                 closeAllMenus();
               }}
             >
@@ -210,7 +231,7 @@ const HeaderInterno = ({ onLogout }) => {
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => {
-                navigation.navigate("ConhecoEssa");
+                navigation.navigate("KnownPlants");
                 closeAllMenus();
               }}
             >
@@ -231,7 +252,7 @@ const HeaderInterno = ({ onLogout }) => {
       <View style={[styles.menuItem]}>
         <TouchableOpacity
           onPress={() => {
-            navigation.navigate("Relatorios");
+            navigation.navigate("MyReports");
             closeAllMenus();
           }}
         >
@@ -239,18 +260,32 @@ const HeaderInterno = ({ onLogout }) => {
         </TouchableOpacity>
       </View>
       <View style={[styles.menuItem]}>
-        <TouchableOpacity
-          onPress={() => setNotificacaoAberta(true)}
-          style={styles.iconButton}
-        >
-          <Text style={styles.icon}>🔔</Text>
-        </TouchableOpacity>
+        <Notificacoes />
       </View>
       <View style={[styles.menuItem]}>
         <TouchableOpacity
-          onPress={() => {
-            navigation.navigate("Profile");
-            closeAllMenus();
+          onPress={async () => {
+            try {
+              const token = await AsyncStorage.getItem("token");
+              if (token) {
+                navigation.navigate("Profile");
+                closeAllMenus();
+              } else {
+                Alert.alert(
+                  "Atenção",
+                  "Você precisa estar logado para acessar seu perfil",
+                  [
+                    {
+                      text: "OK",
+                      onPress: () => navigation.navigate("Login"),
+                    },
+                  ]
+                );
+              }
+            } catch (error) {
+              console.error("Erro ao verificar autenticação:", error);
+              Alert.alert("Erro", "Não foi possível acessar seu perfil");
+            }
           }}
           style={styles.iconButton}
         >
@@ -260,23 +295,11 @@ const HeaderInterno = ({ onLogout }) => {
       <View style={[styles.menuItem]}>
         <TouchableOpacity
           style={[styles.menuItem, styles.logoutButton]}
-          onPress={() => {
-            onLogout();
-            closeAllMenus();
-          }}
+          onPress={handleLogout}
         >
           <Text style={[styles.menuText, styles.logoutText]}>SAIR</Text>
         </TouchableOpacity>
       </View>
-
-      {username && (
-        <View style={styles.userInfo}>
-          <Text style={styles.userName}>
-            {nome} {sobrenome}
-          </Text>
-          <Text style={styles.userEmail}>{email}</Text>
-        </View>
-      )}
     </>
   );
 

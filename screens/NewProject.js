@@ -12,8 +12,10 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
-import projetoApi from '../functions/api/projetoApi'; // ✅ IMPORTAÇÃO CORRIGIDA
+import projetoApi from '../functions/api/projetoApi';
 import * as FileSystem from 'expo-file-system';
+
+const API_BASE_URL = 'https://seu-endereco-api.com'; // ⚠️ Substitua pelo endereço real da sua API
 
 const NewProject = () => {
   const navigation = useNavigation();
@@ -45,6 +47,7 @@ const NewProject = () => {
     }
     return true;
   };
+
   const formatDateToISO = (dateStr) => {
     if (!dateStr) return null;
     const [day, month, year] = dateStr.split('/');

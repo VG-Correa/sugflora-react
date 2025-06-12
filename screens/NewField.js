@@ -13,12 +13,14 @@ import CampoApi from "../functions/api/CampoApi";
 import HeaderInterno from "../components/HeaderInterno";
 import DatePicker from "@dietime/react-native-date-picker";
 import { format } from "date-fns";
+import { useNotification } from "../contexts/NotificationContext";
 
 const NewField = () => {
   const navigation = useNavigation();
   const router = useRoute();
   const [loading, setLoading] = useState(false);
   const [dataInicio, setDataInicio] = useState(new Date());
+  const { showNotification } = useNotification();
 
   const { projeto } = router.params;
   const user_id = localStorage.getItem("user_id");
@@ -63,7 +65,7 @@ const NewField = () => {
     return true;
   };
 
-  async function salvarCampo() {
+  const handleSubmit = async () => {
     if (!projeto?.id) {
       Alert.alert("Erro", "ID do projeto não encontrado");
       return;
@@ -96,49 +98,18 @@ const NewField = () => {
 
     try {
       const response = await CampoApi.create(campoJson);
-      if (response.status === 200) {
-        Alert.alert("Sucesso", "Campo criado com sucesso");
-        console.log("Campo criado com sucesso", response.data.data);
-        navigation.navigate("ProjectScreen", { projeto: projeto });
+
+      if (response.status === 201) {
+        showNotification("Novo campo cadastrado com sucesso!");
+        navigation.goBack();
       }
     } catch (error) {
-      console.error("Erro completo:", error);
-
-      // Mostra detalhes do erro
-      let mensagemErro = "Erro ao criar campo.\n\n";
-
-      if (error.response) {
-        // Erro da API
-        mensagemErro += `Status: ${error.response.status}\n`;
-        mensagemErro += `Mensagem: ${
-          error.response.data?.message || "Sem mensagem"
-        }\n`;
-        if (error.response.data?.data) {
-          mensagemErro += `Detalhes: ${JSON.stringify(
-            error.response.data.data,
-            null,
-            2
-          )}`;
-        }
-      } else if (error.request) {
-        // Erro de rede
-        mensagemErro += "Erro de conexão com o servidor.\n";
-        mensagemErro += "Verifique sua conexão com a internet.";
-      } else {
-        // Outros erros
-        mensagemErro += `Erro: ${error.message}`;
-      }
-
-      Alert.alert("Erro ao Salvar", mensagemErro, [
-        {
-          text: "OK",
-          onPress: () => console.log("Erro confirmado"),
-        },
-      ]);
+      console.error("Erro ao criar campo:", error);
+      showNotification("Erro ao criar campo. Tente novamente.", 7000);
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   return (
     <View style={styles.container}>
@@ -229,7 +200,7 @@ const NewField = () => {
 
         <TouchableOpacity
           style={[styles.createButton, loading && styles.createButtonDisabled]}
-          onPress={salvarCampo}
+          onPress={handleSubmit}
           disabled={loading}
         >
           <Text style={styles.createButtonText}>

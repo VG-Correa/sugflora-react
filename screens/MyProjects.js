@@ -116,19 +116,17 @@ const MyProjects = () => {
                     {projeto.inicio
                       ? (() => {
                           try {
-                            const [dataPart, horaPart] =
-                              projeto.inicio.split(" ");
-                            const [ano, mes, dia] = dataPart.split("-");
-                            const [hora, minuto, segundo] = horaPart.split(":");
-                            const data = new Date(
-                              ano,
-                              mes - 1,
-                              dia,
-                              hora,
-                              minuto,
-                              segundo
-                            );
-                            return data.toLocaleDateString("pt-BR");
+                            // Verifica se a data está no formato ISO
+                            if (projeto.inicio.includes("T")) {
+                              const data = new Date(projeto.inicio);
+                              return data.toLocaleDateString("pt-BR");
+                            }
+                            // Verifica se a data está no formato YYYY-MM-DD
+                            else if (projeto.inicio.includes("-")) {
+                              const [ano, mes, dia] = projeto.inicio.split("-");
+                              return `${dia}/${mes}/${ano}`;
+                            }
+                            return "Data inválida";
                           } catch (error) {
                             console.error(
                               "Erro ao formatar data de início:",
@@ -148,19 +146,18 @@ const MyProjects = () => {
                       <Text style={styles.infoValue}>
                         {(() => {
                           try {
-                            const [dataPart, horaPart] =
-                              projeto.previsaoConclusao.split(" ");
-                            const [ano, mes, dia] = dataPart.split("-");
-                            const [hora, minuto, segundo] = horaPart.split(":");
-                            const data = new Date(
-                              ano,
-                              mes - 1,
-                              dia,
-                              hora,
-                              minuto,
-                              segundo
-                            );
-                            return data.toLocaleDateString("pt-BR");
+                            // Verifica se a data está no formato ISO
+                            if (projeto.previsaoConclusao.includes("T")) {
+                              const data = new Date(projeto.previsaoConclusao);
+                              return data.toLocaleDateString("pt-BR");
+                            }
+                            // Verifica se a data está no formato YYYY-MM-DD
+                            else if (projeto.previsaoConclusao.includes("-")) {
+                              const [ano, mes, dia] =
+                                projeto.previsaoConclusao.split("-");
+                              return `${dia}/${mes}/${ano}`;
+                            }
+                            return "Data inválida";
                           } catch (error) {
                             console.error(
                               "Erro ao formatar data de previsão:",

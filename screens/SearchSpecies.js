@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-
+import HeaderInterno from "../components/HeaderInterno";
 
 const SpeciesSearchScreen = () => {
   const navigation = useNavigation();
@@ -18,38 +18,7 @@ const SpeciesSearchScreen = () => {
   return (
     <View style={styles.container}>
       {/* Cabeçalho */}
-      <View style={styles.headerContainer}>
-        <Image
-          source={require('../assets/images/cabecalho.webp')}  // Alterei para webp
-          style={styles.headerBackgroundImage}
-          resizeMode="cover"
-        />
-        <View style={styles.headerContent}>
-          <Image
-            source={require('../assets/images/logo.png')}
-            style={styles.logoImage}
-            resizeMode="contain"
-          />
-          <Text style={styles.logoText}>SUG - FLORA</Text>
-          <View style={styles.menuTop}>
-            <TouchableOpacity 
-              style={styles.menuItem}
-              onPress={() => navigation.navigate('HomePage')}
-            >
-              <Text style={styles.menuText}>PÁGINA INICIAL</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem}>
-              <Text style={styles.menuText}>SOBRE</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem}>
-              <Text style={styles.menuText}>CONTATO</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem}>
-              <Text style={styles.menuText}>SAIR</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
+      <HeaderInterno />
 
       <ScrollView style={styles.scrollView}>
         <View style={styles.mainContent}>

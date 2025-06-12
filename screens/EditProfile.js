@@ -29,51 +29,42 @@ const EditProfile = () => {
     endereco: "",
   });
 
-  const loadUserData = async () => {
-    try {
-      const uuid = await AsyncStorage.getItem("user_id");
-      const nome = await AsyncStorage.getItem("nome");
-      const sobrenome = await AsyncStorage.getItem("sobrenome");
-      const email = await AsyncStorage.getItem("email");
-      const username = await AsyncStorage.getItem("username");
-      const cpf = await AsyncStorage.getItem("cpf");
-      const rg = await AsyncStorage.getItem("rg");
-      const endereco = await AsyncStorage.getItem("endereco");
-
-      if (!uuid || !nome || !email) {
-        Alert.alert("Erro", "Dados do usuário não encontrados");
-        navigation.navigate("Login");
-        return;
-      }
-
-      setUserData({
-        uuid: uuid,
-        nome: nome || "",
-        sobrenome: sobrenome || "",
-        email: email || "",
-        username: username || "",
-        cpf: cpf || "",
-        rg: rg || "",
-        endereco: endereco || "",
-      });
-    } catch (error) {
-      console.error("Erro ao carregar dados:", error);
-      Alert.alert("Erro", "Não foi possível carregar seus dados");
-    }
-  };
-
   useEffect(() => {
+    const loadUserData = async () => {
+      try {
+        const uuid = await AsyncStorage.getItem("user_id");
+        const nome = await AsyncStorage.getItem("nome");
+        const sobrenome = await AsyncStorage.getItem("sobrenome");
+        const email = await AsyncStorage.getItem("email");
+        const username = await AsyncStorage.getItem("username");
+        const cpf = await AsyncStorage.getItem("cpf");
+        const rg = await AsyncStorage.getItem("rg");
+        const endereco = await AsyncStorage.getItem("endereco");
+
+        if (!uuid || !nome || !email) {
+          Alert.alert("Erro", "Dados do usuário não encontrados");
+          navigation.navigate("Login");
+          return;
+        }
+
+        setUserData({
+          uuid: uuid,
+          nome: nome || "",
+          sobrenome: sobrenome || "",
+          email: email || "",
+          username: username || "",
+          cpf: cpf || "",
+          rg: rg || "",
+          endereco: endereco || "",
+        });
+      } catch (error) {
+        console.error("Erro ao carregar dados:", error);
+        Alert.alert("Erro", "Não foi possível carregar seus dados");
+      }
+    };
+
     loadUserData();
   }, []);
-
-  // Adiciona listener para recarregar dados quando a tela receber foco
-  useEffect(() => {
-    const unsubscribe = navigation.addListener("focus", () => {
-      loadUserData();
-    });
-
-    return unsubscribe;
-  }, [navigation]);
 
   const handleSave = async () => {
     setLoading(true);

@@ -11,6 +11,16 @@ const CampoApi = {
     }
   },
 
+  async getAllByUsuarioId(usuario_id) {
+    try {
+      const response = await api.get("campo/usuario/" + usuario_id);
+      return response;
+    } catch (error) {
+      console.error("Erro ao buscar campos do usuário:", error);
+      throw error;
+    }
+  },
+
   async create(campoJson) {
     try {
       // Validar dados obrigatórios

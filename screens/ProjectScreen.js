@@ -18,18 +18,14 @@ const ProjectScreen = () => {
 
   const [campos, setCampos] = useState([]);
 
-  // Função de data simplificada e robusta
   const formatDate = (dateInput) => {
     if (!dateInput) return "Não definida";
     try {
-      // Para formatos como '2025-06-12T03:05:59' ou com array [2025, 6, 12, ...]
       let date;
       if (Array.isArray(dateInput)) {
         const [ano, mes, dia] = dateInput;
-        // new Date() usa mês 0-11, então subtraímos 1
         date = new Date(ano, mes - 1, dia);
       } else {
-        // Para strings, substitui espaço por 'T' para compatibilidade
         date = new Date(String(dateInput).replace(" ", "T"));
       }
 
@@ -127,15 +123,13 @@ const ProjectScreen = () => {
           {campos.map((campo, index) => (
             <View key={index} style={styles.tableRow}>
 
-              {/* CORREÇÃO APLICADA AQUI: O estilo foi movido do <Text> para o <TouchableOpacity> */}
               <TouchableOpacity
-                style={[styles.tableCell, { flex: 3 }]} // Estilo da célula aplicado aqui
+                style={[styles.tableCell, { flex: 3 }]} 
                 onPress={() => navigation.navigate("FieldScreen", { campo: campo })}
               >
                 <Text style={styles.linkText}>{campo.nome}</Text>
               </TouchableOpacity>
 
-              {/* Células de dados com alinhamento de texto centralizado para melhor visualização */}
               <Text style={[styles.tableCell, { flex: 1.5, textAlign: 'center' }]}>---</Text>
               <Text style={[styles.tableCell, { flex: 2, textAlign: 'center' }]}>---</Text>
               <Text style={[styles.tableCell, { flex: 2.5, textAlign: 'center' }]}>---</Text>

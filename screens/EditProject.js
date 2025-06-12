@@ -14,17 +14,16 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import projetoApi from '../functions/api/projetoApi';
 import * as FileSystem from 'expo-file-system';
-import HeaderInterno from '../components/HeaderInterno'; // Mantendo o header interno padrão
+import HeaderInterno from '../components/HeaderInterno'; 
 
 const EditProject = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { projeto } = route.params;
 
-  // Função para formatar a data vinda da API (Array) para o input (dd/mm/aaaa)
   const formatDateFromArrayForInput = (dateArray) => {
     if (!Array.isArray(dateArray) || dateArray.length < 3) {
-      return ''; // Retorna string vazia se o formato for inválido
+      return ''; 
     }
     const [ano, mes, dia] = dateArray;
     const diaFormatado = String(dia).padStart(2, '0');
@@ -50,7 +49,7 @@ const EditProject = () => {
 
     if (!result.canceled) {
       setImagemUri(result.assets[0].uri);
-      setIsNewImage(true); // Marca que a imagem é nova
+      setIsNewImage(true); 
     }
   };
 
@@ -75,7 +74,6 @@ const EditProject = () => {
       const userId = await AsyncStorage.getItem('user_id');
 
       let imagemBase64 = null;
-      // Converte para base64 apenas se uma nova imagem foi selecionada
       if (imagemUri && isNewImage) {
         imagemBase64 = await FileSystem.readAsStringAsync(imagemUri, {
           encoding: FileSystem.EncodingType.Base64,
@@ -86,13 +84,13 @@ const EditProject = () => {
       const terminoISO = formatDateToISO(previsaoConclusao);
 
       const payload = {
-        id: projeto.id, // ID do projeto que está sendo editado
+        id: projeto.id, 
         nome,
         descricao,
         inicio: inicioISO,
         termino: terminoISO,
         responsavel,
-        imagemBase64, // Será nulo se a imagem não for nova
+        imagemBase64, 
         usuario_dono_uuid: userId,
         isPublic: projeto.isPublic,
       };

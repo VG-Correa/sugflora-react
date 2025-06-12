@@ -13,7 +13,7 @@ import { useNavigation } from "@react-navigation/native";
 import projetoApi from "../functions/api/projetoApi";
 import HeaderInterno from "../components/HeaderInterno";
 
-const coresAbas = ["#b2d8b2", "#ccc", "#f8a5a5"]; // Verde, cinza, vermelho
+const coresAbas = ["#b2d8b2", "#ccc", "#f8a5a5"]; 
 
 const MyProjects = () => {
   const [projetos, setProjetos] = useState([]);
@@ -52,22 +52,17 @@ const MyProjects = () => {
     fetchProjetos();
   }, []);
 
-  // FUNÇÃO CORRIGIDA PARA LER O ARRAY DE DATA
   const formatDate = (dateArray) => {
     try {
-      // Verifica se o input é um array e tem pelo menos 3 elementos (ano, mês, dia)
       if (!Array.isArray(dateArray) || dateArray.length < 3) {
-        // Se a data for nula (como em um 'termino' opcional), retorna "Não definida"
         if (dateArray === null || dateArray === undefined) {
           return "Não definida";
         }
         return "Data inválida";
       }
 
-      // Pega os 3 primeiros valores do array
       const [ano, mes, dia] = dateArray;
 
-      // Formata para garantir dois dígitos para dia e mês
       const diaFormatado = String(dia).padStart(2, "0");
       const mesFormatado = String(mes).padStart(2, "0");
 
@@ -137,7 +132,6 @@ const MyProjects = () => {
                     {formatDate(projeto.inicio)}
                   </Text>
 
-                  {/* A condição projeto.termino já filtra os nulos antes de chamar a função */}
                   {projeto.termino && (
                     <>
                       <Text style={styles.label}>Previsão de Conclusão:</Text>

@@ -15,7 +15,7 @@ import * as ImagePicker from 'expo-image-picker';
 import projetoApi from '../functions/api/projetoApi';
 import * as FileSystem from 'expo-file-system';
 
-const API_BASE_URL = 'https://seu-endereco-api.com'; // ⚠️ Substitua pelo endereço real da sua API
+const API_BASE_URL = 'https://seu-endereco-api.com'; 
 
 const NewProject = () => {
   const navigation = useNavigation();

@@ -12,26 +12,23 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import CampoApi from '../functions/api/CampoApi';
 import HeaderInterno from '../components/HeaderInterno';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-// Se você usar o `useNotification`, descomente a linha abaixo
-// import { useNotification } from "../contexts/NotificationContext";
+
 
 const NewField = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { projeto } = route.params;
 
-  // const { showNotification } = useNotification(); // Descomente se usar
   const [loading, setLoading] = useState(false);
 
-  // Usando useState para todos os campos do formulário
   const [nome, setNome] = useState('');
   const [dataInicio, setDataInicio] = useState('');
   const [descricao, setDescricao] = useState('');
-  const [pais, setPais] = useState('Brasil'); // Valor padrão
+  const [pais, setPais] = useState('Brasil'); 
   const [estado, setEstado] = useState('');
   const [cidade, setCidade] = useState('');
   const [endereco, setEndereco] = useState('');
-  const [previsaoConclusao, setPrevisaoConclusao] = useState(''); // Campo adicionado do layout
+  const [previsaoConclusao, setPrevisaoConclusao] = useState(''); 
 
   const validarCampos = () => {
     if (!nome || !dataInicio || !pais || !estado || !cidade || !endereco) {
@@ -47,7 +44,7 @@ const NewField = () => {
     if (day && month && year && year.length === 4) {
       return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T00:00:00`;
     }
-    return null; // Retorna nulo se o formato for inválido
+    return null; 
   };
 
 
@@ -68,15 +65,14 @@ const NewField = () => {
       const inicioISO = formatDateToISO(dataInicio);
       const terminoISO = formatDateToISO(previsaoConclusao);
 
-      // --- VALIDAÇÃO ADICIONADA AQUI ---
-      // Verifica se a formatação da data retornou nulo (formato inválido)
+      
       if (!inicioISO) {
         Alert.alert(
           "Formato de Data Inválido",
           "Por favor, insira a Data de Início no formato dd/mm/aaaa."
         );
-        setLoading(false); // Libera o botão
-        return; // Para a execução da função aqui
+        setLoading(false); 
+        return; 
       }
 
       const campoJson = {

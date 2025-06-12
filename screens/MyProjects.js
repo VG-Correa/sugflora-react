@@ -4,7 +4,7 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  TextInput,
+  Image,
   ScrollView,
   useWindowDimensions,
   ActivityIndicator,
@@ -13,6 +13,8 @@ import { useNavigation } from "@react-navigation/native";
 import projetoApi from "../functions/api/projetoApi";
 import HeaderInterno from "../components/HeaderInterno";
 
+const coresAbas = ["#b2d8b2", "#ccc", "#f8a5a5"]; 
+
 const MyProjects = () => {
   const [projetos, setProjetos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -20,8 +22,6 @@ const MyProjects = () => {
   const navigation = useNavigation();
   const { width } = useWindowDimensions();
 
-  // Calcula a quantidade de colunas baseado na largura da tela
-  const numColumns = width > 768 ? 3 : width > 480 ? 2 : 1;
   const cardWidth = width > 768 ? "30%" : width > 480 ? "45%" : "90%";
 
   async function fetchProjetos() {
@@ -30,15 +30,12 @@ const MyProjects = () => {
       setError(null);
       const user_id = localStorage.getItem("user_id");
 
-      if (!user_id) {
-        throw new Error("Usuário não autenticado");
-      }
+      if (!user_id) throw new Error("Usuário não autenticado");
 
       const response = await projetoApi.getProjetos(user_id);
 
       if (response.status === 200) {
         const projetosAtivos = response.data.data || [];
-
         setProjetos(projetosAtivos.filter((projeto) => !projeto.deleted));
       } else {
         throw new Error("Erro ao carregar projetos");
@@ -54,6 +51,27 @@ const MyProjects = () => {
   useEffect(() => {
     fetchProjetos();
   }, []);
+
+  const formatDate = (dateArray) => {
+    try {
+      if (!Array.isArray(dateArray) || dateArray.length < 3) {
+        if (dateArray === null || dateArray === undefined) {
+          return "Não definida";
+        }
+        return "Data inválida";
+      }
+
+      const [ano, mes, dia] = dateArray;
+
+      const diaFormatado = String(dia).padStart(2, "0");
+      const mesFormatado = String(mes).padStart(2, "0");
+
+      return `${diaFormatado}/${mesFormatado}/${ano}`;
+    } catch (e) {
+      console.error("Erro ao formatar array de data:", e);
+      return "Data inválida";
+    }
+  };
 
   if (loading) {
     return (
@@ -84,110 +102,65 @@ const MyProjects = () => {
   return (
     <View style={styles.container}>
       <HeaderInterno />
-
-      <ScrollView
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
+      <ScrollView contentContainerStyle={styles.scrollContent}>
         <Text style={styles.pageTitle}>MEUS PROJETOS</Text>
 
-        {projetos.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>Nenhum projeto encontrado</Text>
-            <TouchableOpacity
-              style={styles.createButton}
-              onPress={() => navigation.navigate("NewProject")}
-            >
-              <Text style={styles.buttonText}>Criar novo projeto</Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <View style={[styles.projectsGrid, { width: "100%" }]}>
-            {projetos.map((projeto) => (
+        <View style={[styles.projectsGrid, { width: "100%" }]}>
+          {projetos.map((projeto, index) => {
+            const corAba = coresAbas[index % coresAbas.length];
+            return (
               <View
                 key={projeto.id}
-                style={[styles.projectContainer, { width: cardWidth }]}
+                style={[styles.projectCard, { width: cardWidth }]}
               >
-                <Text style={styles.projectHeader}>{projeto.nome}</Text>
+                <View style={[styles.folderTab, { backgroundColor: corAba }]}>
+                  <Text style={styles.projectTitle}>{projeto.nome}</Text>
+                  {projeto.imagemUrl && (
+                    <Image
+                      source={{ uri: projetoApi.baseUrl + projeto.imagemUrl }}
+                      style={styles.projectImage}
+                    />
+                  )}
+                </View>
 
-                <View style={styles.projectInfo}>
-                  <Text style={styles.infoLabel}>Data de Início:</Text>
-                  <Text style={styles.infoValue}>
-                    {projeto.inicio
-                      ? (() => {
-                          try {
-                            // Verifica se a data está no formato ISO
-                            if (projeto.inicio.includes("T")) {
-                              const data = new Date(projeto.inicio);
-                              return data.toLocaleDateString("pt-BR");
-                            }
-                            // Verifica se a data está no formato YYYY-MM-DD
-                            else if (projeto.inicio.includes("-")) {
-                              const [ano, mes, dia] = projeto.inicio.split("-");
-                              return `${dia}/${mes}/${ano}`;
-                            }
-                            return "Data inválida";
-                          } catch (error) {
-                            console.error(
-                              "Erro ao formatar data de início:",
-                              error
-                            );
-                            return "Data inválida";
-                          }
-                        })()
-                      : "Não definida"}
+                <View style={styles.projectBody}>
+                  <Text style={styles.label}>Descrição:</Text>
+                  <Text style={styles.value}>{projeto.descricao || "-"}</Text>
+
+                  <Text style={styles.label}>Data de Início:</Text>
+                  <Text style={styles.value}>
+                    {formatDate(projeto.inicio)}
                   </Text>
 
-                  {projeto.previsaoConclusao && (
+                  {projeto.termino && (
                     <>
-                      <Text style={styles.infoLabel}>
-                        Previsão de Conclusão:
-                      </Text>
-                      <Text style={styles.infoValue}>
-                        {(() => {
-                          try {
-                            // Verifica se a data está no formato ISO
-                            if (projeto.previsaoConclusao.includes("T")) {
-                              const data = new Date(projeto.previsaoConclusao);
-                              return data.toLocaleDateString("pt-BR");
-                            }
-                            // Verifica se a data está no formato YYYY-MM-DD
-                            else if (projeto.previsaoConclusao.includes("-")) {
-                              const [ano, mes, dia] =
-                                projeto.previsaoConclusao.split("-");
-                              return `${dia}/${mes}/${ano}`;
-                            }
-                            return "Data inválida";
-                          } catch (error) {
-                            console.error(
-                              "Erro ao formatar data de previsão:",
-                              error
-                            );
-                            return "Data inválida";
-                          }
-                        })()}
+                      <Text style={styles.label}>Previsão de Conclusão:</Text>
+                      <Text style={styles.value}>
+                        {formatDate(projeto.termino)}
                       </Text>
                     </>
                   )}
 
-                  <Text style={styles.infoLabel}>Status:</Text>
-                  <Text style={styles.infoValue}>
-                    {projeto.public ? "Publicado" : "Privado"}
-                  </Text>
-                </View>
+                  {projeto.responsavel && (
+                    <>
+                      <Text style={styles.label}>Responsável:</Text>
+                      <Text style={styles.value}>{projeto.responsavel}</Text>
+                    </>
+                  )}
 
-                <TouchableOpacity
-                  style={styles.openButton}
-                  onPress={() =>
-                    navigation.navigate("ProjectScreen", { projeto })
-                  }
-                >
-                  <Text style={styles.buttonText}>Abrir Projeto</Text>
-                </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.openButton, { backgroundColor: corAba }]}
+                    onPress={() =>
+                      navigation.navigate("ProjectScreen", { projeto })
+                    }
+                  >
+                    <Text style={styles.buttonText}>Ver projeto</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
-            ))}
-          </View>
-        )}
+            );
+          })}
+        </View>
       </ScrollView>
     </View>
   );
@@ -202,6 +175,71 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     padding: 20,
     alignItems: "center",
+  },
+  pageTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#2e7d32",
+    marginBottom: 25,
+    textAlign: "center",
+  },
+  projectsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 20,
+  },
+  projectCard: {
+    borderRadius: 8,
+    backgroundColor: "#f4f4f4",
+    overflow: "hidden",
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  folderTab: {
+    padding: 10,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  projectTitle: {
+    fontSize: 16,
+    fontWeight: "bold",
+    color: "#000",
+  },
+  projectImage: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+  },
+  projectBody: {
+    backgroundColor: "#dcedc8",
+    padding: 10,
+  },
+  label: {
+    fontSize: 12,
+    color: "#555",
+    fontWeight: "bold",
+  },
+  value: {
+    fontSize: 14,
+    color: "#333",
+    marginBottom: 8,
+  },
+  openButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+    alignItems: "center",
+    marginTop: 10,
+  },
+  buttonText: {
+    color: "#fff",
+    fontWeight: "bold",
   },
   loadingContainer: {
     flex: 1,
@@ -225,99 +263,11 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 20,
   },
-  pageTitle: {
-    fontSize: 24,
-    fontWeight: "bold",
-    color: "#2e7d32",
-    marginBottom: 25,
-    textAlign: "center",
-  },
-  projectsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "center",
-    gap: 15,
-    paddingBottom: 20,
-  },
-  projectContainer: {
-    backgroundColor: "#e8f5e9",
-    borderRadius: 10,
-    padding: 15,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    minWidth: 200, // Largura mínima para os cards
-  },
-  projectHeader: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#2e7d32",
-    textAlign: "center",
-    marginBottom: 15,
-  },
-  inputField: {
-    width: "100%",
-    height: 40,
-    backgroundColor: "#fff",
-    borderColor: "#ccc",
-    borderWidth: 1,
-    borderRadius: 5,
-    paddingHorizontal: 10,
-    marginBottom: 15,
-    color: "#333",
-    textAlign: "center",
-  },
-  openButton: {
-    backgroundColor: "#2e7d32",
-    padding: 12,
-    borderRadius: 5,
-    alignItems: "center",
-    marginTop: 10,
-  },
   retryButton: {
     backgroundColor: "#d32f2f",
     padding: 12,
     borderRadius: 5,
     alignItems: "center",
-  },
-  createButton: {
-    backgroundColor: "#2e7d32",
-    padding: 12,
-    borderRadius: 5,
-    alignItems: "center",
-    marginTop: 15,
-    minWidth: 200,
-  },
-  buttonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 14,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 20,
-  },
-  emptyText: {
-    fontSize: 18,
-    color: "#666",
-    marginBottom: 15,
-  },
-  projectInfo: {
-    marginBottom: 15,
-  },
-  infoLabel: {
-    fontSize: 12,
-    color: "#666",
-    marginBottom: 2,
-  },
-  infoValue: {
-    fontSize: 14,
-    color: "#333",
-    marginBottom: 8,
   },
 });
 

@@ -21,7 +21,7 @@ const Home = ({ navigation }) => {
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.scrollContainer}>
         {/* Header fixo no topo com logo e navegação */}
-        <Header navigation={navigation} /> {/* Já está configurado para navegar para Login */}
+        <Header navigation={navigation} /> 
 
         <Image
           source={require('../assets/images/forest.webp')}
@@ -68,7 +68,6 @@ const Home = ({ navigation }) => {
   );
 };
 
-/* SEUS ESTILOS ORIGINAIS (totalmente inalterados) */
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
@@ -85,7 +84,7 @@ const styles = StyleSheet.create({
     resizeMode: 'cover',
   },
   contentWrapper: {
-    flex: 1, // 👈 Garante que o container ocupe toda a altura disponível
+    flex: 1, 
     justifyContent: 'flex-start',
     alignItems: 'flex-start',
     padding: 20,
@@ -93,7 +92,7 @@ const styles = StyleSheet.create({
   },
   left: {
     flex: 1,
-    justifyContent: 'space-between', // 👈 Distribui espaço entre título e botão
+    justifyContent: 'space-between', 
     paddingRight: 20,
   },
   title: {
@@ -113,7 +112,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     borderRadius: 20,
     alignSelf: 'center',
-    marginTop: 'auto', // 👈 Fixa o botão na base
+    marginTop: 'auto', 
   },
   loginText: {
     color: '#fff',
@@ -121,7 +120,7 @@ const styles = StyleSheet.create({
   },
     right: {
     flex: 1,
-    justifyContent: 'center', // 👈 Centraliza as imagens verticalmente
+    justifyContent: 'center', 
     gap: 10,
   },
    

@@ -1,123 +1,190 @@
-import React, { useRef, useState } from "react";
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   TextInput,
+  Image,
   ScrollView,
-} from "react-native";
-import { useNavigation } from "@react-navigation/native";
-import HeaderInterno from "../components/HeaderInterno";
-import projetoApi from "../functions/api/projetoApi";
-import DatePicker from "@dietime/react-native-date-picker";
-import { format } from "date-fns";
+  Alert,
+} from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as ImagePicker from 'expo-image-picker';
+import projetoApi from '../functions/api/projetoApi';
+import * as FileSystem from 'expo-file-system';
+
+const API_BASE_URL = 'https://seu-endereco-api.com'; 
 
 const NewProject = () => {
   const navigation = useNavigation();
 
-  const [data_inicio, setData_inicio] = useState(new Date());
-  const [data_previsao, setData_previsao] = useState(new Date());
+  const [nome, setNome] = useState('');
+  const [descricao, setDescricao] = useState('');
+  const [dataInicio, setDataInicio] = useState('');
+  const [previsaoConclusao, setPrevisaoConclusao] = useState('');
+  const [responsavel, setResponsavel] = useState('');
+  const [imagemUri, setImagemUri] = useState(null);
 
-  const nomeProjetoRef = useRef();
-  const descricaoProjetoRef = useRef();
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.5,
+    });
 
-  async function postProjeto() {
+    if (!result.canceled) {
+      setImagemUri(result.assets[0].uri);
+    }
+  };
+
+  const validarCampos = () => {
+    if (!nome || !descricao || !dataInicio || !previsaoConclusao || !responsavel) {
+      Alert.alert('Campos obrigatórios', 'Por favor, preencha todos os campos.');
+      return false;
+    }
+    return true;
+  };
+
+  const formatDateToISO = (dateStr) => {
+    if (!dateStr) return null;
+    const [day, month, year] = dateStr.split('/');
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T00:00:00`;
+  };
+
+  const handleCreateProject = async () => {
+    if (!validarCampos()) return;
+
     try {
-      // Formata as datas para o formato esperado pelo backend (yyyy-MM-dd)
-      const dataInicioFormatada = format(data_inicio, "yyyy-MM-dd");
-      const dataPrevisaoFormatada = format(data_previsao, "yyyy-MM-dd");
+      const userId = await AsyncStorage.getItem('user_id');
 
-      const response = await projetoApi.create({
+      let imagemBase64 = null;
+      if (imagemUri) {
+        imagemBase64 = await FileSystem.readAsStringAsync(imagemUri, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+      }
+
+      const inicioISO = formatDateToISO(dataInicio);
+      const terminoISO = formatDateToISO(previsaoConclusao);
+
+      const payload = {
         id: null,
-        nome: nomeProjetoRef.current.value,
-        descricao: descricaoProjetoRef.current.value,
-        inicio: dataInicioFormatada,
-        previsaoConclusao: dataPrevisaoFormatada,
-        usuario_dono_uuid: localStorage.getItem("user_id"),
-        public: false,
-      });
+        nome,
+        descricao,
+        inicio: inicioISO,
+        termino: terminoISO,
+        responsavel,
+        imagemBase64,
+        usuario_dono_uuid: userId,
+        isPublic: false,
+      };
 
-      if (response.status === 201) {
-        navigation.navigate("MyProjects");
+      console.log('Payload para API:', payload);
+
+      const response = await projetoApi.create(payload);
+
+      console.log('Resposta da criação:', response?.status, response?.data);
+
+      if (response?.status === 201) {
+        navigation.navigate('MyProjects');
       } else {
-        window.alert("Erro ao salvar projeto");
+        Alert.alert('Erro', 'Erro ao salvar o projeto');
       }
     } catch (error) {
-      window.alert(
-        "Erro ao tentar salvar projeto: " + error.response?.data?.message
-      );
-      console.log("Erro ao salvar o projeto ", error);
+      console.error('Erro ao criar projeto', error);
+      Alert.alert('Erro', 'Erro ao tentar salvar projeto');
     }
-  }
+  };
 
   return (
     <View style={styles.container}>
-      <HeaderInterno />
-      <ScrollView style={styles.content}>
+      <View style={styles.headerContainer}>
+        <Image
+          source={require('../assets/images/cabecalho.webp')}
+          style={styles.headerBackgroundImage}
+          resizeMode="cover"
+        />
+        <View style={styles.headerContent}>
+          <Image
+            source={require('../assets/images/logo.png')}
+            style={styles.logoImage}
+            resizeMode="contain"
+          />
+          <Text style={styles.logoText}>SUG - FLORA</Text>
+          <View style={styles.menuTop}>
+            <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('MyProjects')}>
+              <Text style={styles.menuText}>MEUS PROJETOS</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('NewProject')}>
+              <Text style={styles.menuText}>CRIAR PROJETO</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('HomePage')}>
+              <Text style={styles.menuText}>PÁGINA INICIAL</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.menuItem}>
+              <Text style={styles.menuText}>SAIR</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </View>
+
+      <ScrollView style={styles.content} contentContainerStyle={styles.formWrapper}>
         <Text style={styles.pageTitle}>CRIAR PROJETO</Text>
 
-        <View style={styles.profileSection}>
-          {/* Dados do projeto à direita */}
-          <View style={styles.dataSection}>
-            <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>NOME DO PROJETO</Text>
-              <TextInput
-                ref={nomeProjetoRef}
-                style={styles.input}
-                placeholder=""
-              />
+        <View style={styles.row}>
+          <View style={styles.imageSection}>
+            <Text style={styles.photoLabel}>Imagem</Text>
+            {imagemUri ? (
+              <Image source={{ uri: imagemUri }} style={styles.photoPreview} />
+            ) : (
+              <View style={styles.photoPlaceholder}></View>
+            )}
+            <TouchableOpacity style={styles.changePhotoButton} onPress={pickImage}>
+              <Text style={styles.changePhotoText}>Adicionar imagem</Text>
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.fieldsSection}>
+            <View style={styles.doubleFieldRow}>
+              <View style={styles.fieldGroupHalf}>
+                <Text style={styles.fieldLabel}>NOME DO PROJETO</Text>
+                <TextInput style={styles.input} value={nome} onChangeText={setNome} />
+              </View>
+              <View style={styles.fieldGroupHalf}>
+                <Text style={styles.fieldLabel}>DATA DE INÍCIO</Text>
+                <TextInput style={styles.input} placeholder="dd/mm/aaaa" value={dataInicio} onChangeText={setDataInicio} />
+              </View>
             </View>
 
             <View style={styles.fieldGroup}>
               <Text style={styles.fieldLabel}>DESCRIÇÃO</Text>
               <TextInput
-                ref={descricaoProjetoRef}
-                style={[styles.input, { height: 100 }]}
-                placeholder="Digite aqui"
+                style={[styles.input, { height: 80 }]}
                 multiline
+                value={descricao}
+                onChangeText={setDescricao}
               />
             </View>
 
-            <View style={styles.dateSection}>
-              <View style={styles.datePickerContainer}>
-                <Text style={styles.dataLabel}>Data de início</Text>
-                <DatePicker
-                  value={data_inicio}
-                  onChange={(value) => setData_inicio(value)}
-                  format="dd-mm-YY"
-                  height={300}
-                  width={300}
-                  startYear={2025}
-                  endYear={2030}
-                />
+            <View style={styles.doubleFieldRow}>
+              <View style={styles.fieldGroupHalf}>
+                <Text style={styles.fieldLabel}>PREVISÃO DE CONCLUSÃO</Text>
+                <TextInput style={styles.input} placeholder="dd/mm/aaaa" value={previsaoConclusao} onChangeText={setPrevisaoConclusao} />
               </View>
-
-              <View style={styles.datePickerContainer}>
-                <Text style={styles.dataLabel}>Previsão de conclusão</Text>
-                <DatePicker
-                  value={data_previsao}
-                  onChange={(value) => setData_previsao(value)}
-                  format="dd-mm-YY"
-                  height={300}
-                  width={300}
-                  startYear={2025}
-                  endYear={2030}
-                />
+              <View style={styles.fieldGroupHalf}>
+                <Text style={styles.fieldLabel}>RESPONSÁVEL</Text>
+                <TextInput style={styles.input} value={responsavel} onChangeText={setResponsavel} />
               </View>
             </View>
           </View>
         </View>
 
-        {/* Seção de datas e responsável */}
-        <View style={styles.bottomSection}>
-          <TouchableOpacity
-            style={styles.createButton}
-            onPress={() => {
-              postProjeto();
-            }}
-          >
-            <Text style={styles.createButtonText}>CRIAR PROJETO</Text>
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity style={styles.createButton} onPress={handleCreateProject}>
+            <Text style={styles.createButtonText}>Salvar Projeto</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -126,98 +193,56 @@ const NewProject = () => {
 };
 
 const styles = StyleSheet.create({
-  dataLabel: {
-    alignSelf: "center",
-    fontSize: 30,
-    marginBottom: 10,
-  },
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
-  content: {
-    flex: 1,
-  },
-  pageTitle: {
+  container: { flex: 1, backgroundColor: '#fff' },
+  headerContainer: { width: '100%', height: 220, position: 'relative' },
+  headerBackgroundImage: { width: '100%', height: '100%', position: 'absolute' },
+  headerContent: { position: 'absolute', width: '100%', alignItems: 'center', paddingTop: 20 },
+  logoImage: { width: 80, height: 80, marginBottom: 5 },
+  logoText: {
     fontSize: 24,
-    fontWeight: "bold",
-    textAlign: "center",
-    marginVertical: 20,
-    color: "#2e7d32",
-  },
-  profileSection: {
-    flexDirection: "row",
-    paddingHorizontal: 20,
-    marginBottom: 20,
-  },
-  photoSection: {
-    width: "30%",
-    alignItems: "center",
-    marginRight: 20,
-  },
-  photoLabel: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 10,
-    color: "#2e7d32",
-  },
-  photoPlaceholder: {
-    width: 100,
-    height: 100,
-    backgroundColor: "#e8f5e9",
-    marginBottom: 10,
-  },
-  changePhotoButton: {
-    backgroundColor: "#2e7d32",
-    padding: 8,
-    borderRadius: 5,
-  },
-  changePhotoText: {
-    color: "#fff",
-    fontSize: 12,
-  },
-  dataSection: {
-    flex: 1,
-  },
-  dateSection: {
-    marginTop: 20,
-  },
-  datePickerContainer: {
-    marginBottom: 30,
-  },
-  bottomSection: {
-    paddingHorizontal: 20,
-  },
-  fieldGroup: {
+    fontWeight: 'bold',
+    color: '#fff',
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 5,
     marginBottom: 15,
   },
-  fieldLabel: {
-    fontSize: 14,
-    fontWeight: "bold",
-    marginBottom: 5,
-    color: "#2e7d32",
+  menuTop: { flexDirection: 'row', justifyContent: 'space-around', width: '100%', paddingVertical: 10 },
+  menuItem: { paddingHorizontal: 10 },
+  menuText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#fff',
+    textShadowColor: 'rgba(0,0,0,0.8)',
+    textShadowOffset: { width: 1, height: 1 },
+    textShadowRadius: 5,
   },
+  content: { flex: 1 },
+  formWrapper: { padding: 20 },
+  pageTitle: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', marginVertical: 20, color: '#2e7d32' },
+  row: { flexDirection: 'row', justifyContent: 'space-between' },
+  imageSection: { width: '30%', alignItems: 'center' },
+  photoLabel: { fontSize: 16, fontWeight: 'bold', marginBottom: 10, color: '#2e7d32' },
+  photoPlaceholder: { width: 100, height: 100, backgroundColor: '#e8f5e9', marginBottom: 10 },
+  photoPreview: { width: 100, height: 100, borderRadius: 5, marginBottom: 10 },
+  changePhotoButton: { backgroundColor: '#2e7d32', padding: 8, borderRadius: 5 },
+  changePhotoText: { color: '#fff', fontSize: 12 },
+  fieldsSection: { width: '65%' },
+  fieldGroup: { marginBottom: 15 },
+  fieldGroupHalf: { flex: 1, marginEnd: 10 },
+  doubleFieldRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 },
+  fieldLabel: { fontSize: 14, fontWeight: 'bold', marginBottom: 5, color: '#2e7d32' },
   input: {
     height: 40,
-    borderColor: "#ddd",
+    borderColor: '#ddd',
     borderWidth: 1,
     borderRadius: 5,
     paddingHorizontal: 10,
-    backgroundColor: "#f9f9f9",
+    backgroundColor: '#f9f9f9',
   },
-  createButton: {
-    backgroundColor: "#2e7d32",
-    padding: 15,
-    borderRadius: 5,
-    alignItems: "center",
-    marginTop: 20,
-    marginBottom: 30,
-  },
-  createButtonText: {
-    color: "#fff",
-    fontWeight: "bold",
-    fontSize: 16,
-  },
+  buttonContainer: { alignItems: 'center', marginTop: 20 },
+  createButton: { backgroundColor: '#2e7d32', padding: 15, borderRadius: 5, width: 200, alignItems: 'center' },
+  createButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
 });
 
 export default NewProject;

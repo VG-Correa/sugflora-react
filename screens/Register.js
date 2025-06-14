@@ -17,6 +17,7 @@ import {
 import Header from "../components/Header"; // Importando o Header igual ao Home.js
 import MaskInput, { Masks } from "react-native-mask-input";
 import axios from "axios";
+import UsuarioApi from "../functions/api/usuarioApi";
 
 const Register = ({ navigation }) => {
   const { width: screenWidth } = useWindowDimensions();
@@ -95,9 +96,13 @@ const Register = ({ navigation }) => {
   };
 
   const validateForm = () => {
+    console.log("Iniciando validação do formulário...");
+    console.log("Dados do formulário:", formData);
+
     // Validação de CPF
     const cpfLimpo = formData.cpf.replace(/\D/g, "");
     if (cpfLimpo.length !== 11) {
+      console.log("CPF inválido:", formData.cpf);
       Alert.alert("Erro", "CPF inválido");
       return false;
     }
@@ -105,6 +110,7 @@ const Register = ({ navigation }) => {
     // Validação de email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
+      console.log("Email inválido:", formData.email);
       Alert.alert("Erro", "Email inválido");
       return false;
     }
@@ -112,35 +118,45 @@ const Register = ({ navigation }) => {
     // Validação de CEP
     const cepLimpo = formData.cep.replace(/\D/g, "");
     if (cepLimpo.length !== 8) {
+      console.log("CEP inválido:", formData.cep);
       Alert.alert("Erro", "CEP inválido");
       return false;
     }
 
-    if (
-      !formData.nome ||
-      !formData.email ||
-      !formData.senha ||
-      !formData.confirmarSenha ||
-      !formData.cpf ||
-      !formData.rg ||
-      !formData.endereco ||
-      !formData.cidade ||
-      !formData.estado
-    ) {
-      Alert.alert("Erro", "Por favor, preencha todos os campos obrigatórios");
-      return false;
+    // Validação dos campos obrigatórios
+    const camposObrigatorios = {
+      nome: "Nome",
+      email: "Email",
+      senha: "Senha",
+      confirmarSenha: "Confirmação de senha",
+      cpf: "CPF",
+      rg: "RG",
+      endereco: "Endereço",
+      cidade: "Cidade",
+      estado: "Estado",
+    };
+
+    for (const [campo, nome] of Object.entries(camposObrigatorios)) {
+      if (!formData[campo]) {
+        console.log(`Campo obrigatório não preenchido: ${campo}`);
+        Alert.alert("Erro", `Por favor, preencha o campo ${nome}`);
+        return false;
+      }
     }
 
     if (formData.senha !== formData.confirmarSenha) {
+      console.log("Senhas não coincidem");
       Alert.alert("Erro", "As senhas não coincidem");
       return false;
     }
 
     if (!termsAccepted) {
+      console.log("Termos não aceitos");
       Alert.alert("Erro", "Você precisa aceitar os termos e condições");
       return false;
     }
 
+    console.log("Formulário validado com sucesso!");
     return true;
   };
 
@@ -150,10 +166,12 @@ const Register = ({ navigation }) => {
     if (cepLimpo.length !== 8) return;
 
     try {
+      setLoading(true);
       const response = await axios.get(
         `https://viacep.com.br/ws/${cepLimpo}/json/`
       );
-      if (!response.data.erro) {
+
+      if (response.data && !response.data.erro) {
         setFormData((prev) => ({
           ...prev,
           endereco: response.data.logradouro || prev.endereco,
@@ -164,14 +182,48 @@ const Register = ({ navigation }) => {
       }
     } catch (error) {
       console.error("Erro ao buscar CEP:", error);
+      Alert.alert("Erro", "Não foi possível buscar o CEP. Tente novamente.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Adicionar debounce para a busca do CEP
+  const debounce = (func, wait) => {
+    let timeout;
+    return function executedFunction(...args) {
+      const later = () => {
+        clearTimeout(timeout);
+        func(...args);
+      };
+      clearTimeout(timeout);
+      timeout = setTimeout(later, wait);
+    };
+  };
+
+  const debouncedBuscarCep = debounce(buscarCep, 1000);
+
+  const handleCepChange = (value) => {
+    handleInputChange("cep", value);
+    if (value.replace(/\D/g, "").length === 8) {
+      debouncedBuscarCep(value);
     }
   };
 
   const handleRegister = async () => {
-    if (!validateForm()) return;
+    console.log("Iniciando cadastro...");
+    console.log("Estado do formulário:", formData);
+    console.log("Termos aceitos:", termsAccepted);
+
+    if (!validateForm()) {
+      console.log("Validação do formulário falhou");
+      return;
+    }
 
     setLoading(true);
     try {
+      console.log("Formulário válido, preparando dados...");
+
       // Formata o endereço completo
       const enderecoCompleto = `${formData.endereco}${
         formData.numero ? `, ${formData.numero}` : ""
@@ -181,32 +233,39 @@ const Register = ({ navigation }) => {
         formData.cep ? ` - CEP: ${formData.cep}` : ""
       }`;
 
+      // Limpa e formata os dados antes de enviar
       const userData = {
-        username: formData.email, // Usando email como username
-        nome: formData.nome,
-        sobrenome: formData.sobrenome || "",
-        email: formData.email,
+        username: formData.email.trim(),
+        nome: formData.nome.trim(),
+        sobrenome: formData.sobrenome?.trim() || "",
+        email: formData.email.trim(),
         senha: formData.senha,
-        cpf: formData.cpf.replace(/\D/g, ""), // Remove caracteres não numéricos
-        rg: formData.rg.replace(/\D/g, ""), // Remove caracteres não numéricos
-        endereco: enderecoCompleto,
+        cpf: formData.cpf.replace(/\D/g, ""),
+        rg: formData.rg.replace(/\D/g, ""),
+        endereco: enderecoCompleto.trim(),
         role: "USER",
       };
 
-      console.log("Dados sendo enviados:", userData);
+      console.log("Dados formatados:", userData);
 
-      const response = await fetch("http://localhost:8080/api/usuario", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(userData),
-      });
+      // Verifica se o usuário já existe
+      console.log("Verificando se usuário já existe...");
+      const existingUser = await UsuarioApi.getUserByUsername(
+        userData.username
+      );
+      if (existingUser && existingUser.data) {
+        console.log("Usuário já existe");
+        Alert.alert("Erro", "Este e-mail já está cadastrado");
+        setLoading(false);
+        return;
+      }
 
-      const data = await response.json();
-      console.log("Resposta da API:", data);
+      console.log("Tentando criar usuário...");
+      const response = await UsuarioApi.create(userData);
+      console.log("Resposta da API:", response);
 
-      if (response.ok) {
+      if (response.status === 201 && response.data) {
+        console.log("Usuário criado com sucesso");
         // Limpa o formulário
         setFormData({
           nome: "",
@@ -226,19 +285,37 @@ const Register = ({ navigation }) => {
           role: "USER",
         });
 
-        // Navega para a tela de login
-        navigation.replace("Login");
-      } else {
-        const errorMessage =
-          data.message || data.error || "Erro ao realizar cadastro";
-        Alert.alert("Erro", errorMessage);
+        Alert.alert("Sucesso", "Cadastro realizado com sucesso!", [
+          {
+            text: "OK",
+            onPress: () => {
+              console.log("Redirecionando para Login...");
+              navigation.reset({
+                index: 0,
+                routes: [{ name: "Login" }],
+              });
+            },
+          },
+        ]);
       }
     } catch (error) {
-      console.error("Erro ao cadastrar:", error);
-      Alert.alert(
-        "Erro",
-        "Erro ao conectar com o servidor. Verifique se o servidor está rodando."
-      );
+      console.error("Erro detalhado ao cadastrar:", error);
+      console.error("Resposta do erro:", error.response?.data);
+      console.error("Status do erro:", error.response?.status);
+
+      let errorMessage = "Erro ao realizar cadastro. Tente novamente.";
+
+      if (error.response) {
+        if (error.response.status === 400) {
+          errorMessage = "Dados inválidos. Verifique as informações.";
+        } else if (error.response.status === 409) {
+          errorMessage = "Este e-mail ou usuário já está cadastrado.";
+        } else if (error.response.data && error.response.data.message) {
+          errorMessage = error.response.data.message;
+        }
+      }
+
+      Alert.alert("Erro", errorMessage);
     } finally {
       setLoading(false);
     }
@@ -357,19 +434,14 @@ const Register = ({ navigation }) => {
             {/* CEP */}
             <View style={styles.section}>
               <View style={styles.inputGroup}>
-                <Text style={styles.label}>CEP*</Text>
+                <Text style={styles.label}>CEP</Text>
                 <MaskInput
                   style={styles.input}
-                  placeholder="00000-000"
                   value={formData.cep}
-                  onChange={(masked, unmasked) => {
-                    handleInputChange("cep", masked);
-                    if (masked.length === 9) {
-                      buscarCep(masked);
-                    }
-                  }}
+                  onChangeText={handleCepChange}
                   mask={Masks.ZIP_CODE}
                   keyboardType="numeric"
+                  placeholder="00000-000"
                 />
               </View>
             </View>
@@ -547,12 +619,17 @@ const Register = ({ navigation }) => {
             {/* Botão de cadastro */}
             <TouchableOpacity
               style={[styles.registerButton, loading && styles.disabledButton]}
-              onPress={handleRegister}
+              onPress={() => {
+                console.log("Botão de cadastro pressionado");
+                handleRegister();
+              }}
               disabled={loading}
             >
-              <Text style={styles.registerButtonText}>
-                {loading ? "Cadastrando..." : "Cadastrar-se"}
-              </Text>
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.registerButtonText}>Cadastrar-se</Text>
+              )}
             </TouchableOpacity>
           </View>
         </View>

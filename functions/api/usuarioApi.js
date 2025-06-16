@@ -85,11 +85,24 @@ const UsuarioApi = {
 
   async update(usuario) {
     try {
-      const response = await api.put("/usuario", usuario);
+      const usuarioWriteDTO = {
+        uuid: usuario.uuid,
+        username: usuario.username,
+        nome: usuario.nome,
+        sobrenome: usuario.sobrenome || "",
+        email: usuario.email,
+        senha: usuario.senha,
+        cpf: usuario.cpf.replace(/\D/g, ""),
+        rg: usuario.rg.replace(/\D/g, ""),
+        endereco: usuario.endereco,
+        role: usuario.role || "USER",
+      };
+
+      const response = await api.put("/usuario", usuarioWriteDTO);
       return response;
     } catch (error) {
-      console.log("(API) Erro ao salvar usuario ", error);
-      return null;
+      console.log("(API) Erro ao atualizar usuário ", error);
+      throw error;
     }
   },
 

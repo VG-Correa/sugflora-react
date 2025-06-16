@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Switch,
   Platform,
+  Image,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import HeaderInterno from "../components/HeaderInterno";
@@ -17,7 +18,9 @@ import projetoApi from "../functions/api/projetoApi";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Picker } from "@react-native-picker/picker";
+import * as ImagePicker from "expo-image-picker";
 import axios from "axios";
+import DateTimePickerAndroid from "@react-native-community/datetimepicker";
 
 const NewProject = () => {
   const navigation = useNavigation();
@@ -26,6 +29,7 @@ const NewProject = () => {
   const [showInicioPicker, setShowInicioPicker] = useState(false);
   const [showTerminoPicker, setShowTerminoPicker] = useState(false);
   const [showPrevisaoPicker, setShowPrevisaoPicker] = useState(false);
+  const [imagem, setImagem] = useState(null);
   const [projeto, setProjeto] = useState({
     nome: "",
     descricao: "",
@@ -34,11 +38,47 @@ const NewProject = () => {
     termino: null,
     previsaoConclusao: null,
     responsavel_uuid: null,
+    imagemBase64: null,
   });
 
   useEffect(() => {
     carregarUsuarios();
+    solicitarPermissaoCamera();
   }, []);
+
+  const solicitarPermissaoCamera = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        "Permissão necessária",
+        "Precisamos de permissão para acessar suas fotos."
+      );
+    }
+  };
+
+  const selecionarImagem = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [16, 9],
+        quality: 0.5,
+        base64: true,
+      });
+
+      if (!result.canceled) {
+        const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
+        setImagem(result.assets[0].uri);
+        setProjeto((prev) => ({
+          ...prev,
+          imagemBase64: base64Image,
+        }));
+      }
+    } catch (error) {
+      console.error("Erro ao selecionar imagem:", error);
+      Alert.alert("Erro", "Não foi possível selecionar a imagem");
+    }
+  };
 
   const carregarUsuarios = async () => {
     try {
@@ -70,15 +110,18 @@ const NewProject = () => {
     }
 
     if (selectedDate) {
+      const adjustedDate = new Date(selectedDate);
+      adjustedDate.setHours(0, 0, 0, 0);
+
       switch (tipo) {
         case "inicio":
-          setProjeto({ ...projeto, inicio: selectedDate });
+          setProjeto((prev) => ({ ...prev, inicio: adjustedDate }));
           break;
         case "termino":
-          setProjeto({ ...projeto, termino: selectedDate });
+          setProjeto((prev) => ({ ...prev, termino: adjustedDate }));
           break;
         case "previsao":
-          setProjeto({ ...projeto, previsaoConclusao: selectedDate });
+          setProjeto((prev) => ({ ...prev, previsaoConclusao: adjustedDate }));
           break;
       }
     }
@@ -128,42 +171,86 @@ const NewProject = () => {
     setLoading(true);
     try {
       const token = await AsyncStorage.getItem("token");
-      const uuid = await AsyncStorage.getItem("uuid");
+      const user_id = await AsyncStorage.getItem("user_id");
 
-      // Formatar as datas para o formato esperado pela API
+      console.log("Token encontrado:", token ? "Sim" : "Não");
+      console.log("User ID encontrado:", user_id);
+
+      if (!user_id) {
+        throw new Error("Usuário não identificado");
+      }
+
+      if (!token) {
+        throw new Error("Token não encontrado. Faça login novamente.");
+      }
+
       const projetoData = {
-        nome: projeto.nome,
-        descricao: projeto.descricao || null,
-        isPublic: projeto.isPublic,
-        usuario_dono_uuid: uuid,
-        inicio: projeto.inicio.toISOString(),
-        termino: projeto.termino ? projeto.termino.toISOString() : null,
+        id: 0,
+        nome: projeto.nome.trim(),
+        descricao: projeto.descricao?.trim() || "",
+        inicio: projeto.inicio.toISOString().split("T")[0],
         previsaoConclusao: projeto.previsaoConclusao
-          ? projeto.previsaoConclusao.toISOString()
+          ? projeto.previsaoConclusao.toISOString().split("T")[0]
           : null,
-        responsavel_uuid: projeto.responsavel_uuid || null,
+        responsavel: projeto.responsavel_uuid || "",
+        usuario_dono_uuid: user_id,
+        imagemBase64: projeto.imagemBase64 || "",
+        public: projeto.isPublic,
       };
 
       console.log("Dados do projeto sendo enviados:", projetoData);
+      console.log("Headers sendo enviados:", {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+        Accept: "application/hal+json",
+      });
 
-      const response = await projetoApi.create(projetoData);
+      const response = await axios.post(
+        "http://localhost:8080/api/projeto",
+        projetoData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+            Accept: "application/hal+json",
+          },
+          validateStatus: function (status) {
+            return status < 500;
+          },
+        }
+      );
 
-      if (response.status === 201) {
-        Alert.alert("Sucesso", "Projeto criado com sucesso!");
-        navigation.navigate("MyProjects");
+      console.log("Resposta da API:", {
+        status: response.status,
+        data: response.data,
+        headers: response.headers,
+      });
+
+      if (response.status === 200) {
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "MyProjects" }],
+        });
       } else {
-        Alert.alert("Erro", "Não foi possível criar o projeto");
+        throw new Error(
+          response.data?.message ||
+            response.data?.error ||
+            "Erro ao criar projeto"
+        );
       }
     } catch (error) {
       console.error("Erro detalhado ao salvar projeto:", {
         message: error.message,
         response: error.response?.data,
         status: error.response?.status,
+        headers: error.response?.headers,
       });
 
       let mensagemErro = "Não foi possível salvar o projeto. ";
       if (error.response?.data?.message) {
         mensagemErro += error.response.data.message;
+      } else if (error.response?.data?.error) {
+        mensagemErro += error.response.data.error;
       } else {
         mensagemErro += "Por favor, tente novamente.";
       }
@@ -172,6 +259,60 @@ const NewProject = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const renderDatePicker = (label, value, onChange, minDate) => {
+    if (Platform.OS === "web") {
+      return (
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>{label}</Text>
+          <input
+            type="date"
+            value={value ? value.toISOString().split("T")[0] : ""}
+            onChange={(e) => {
+              const date = new Date(e.target.value);
+              date.setHours(0, 0, 0, 0);
+              onChange(date);
+            }}
+            min={minDate ? minDate.toISOString().split("T")[0] : undefined}
+            style={{
+              padding: 10,
+              borderWidth: 1,
+              borderColor: "#ccc",
+              borderRadius: 5,
+              fontSize: 16,
+              width: "100%",
+              backgroundColor: "#fff",
+            }}
+          />
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.inputContainer}>
+        <Text style={styles.label}>{label}</Text>
+        <TouchableOpacity
+          style={styles.dateButton}
+          onPress={() => {
+            DateTimePickerAndroid.open({
+              value: value || new Date(),
+              onChange: (event, selectedDate) => {
+                if (selectedDate) {
+                  onChange(selectedDate);
+                }
+              },
+              mode: "date",
+              minimumDate: minDate,
+            });
+          }}
+        >
+          <Text style={styles.dateButtonText}>
+            {value ? formatarData(value) : "Selecione uma data"}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
   };
 
   if (loading) {
@@ -215,6 +356,21 @@ const NewProject = () => {
           </View>
 
           <View style={styles.inputGroup}>
+            <Text style={styles.label}>Imagem do Projeto</Text>
+            <TouchableOpacity
+              style={styles.imageButton}
+              onPress={selecionarImagem}
+            >
+              <Text style={styles.imageButtonText}>
+                {imagem ? "Alterar Imagem" : "Selecionar Imagem"}
+              </Text>
+            </TouchableOpacity>
+            {imagem && (
+              <Image source={{ uri: imagem }} style={styles.imagePreview} />
+            )}
+          </View>
+
+          <View style={styles.inputGroup}>
             <Text style={styles.label}>Projeto Público</Text>
             <View style={styles.switchContainer}>
               <Switch
@@ -231,78 +387,26 @@ const NewProject = () => {
             </View>
           </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Data de Início *</Text>
-            <TouchableOpacity
-              style={styles.dateButton}
-              onPress={() => setShowInicioPicker(true)}
-            >
-              <Text style={styles.dateButtonText}>
-                {formatarData(projeto.inicio)}
-              </Text>
-            </TouchableOpacity>
-            {showInicioPicker && (
-              <DateTimePicker
-                value={projeto.inicio}
-                mode="date"
-                display={Platform.OS === "ios" ? "spinner" : "default"}
-                onChange={(event, date) =>
-                  handleDateChange(event, date, "inicio")
-                }
-                minimumDate={new Date()}
-              />
-            )}
-          </View>
+          {renderDatePicker(
+            "Data de Início",
+            projeto.inicio,
+            (date) => handleDateChange("inicio", date),
+            new Date()
+          )}
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Data de Término (opcional)</Text>
-            <TouchableOpacity
-              style={styles.dateButton}
-              onPress={() => setShowTerminoPicker(true)}
-            >
-              <Text style={styles.dateButtonText}>
-                {projeto.termino
-                  ? formatarData(projeto.termino)
-                  : "Selecione uma data"}
-              </Text>
-            </TouchableOpacity>
-            {showTerminoPicker && (
-              <DateTimePicker
-                value={projeto.termino || new Date()}
-                mode="date"
-                display={Platform.OS === "ios" ? "spinner" : "default"}
-                onChange={(event, date) =>
-                  handleDateChange(event, date, "termino")
-                }
-                minimumDate={projeto.inicio}
-              />
-            )}
-          </View>
+          {renderDatePicker(
+            "Data de Término",
+            projeto.termino,
+            (date) => handleDateChange("termino", date),
+            projeto.inicio
+          )}
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Previsão de Conclusão (opcional)</Text>
-            <TouchableOpacity
-              style={styles.dateButton}
-              onPress={() => setShowPrevisaoPicker(true)}
-            >
-              <Text style={styles.dateButtonText}>
-                {projeto.previsaoConclusao
-                  ? formatarData(projeto.previsaoConclusao)
-                  : "Selecione uma data"}
-              </Text>
-            </TouchableOpacity>
-            {showPrevisaoPicker && (
-              <DateTimePicker
-                value={projeto.previsaoConclusao || new Date()}
-                mode="date"
-                display={Platform.OS === "ios" ? "spinner" : "default"}
-                onChange={(event, date) =>
-                  handleDateChange(event, date, "previsao")
-                }
-                minimumDate={projeto.inicio}
-              />
-            )}
-          </View>
+          {renderDatePicker(
+            "Previsão de Conclusão",
+            projeto.previsaoConclusao,
+            (date) => handleDateChange("previsaoConclusao", date),
+            projeto.inicio
+          )}
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Responsável (opcional)</Text>
@@ -329,8 +433,16 @@ const NewProject = () => {
             </View>
           </View>
 
-          <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-            <Text style={styles.saveButtonText}>CRIAR PROJETO</Text>
+          <TouchableOpacity
+            style={[styles.saveButton, loading && styles.disabledButton]}
+            onPress={handleSave}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.saveButtonText}>CRIAR PROJETO</Text>
+            )}
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -402,6 +514,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
+  disabledButton: {
+    opacity: 0.7,
+  },
   switchContainer: {
     flexDirection: "row",
     alignItems: "center",
@@ -422,6 +537,28 @@ const styles = StyleSheet.create({
   dateButtonText: {
     fontSize: 16,
     color: "#333",
+  },
+  imageButton: {
+    backgroundColor: "#f0f0f0",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#ddd",
+  },
+  imageButtonText: {
+    color: "#2e7d32",
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  imagePreview: {
+    width: "100%",
+    height: 200,
+    marginTop: 10,
+    borderRadius: 8,
+  },
+  inputContainer: {
+    marginBottom: 20,
   },
 });
 

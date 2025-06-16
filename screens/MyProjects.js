@@ -8,12 +8,15 @@ import {
   ScrollView,
   useWindowDimensions,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import projetoApi from "../functions/api/projetoApi";
 import HeaderInterno from "../components/HeaderInterno";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
 
-const coresAbas = ["#b2d8b2", "#ccc", "#f8a5a5"]; 
+const coresAbas = ["#b2d8b2", "#ccc", "#f8a5a5"];
 
 const MyProjects = () => {
   const [projetos, setProjetos] = useState([]);
@@ -24,53 +27,155 @@ const MyProjects = () => {
 
   const cardWidth = width > 768 ? "30%" : width > 480 ? "45%" : "90%";
 
-  async function fetchProjetos() {
+  const fetchProjetos = async () => {
     try {
       setLoading(true);
       setError(null);
-      const user_id = localStorage.getItem("user_id");
+      const user_id = await AsyncStorage.getItem("user_id");
 
-      if (!user_id) throw new Error("Usuário não autenticado");
+      if (!user_id) {
+        throw new Error("Usuário não autenticado");
+      }
 
+      console.log("Buscando projetos para o usuário:", user_id);
       const response = await projetoApi.getProjetos(user_id);
 
-      if (response.status === 200) {
-        const projetosAtivos = response.data.data || [];
-        setProjetos(projetosAtivos.filter((projeto) => !projeto.deleted));
+      if (response.status === 200 && response.data && response.data.data) {
+        const projetosAtivos = response.data.data.filter(
+          (projeto) => !projeto.deleted
+        );
+        console.log("Projetos encontrados:", projetosAtivos);
+        setProjetos(projetosAtivos);
       } else {
         throw new Error("Erro ao carregar projetos");
       }
     } catch (err) {
-      console.error("Erro:", err);
-      setError(err.message);
+      console.error("Erro ao carregar projetos:", err);
+      setError(err.message || "Erro ao carregar projetos");
+      Alert.alert(
+        "Erro",
+        "Não foi possível carregar seus projetos. Por favor, tente novamente."
+      );
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    fetchProjetos();
-  }, []);
+    const unsubscribe = navigation.addListener("focus", () => {
+      fetchProjetos();
+    });
 
-  const formatDate = (dateArray) => {
+    return unsubscribe;
+  }, [navigation]);
+
+  const formatDate = (dateString) => {
     try {
-      if (!Array.isArray(dateArray) || dateArray.length < 3) {
-        if (dateArray === null || dateArray === undefined) {
-          return "Não definida";
-        }
-        return "Data inválida";
-      }
+      if (!dateString) return "Não definida";
 
-      const [ano, mes, dia] = dateArray;
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return "Data inválida";
 
-      const diaFormatado = String(dia).padStart(2, "0");
-      const mesFormatado = String(mes).padStart(2, "0");
-
-      return `${diaFormatado}/${mesFormatado}/${ano}`;
+      return date.toLocaleDateString("pt-BR");
     } catch (e) {
-      console.error("Erro ao formatar array de data:", e);
+      console.error("Erro ao formatar data:", e);
       return "Data inválida";
     }
+  };
+
+  const handleDeleteProject = async (projetoId) => {
+    console.log("Botão de exclusão clicado para o projeto:", projetoId);
+
+    try {
+      Alert.alert(
+        "Confirmar exclusão",
+        "Tem certeza que deseja excluir este projeto?",
+        [
+          {
+            text: "Cancelar",
+            style: "cancel",
+          },
+          {
+            text: "Excluir",
+            style: "destructive",
+            onPress: async () => {
+              try {
+                setLoading(true);
+                console.log("Iniciando exclusão do projeto ID:", projetoId);
+
+                const token = await AsyncStorage.getItem("token");
+                if (!token) {
+                  throw new Error(
+                    "Token não encontrado. Faça login novamente."
+                  );
+                }
+
+                // URL correta para exclusão do projeto
+                const url = `http://localhost:8080/api/projeto/${projetoId}`;
+                console.log("URL da requisição DELETE:", url);
+
+                const response = await axios({
+                  method: "delete",
+                  url: url,
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                    Accept: "application/hal+json",
+                    "Content-Type": "application/json",
+                  },
+                });
+
+                console.log("Resposta da API:", {
+                  status: response.status,
+                  data: response.data,
+                });
+
+                if (response.status === 200) {
+                  console.log("Projeto excluído com sucesso!");
+                  // Atualizar a lista de projetos
+                  await fetchProjetos();
+                  Alert.alert("Sucesso", "Projeto excluído com sucesso!");
+                } else {
+                  throw new Error(
+                    response.data?.message ||
+                      response.data?.error ||
+                      "Erro ao excluir projeto"
+                  );
+                }
+              } catch (error) {
+                console.error("Erro ao excluir projeto:", {
+                  message: error.message,
+                  response: error.response?.data,
+                  status: error.response?.status,
+                });
+
+                Alert.alert(
+                  "Erro",
+                  error.response?.data?.message ||
+                    error.message ||
+                    "Não foi possível excluir o projeto. Tente novamente."
+                );
+              } finally {
+                setLoading(false);
+              }
+            },
+          },
+        ]
+      );
+    } catch (error) {
+      console.error("Erro ao iniciar exclusão:", error);
+      Alert.alert("Erro", "Não foi possível iniciar a exclusão do projeto");
+    }
+  };
+
+  const handleViewProject = (projeto) => {
+    navigation.navigate("ProjectScreen", {
+      projeto: {
+        ...projeto,
+        imagemUrl: projeto.imagem
+          ? `${projetoApi.baseUrl}/${projeto.id}/imagem`
+          : null,
+      },
+    });
   };
 
   if (loading) {
@@ -103,64 +208,106 @@ const MyProjects = () => {
     <View style={styles.container}>
       <HeaderInterno />
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={styles.pageTitle}>MEUS PROJETOS</Text>
-
-        <View style={[styles.projectsGrid, { width: "100%" }]}>
-          {projetos.map((projeto, index) => {
-            const corAba = coresAbas[index % coresAbas.length];
-            return (
-              <View
-                key={projeto.id}
-                style={[styles.projectCard, { width: cardWidth }]}
-              >
-                <View style={[styles.folderTab, { backgroundColor: corAba }]}>
-                  <Text style={styles.projectTitle}>{projeto.nome}</Text>
-                  {projeto.imagemUrl && (
-                    <Image
-                      source={{ uri: projetoApi.baseUrl + projeto.imagemUrl }}
-                      style={styles.projectImage}
-                    />
-                  )}
-                </View>
-
-                <View style={styles.projectBody}>
-                  <Text style={styles.label}>Descrição:</Text>
-                  <Text style={styles.value}>{projeto.descricao || "-"}</Text>
-
-                  <Text style={styles.label}>Data de Início:</Text>
-                  <Text style={styles.value}>
-                    {formatDate(projeto.inicio)}
-                  </Text>
-
-                  {projeto.termino && (
-                    <>
-                      <Text style={styles.label}>Previsão de Conclusão:</Text>
-                      <Text style={styles.value}>
-                        {formatDate(projeto.termino)}
-                      </Text>
-                    </>
-                  )}
-
-                  {projeto.responsavel && (
-                    <>
-                      <Text style={styles.label}>Responsável:</Text>
-                      <Text style={styles.value}>{projeto.responsavel}</Text>
-                    </>
-                  )}
-
-                  <TouchableOpacity
-                    style={[styles.openButton, { backgroundColor: corAba }]}
-                    onPress={() =>
-                      navigation.navigate("ProjectScreen", { projeto })
-                    }
-                  >
-                    <Text style={styles.buttonText}>Ver projeto</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            );
-          })}
+        <View style={styles.headerContainer}>
+          <Text style={styles.pageTitle}>MEUS PROJETOS</Text>
+          <TouchableOpacity
+            style={styles.newProjectButton}
+            onPress={() => navigation.navigate("NewProject")}
+          >
+            <Text style={styles.newProjectButtonText}>+ Novo Projeto</Text>
+          </TouchableOpacity>
         </View>
+
+        {projetos.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>Você ainda não tem projetos</Text>
+            <TouchableOpacity
+              style={styles.createFirstButton}
+              onPress={() => navigation.navigate("NewProject")}
+            >
+              <Text style={styles.createFirstButtonText}>
+                Criar primeiro projeto
+              </Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <View style={[styles.projectsGrid, { width: "100%" }]}>
+            {projetos.map((projeto, index) => {
+              const corAba = coresAbas[index % coresAbas.length];
+              return (
+                <View
+                  key={projeto.id}
+                  style={[styles.projectCard, { width: cardWidth }]}
+                >
+                  <View style={[styles.folderTab, { backgroundColor: corAba }]}>
+                    <Text style={styles.projectTitle} numberOfLines={1}>
+                      {projeto.nome}
+                    </Text>
+                    {projeto.imagem && (
+                      <Image
+                        source={{
+                          uri: `${projetoApi.baseUrl}/${projeto.id}/imagem`,
+                        }}
+                        style={styles.projectImage}
+                      />
+                    )}
+                  </View>
+
+                  <View style={styles.projectBody}>
+                    <Text style={styles.label}>Descrição:</Text>
+                    <Text style={styles.value} numberOfLines={2}>
+                      {projeto.descricao || "-"}
+                    </Text>
+
+                    <Text style={styles.label}>Data de Início:</Text>
+                    <Text style={styles.value}>
+                      {formatDate(projeto.inicio)}
+                    </Text>
+
+                    {projeto.previsaoConclusao && (
+                      <>
+                        <Text style={styles.label}>Previsão de Conclusão:</Text>
+                        <Text style={styles.value}>
+                          {formatDate(projeto.previsaoConclusao)}
+                        </Text>
+                      </>
+                    )}
+
+                    {projeto.responsavel && (
+                      <>
+                        <Text style={styles.label}>Responsável:</Text>
+                        <Text style={styles.value}>{projeto.responsavel}</Text>
+                      </>
+                    )}
+
+                    <View style={styles.buttonContainer}>
+                      <TouchableOpacity
+                        style={[
+                          styles.actionButton,
+                          { backgroundColor: corAba },
+                        ]}
+                        onPress={() => handleViewProject(projeto)}
+                      >
+                        <Text style={styles.buttonText}>Ver projeto</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity
+                        style={[styles.actionButton, styles.deleteButton]}
+                        onPress={() => {
+                          console.log("Botão de exclusão clicado");
+                          handleDeleteProject(projeto.id);
+                        }}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={styles.buttonText}>Excluir</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        )}
       </ScrollView>
     </View>
   );
@@ -174,14 +321,27 @@ const styles = StyleSheet.create({
   scrollContent: {
     flexGrow: 1,
     padding: 20,
+  },
+  headerContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
+    marginBottom: 25,
   },
   pageTitle: {
     fontSize: 24,
     fontWeight: "bold",
     color: "#2e7d32",
-    marginBottom: 25,
-    textAlign: "center",
+  },
+  newProjectButton: {
+    backgroundColor: "#2e7d32",
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 5,
+  },
+  newProjectButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
   },
   projectsGrid: {
     flexDirection: "row",
@@ -210,6 +370,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
     color: "#000",
+    flex: 1,
+    marginRight: 10,
   },
   projectImage: {
     width: 30,
@@ -218,28 +380,42 @@ const styles = StyleSheet.create({
   },
   projectBody: {
     backgroundColor: "#dcedc8",
-    padding: 10,
+    padding: 15,
   },
   label: {
     fontSize: 12,
     color: "#555",
     fontWeight: "bold",
+    marginTop: 5,
   },
   value: {
     fontSize: 14,
     color: "#333",
     marginBottom: 8,
   },
-  openButton: {
+  buttonContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 15,
+    gap: 10,
+  },
+  actionButton: {
+    flex: 1,
     paddingVertical: 10,
-    paddingHorizontal: 20,
+    paddingHorizontal: 15,
     borderRadius: 5,
     alignItems: "center",
-    marginTop: 10,
+    justifyContent: "center",
+    minHeight: 40,
+  },
+  deleteButton: {
+    backgroundColor: "#d32f2f",
+    marginLeft: 10,
   },
   buttonText: {
     color: "#fff",
     fontWeight: "bold",
+    fontSize: 14,
   },
   loadingContainer: {
     flex: 1,
@@ -268,6 +444,29 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 5,
     alignItems: "center",
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  emptyText: {
+    fontSize: 18,
+    color: "#666",
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  createFirstButton: {
+    backgroundColor: "#2e7d32",
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 5,
+  },
+  createFirstButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 16,
   },
 });
 

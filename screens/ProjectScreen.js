@@ -6,10 +6,14 @@ import {
   ScrollView,
   Image,
   TouchableOpacity,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import CampoApi from "../functions/api/CampoApi";
+import ColetaApi from "../functions/api/ColetaApi";
 import HeaderInterno from "../components/HeaderInterno";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const ProjectScreen = () => {
   const navigation = useNavigation();
@@ -17,6 +21,8 @@ const ProjectScreen = () => {
   const { projeto } = route.params;
 
   const [campos, setCampos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   const formatDate = (dateInput) => {
     if (!dateInput) return "Não definida";
@@ -42,18 +48,149 @@ const ProjectScreen = () => {
 
   async function fetchCampos() {
     try {
-      const response = await CampoApi.getAllByProjetoId(projeto.id);
-      if (response.status === 200) {
-        setCampos(response.data.data);
+      setLoading(true);
+      setError(null);
+
+      // Verificar token e user_id
+      const token = await AsyncStorage.getItem("token");
+      const user_id = await AsyncStorage.getItem("user_id");
+
+      if (!token) {
+        throw new Error("Token não encontrado. Faça login novamente.");
+      }
+
+      if (!user_id) {
+        throw new Error("Usuário não identificado");
+      }
+
+      // Buscar todos os campos do usuário
+      const response = await CampoApi.getAllByUsuarioId(user_id);
+      console.log(
+        "Resposta completa da API de campos:",
+        JSON.stringify(response, null, 2)
+      );
+
+      if (response.status === 200 && response.data && response.data.data) {
+        console.log(
+          "Dados brutos dos campos:",
+          JSON.stringify(response.data.data, null, 2)
+        );
+
+        // Filtrar apenas campos não deletados
+        const camposAtivos = response.data.data
+          .filter((campo) => campo !== null)
+          .filter((campo) => !campo.deleted);
+
+        console.log(
+          "Campos ativos encontrados:",
+          JSON.stringify(camposAtivos, null, 2)
+        );
+
+        // Buscar informações de coletas para cada campo
+        const camposComColetas = await Promise.all(
+          camposAtivos.map(async (campo) => {
+            try {
+              const coletasResponse = await ColetaApi.getColetasByCampoId(
+                campo.id
+              );
+              console.log(
+                `Coletas do campo ${campo.id}:`,
+                coletasResponse.data
+              );
+
+              const coletas = coletasResponse.data.data || [];
+
+              // Contar coletas identificadas e não identificadas
+              const identificadas = coletas.filter(
+                (coleta) => coleta && coleta.identificada
+              ).length;
+              const naoIdentificadas = coletas.filter(
+                (coleta) => coleta && !coleta.identificada
+              ).length;
+
+              return {
+                ...campo,
+                totalColetas: coletas.length,
+                identificadas,
+                naoIdentificadas,
+                projetoNome: campo.projeto?.nome || "Sem projeto",
+                dataInicio: formatDate(campo.data_inicio),
+                dataTermino: campo.data_termino
+                  ? formatDate(campo.data_termino)
+                  : "Não definida",
+                endereco: `${campo.endereco}, ${campo.cidade} - ${campo.estado}, ${campo.pais}`,
+              };
+            } catch (error) {
+              console.error(
+                `Erro ao buscar coletas do campo ${campo.id}:`,
+                error
+              );
+              return {
+                ...campo,
+                totalColetas: 0,
+                identificadas: 0,
+                naoIdentificadas: 0,
+                projetoNome: campo.projeto?.nome || "Sem projeto",
+                dataInicio: formatDate(campo.data_inicio),
+                dataTermino: campo.data_termino
+                  ? formatDate(campo.data_termino)
+                  : "Não definida",
+                endereco: `${campo.endereco}, ${campo.cidade} - ${campo.estado}, ${campo.pais}`,
+              };
+            }
+          })
+        );
+
+        console.log(
+          "Campos com coletas:",
+          JSON.stringify(camposComColetas, null, 2)
+        );
+        setCampos(camposComColetas);
+      } else {
+        console.error("Resposta inválida da API:", response);
+        throw new Error("Erro ao carregar campos");
       }
     } catch (error) {
-      console.log("Erro ao buscar campos:", error);
+      console.error("Erro ao buscar campos:", error);
+      setError(error.message || "Erro ao carregar campos");
+      Alert.alert(
+        "Erro",
+        "Não foi possível carregar os campos. Por favor, tente novamente."
+      );
+    } finally {
+      setLoading(false);
     }
   }
 
   useEffect(() => {
     fetchCampos();
   }, []);
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <HeaderInterno />
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#2e7d32" />
+          <Text style={styles.loadingText}>Carregando campos...</Text>
+        </View>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.container}>
+        <HeaderInterno />
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+          <TouchableOpacity style={styles.retryButton} onPress={fetchCampos}>
+            <Text style={styles.buttonText}>Tentar novamente</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -62,7 +199,9 @@ const ProjectScreen = () => {
         style={styles.content}
         contentContainerStyle={styles.scrollContent}
       >
-        <Text style={styles.pageTitle}>PROJETO - {projeto.nome.toUpperCase()}</Text>
+        <Text style={styles.pageTitle}>
+          PROJETO - {projeto.nome.toUpperCase()}
+        </Text>
 
         {/* Bloco de Informações do Projeto */}
         <View style={styles.infoContainer}>
@@ -71,18 +210,27 @@ const ProjectScreen = () => {
               <View style={styles.infoColumn}>
                 <Text style={styles.infoLabel}>DATA DE INÍCIO</Text>
                 <View style={styles.infoBox}>
-                  <Text style={styles.infoValue}>{formatDate(projeto.inicio)}</Text>
+                  <Text style={styles.infoValue}>
+                    {formatDate(projeto.inicio)}
+                  </Text>
                 </View>
               </View>
               <View style={styles.infoColumn}>
                 <Text style={styles.infoLabel}>PREVISÃO DE CONCLUSÃO</Text>
                 <View style={styles.infoBox}>
-                  <Text style={styles.infoValue}>{formatDate(projeto.termino)}</Text>
+                  <Text style={styles.infoValue}>
+                    {formatDate(projeto.termino)}
+                  </Text>
                 </View>
               </View>
               <View style={styles.infoColumn}>
                 <Text style={styles.infoLabel}>STATUS</Text>
-                <View style={[styles.infoBox, { paddingVertical: 0, paddingHorizontal: 0 }]}>
+                <View
+                  style={[
+                    styles.infoBox,
+                    { paddingVertical: 0, paddingHorizontal: 0 },
+                  ]}
+                >
                   <View style={styles.statusBadge}>
                     <Text style={styles.statusBadgeText}>Ativo</Text>
                   </View>
@@ -104,7 +252,7 @@ const ProjectScreen = () => {
           </View>
           <View style={styles.projectImageContainer}>
             <Image
-              source={require('../assets/images/sem-imagem.webp')} // Coloque sua imagem aqui
+              source={require("../assets/images/sem-imagem.webp")}
               style={styles.projectImage}
             />
           </View>
@@ -115,48 +263,113 @@ const ProjectScreen = () => {
           <Text style={styles.sectionTitle}>CAMPOS</Text>
           <View style={styles.tableHeader}>
             <Text style={[styles.tableHeaderText, { flex: 3 }]}>NOME</Text>
-            <Text style={[styles.tableHeaderText, { flex: 1.5, textAlign: 'center' }]}>COLETAS</Text>
-            <Text style={[styles.tableHeaderText, { flex: 2, textAlign: 'center' }]}>IDENTIFICADAS</Text>
-            <Text style={[styles.tableHeaderText, { flex: 2.5, textAlign: 'center' }]}>NÃO IDENTIFICADAS</Text>
-            <Text style={[styles.tableHeaderText, { flex: 1.5, textAlign: 'center' }]}>STATUS</Text>
+            <Text
+              style={[
+                styles.tableHeaderText,
+                { flex: 1.5, textAlign: "center" },
+              ]}
+            >
+              COLETAS
+            </Text>
+            <Text
+              style={[styles.tableHeaderText, { flex: 2, textAlign: "center" }]}
+            >
+              IDENTIFICADAS
+            </Text>
+            <Text
+              style={[
+                styles.tableHeaderText,
+                { flex: 2.5, textAlign: "center" },
+              ]}
+            >
+              NÃO IDENTIFICADAS
+            </Text>
+            <Text
+              style={[
+                styles.tableHeaderText,
+                { flex: 1.5, textAlign: "center" },
+              ]}
+            >
+              STATUS
+            </Text>
           </View>
-          {campos.map((campo, index) => (
-            <View key={index} style={styles.tableRow}>
+          {campos.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>Nenhum campo encontrado</Text>
+            </View>
+          ) : (
+            campos.map((campo, index) => (
+              <View key={campo.id} style={styles.tableRow}>
+                <TouchableOpacity
+                  style={[styles.tableCell, { flex: 3 }]}
+                  onPress={() =>
+                    navigation.navigate("FieldScreen", { campo: campo })
+                  }
+                >
+                  <Text style={styles.linkText}>{campo.nome}</Text>
+                  <Text style={styles.projectName}>
+                    Projeto: {campo.projetoNome}
+                  </Text>
+                  <Text style={styles.fieldInfo}>
+                    Início: {campo.dataInicio}
+                  </Text>
+                  <Text style={styles.fieldInfo}>
+                    Término: {campo.dataTermino}
+                  </Text>
+                  <Text style={styles.fieldInfo} numberOfLines={1}>
+                    {campo.endereco}
+                  </Text>
+                </TouchableOpacity>
 
-              <TouchableOpacity
-                style={[styles.tableCell, { flex: 3 }]} 
-                onPress={() => navigation.navigate("FieldScreen", { campo: campo })}
-              >
-                <Text style={styles.linkText}>{campo.nome}</Text>
-              </TouchableOpacity>
+                <Text
+                  style={[styles.tableCell, { flex: 1.5, textAlign: "center" }]}
+                >
+                  {campo.totalColetas}
+                </Text>
+                <Text
+                  style={[styles.tableCell, { flex: 2, textAlign: "center" }]}
+                >
+                  {campo.identificadas}
+                </Text>
+                <Text
+                  style={[styles.tableCell, { flex: 2.5, textAlign: "center" }]}
+                >
+                  {campo.naoIdentificadas}
+                </Text>
 
-              <Text style={[styles.tableCell, { flex: 1.5, textAlign: 'center' }]}>---</Text>
-              <Text style={[styles.tableCell, { flex: 2, textAlign: 'center' }]}>---</Text>
-              <Text style={[styles.tableCell, { flex: 2.5, textAlign: 'center' }]}>---</Text>
-
-              {/* Célula de status com alinhamento centralizado */}
-              <View style={[styles.tableCell, { flex: 1.5, alignItems: 'center' }]}>
-                <View style={styles.statusBadge}>
-                  <Text style={styles.statusBadgeText}>{campo.deleted ? "Inativo" : "Ativo"}</Text>
+                <View
+                  style={[
+                    styles.tableCell,
+                    { flex: 1.5, alignItems: "center" },
+                  ]}
+                >
+                  <View style={styles.statusBadge}>
+                    <Text style={styles.statusBadgeText}>
+                      {campo.deleted ? "Inativo" : "Ativo"}
+                    </Text>
+                  </View>
                 </View>
               </View>
-
-            </View>
-          ))}
+            ))
+          )}
         </View>
 
         {/* Botões de Ação */}
         <View style={styles.actionButtonsContainer}>
           <TouchableOpacity
             style={[styles.button, styles.addButton]}
-            onPress={() => navigation.navigate("NewField", { projeto: projeto })}
+            onPress={() =>
+              navigation.navigate("NewField", { projeto: projeto })
+            }
           >
             <Text style={styles.buttonText}>Adicionar Campos</Text>
           </TouchableOpacity>
 
           <TouchableOpacity
             style={[styles.button, styles.editButton]}
-            onPress={() => navigation.navigate("EditProject", { projeto: projeto })}
+            onPress={() =>
+              navigation.navigate("EditProject", { projeto: projeto })
+            }
           >
             <Text style={styles.buttonText}>Editar Projeto</Text>
           </TouchableOpacity>
@@ -178,13 +391,13 @@ const styles = StyleSheet.create({
     textAlign: "left",
   },
   infoContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
+    flexDirection: "row",
+    backgroundColor: "#fff",
     borderRadius: 8,
     padding: 20,
     marginBottom: 25,
     elevation: 3,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 1.41,
@@ -193,8 +406,8 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   topRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 15,
   },
   infoColumn: {
@@ -206,39 +419,39 @@ const styles = StyleSheet.create({
   },
   infoLabel: {
     fontSize: 12,
-    color: '#555',
+    color: "#555",
     marginBottom: 5,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   infoBox: {
-    backgroundColor: '#F9F9F9',
+    backgroundColor: "#F9F9F9",
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: "#E0E0E0",
     borderRadius: 5,
     paddingVertical: 8,
     paddingHorizontal: 10,
   },
   infoValue: {
     fontSize: 14,
-    color: '#333',
+    color: "#333",
   },
   statusBadge: {
-    backgroundColor: '#2e7d32',
+    backgroundColor: "#2e7d32",
     borderRadius: 5,
     paddingVertical: 8,
     paddingHorizontal: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   statusBadgeText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 14,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   projectImageContainer: {
     marginLeft: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   projectImage: {
     width: 100,
@@ -247,50 +460,50 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     color: "#333",
     marginBottom: 15,
   },
   tableContainer: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 8,
     padding: 20,
     elevation: 3,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.2,
     shadowRadius: 1.41,
     marginBottom: 25,
   },
   tableHeader: {
-    flexDirection: 'row',
+    flexDirection: "row",
     borderBottomWidth: 2,
-    borderBottomColor: '#E0E0E0',
+    borderBottomColor: "#E0E0E0",
     paddingBottom: 10,
     marginBottom: 5,
   },
   tableHeaderText: {
-    fontWeight: 'bold',
-    color: '#555',
+    fontWeight: "bold",
+    color: "#555",
   },
   tableRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: 10,
     borderBottomWidth: 1,
-    borderBottomColor: '#F0F0F0',
+    borderBottomColor: "#F0F0F0",
   },
   tableCell: {
-    color: '#333',
+    color: "#333",
   },
   linkText: {
-    color: '#2e7d32',
-    fontWeight: 'bold',
-    textDecorationLine: 'underline'
+    color: "#2e7d32",
+    fontWeight: "bold",
+    textDecorationLine: "underline",
   },
   actionButtonsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     marginTop: 10,
     gap: 20,
   },
@@ -298,18 +511,64 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 30,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
   },
   addButton: {
-    backgroundColor: '#2e7d32',
+    backgroundColor: "#2e7d32",
   },
   editButton: {
-    backgroundColor: '#5a9bd5',
+    backgroundColor: "#5a9bd5",
   },
   buttonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: "#fff",
+    fontWeight: "bold",
     fontSize: 14,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  loadingText: {
+    marginTop: 15,
+    color: "#2e7d32",
+    fontSize: 16,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
+  },
+  errorText: {
+    color: "#d32f2f",
+    fontSize: 16,
+    textAlign: "center",
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: "#d32f2f",
+    padding: 12,
+    borderRadius: 5,
+    alignItems: "center",
+  },
+  emptyContainer: {
+    padding: 20,
+    alignItems: "center",
+  },
+  emptyText: {
+    color: "#666",
+    fontSize: 16,
+  },
+  projectName: {
+    fontSize: 12,
+    color: "#666",
+    marginTop: 4,
+  },
+  fieldInfo: {
+    fontSize: 11,
+    color: "#888",
+    marginTop: 2,
   },
 });
 

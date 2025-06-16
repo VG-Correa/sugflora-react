@@ -9,37 +9,13 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
+import HeaderInterno from '../components/HeaderInterno';
 
 const HelpRequestFormScreen = () => {
   return (
     <View style={styles.container}>
       {/* Cabeçalho */}
-      <View style={styles.headerContainer}>
-        <Image
-          source={require('../assets/images/cabecalho.webp')}
-          style={styles.headerBackgroundImage}
-          resizeMode="cover"
-        />
-        <View style={styles.headerContent}>
-          <Image
-            source={require('../assets/images/logo.png')}
-            style={styles.logoImage}
-            resizeMode="contain"
-          />
-          <Text style={styles.logoText}>SUG - FLORA</Text>
-          <View style={styles.menuTop}>
-            <TouchableOpacity style={styles.menuItem}>
-              <Text style={styles.menuText}>FLORAMATCH</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem}>
-              <Text style={styles.menuText}>PÁGINA INICIAL</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem}>
-              <Text style={styles.menuText}>SAIR</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
+      <HeaderInterno />
 
       {/* Conteúdo */}
       <ScrollView contentContainerStyle={styles.content}>
@@ -85,7 +61,7 @@ const HelpRequestFormScreen = () => {
         {/* Imagem */}
         <View style={styles.imageContainer}>
           <Image
-            source={require('../assets/images/sem-image.png')}
+            source={require('../assets/images/sem-imagem.webp')}
             style={styles.imagePlaceholder}
           />
           <TouchableOpacity style={styles.uploadButton}>

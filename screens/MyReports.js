@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
+import HeaderInterno from '../components/HeaderInterno';
 
 const MyReportsScreen = () => {
   const navigation = useNavigation();
@@ -50,27 +51,9 @@ const MyReportsScreen = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerContainer}>
-        <Image
-          source={require('../assets/images/cabecalho.webp')}
-          style={styles.headerBackgroundImage}
-          resizeMode="cover"
-        />
-        <View style={styles.headerContent}>
-          <Image
-            source={require('../assets/images/logo.png')}
-            style={styles.logoImage}
-            resizeMode="contain"
-          />
-          <Text style={styles.logoText}>SUG - FLORA</Text>
-          <View style={styles.menuTop}>
-            <Text style={styles.menuText} onPress={() => navigation.navigate('HomePage')}>PÁGINA INICIAL</Text>
-            <Text style={styles.menuText}>SOBRE</Text>
-            <Text style={styles.menuText}>CONTATO</Text>
-            <Text style={styles.menuText}>SAIR</Text>
-          </View>
-        </View>
-      </View>
+      
+      <HeaderInterno />
+
 
       <ScrollView style={styles.content} contentContainerStyle={styles.scrollContent}>
         <Text style={styles.pageTitle}>MEUS RELATÓRIOS</Text>

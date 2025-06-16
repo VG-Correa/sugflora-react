@@ -90,22 +90,20 @@ const HeaderInterno = ({ onLogout }) => {
 
   const handleLogout = async () => {
     try {
-      // Limpar todos os dados do usuário do AsyncStorage
       await AsyncStorage.multiRemove([
         "token",
         "nome",
         "sobrenome",
         "email",
         "username",
+        "user_id",
       ]);
 
-      // Redirecionar para a tela de login
       navigation.reset({
         index: 0,
         routes: [{ name: "Login" }],
       });
 
-      // Fechar o menu se estiver aberto
       closeAllMenus();
     } catch (error) {
       console.error("Erro ao fazer logout:", error);
@@ -159,7 +157,48 @@ const HeaderInterno = ({ onLogout }) => {
                   isMobileView && styles.submenuTextMobile,
                 ]}
               >
-                Criar Projetos
+                Criar Projeto
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
+      </View>
+
+      {/* COLETAS */}
+      <View style={styles.menuItem}>
+        <TouchableOpacity onPress={() => toggleSubmenu("coletas")}>
+          <Text style={styles.menuText}>COLETAS</Text>
+        </TouchableOpacity>
+        {activeSubmenu === "coletas" && (
+          <View style={isMobileView ? styles.submenuMobile : styles.submenu}>
+            <TouchableOpacity
+              onPress={() => {
+                navigation.navigate("MyCollection");
+                closeAllMenus();
+              }}
+            >
+              <Text
+                style={[
+                  styles.submenuText,
+                  isMobileView && styles.submenuTextMobile,
+                ]}
+              >
+                Minhas Coletas
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                navigation.navigate("AddCollection");
+                closeAllMenus();
+              }}
+            >
+              <Text
+                style={[
+                  styles.submenuText,
+                  isMobileView && styles.submenuTextMobile,
+                ]}
+              >
+                Nova Coleta
               </Text>
             </TouchableOpacity>
           </View>
@@ -190,7 +229,7 @@ const HeaderInterno = ({ onLogout }) => {
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => {
-                navigation.navigate("MyCollection");
+                navigation.navigate("SpeciesList");
                 closeAllMenus();
               }}
             >
@@ -200,7 +239,7 @@ const HeaderInterno = ({ onLogout }) => {
                   isMobileView && styles.submenuTextMobile,
                 ]}
               >
-                Minhas Coletas
+                Lista de Espécies
               </Text>
             </TouchableOpacity>
           </View>
@@ -216,7 +255,7 @@ const HeaderInterno = ({ onLogout }) => {
           <View style={isMobileView ? styles.submenuMobile : styles.submenu}>
             <TouchableOpacity
               onPress={() => {
-                navigation.navigate("IdentifyPlant");
+                navigation.navigate("AjudemeAIdentificar");
                 closeAllMenus();
               }}
             >
@@ -231,7 +270,7 @@ const HeaderInterno = ({ onLogout }) => {
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => {
-                navigation.navigate("KnownPlants");
+                navigation.navigate("EuConhecoEssa");
                 closeAllMenus();
               }}
             >
@@ -248,21 +287,54 @@ const HeaderInterno = ({ onLogout }) => {
         )}
       </View>
 
-      {/* RELATÓRIO + ÍCONES */}
-      <View style={[styles.menuItem]}>
-        <TouchableOpacity
-          onPress={() => {
-            navigation.navigate("MyReports");
-            closeAllMenus();
-          }}
-        >
-          <Text style={styles.menuText}>RELATÓRIO</Text>
+      {/* RELATÓRIOS */}
+      <View style={styles.menuItem}>
+        <TouchableOpacity onPress={() => toggleSubmenu("relatorios")}>
+          <Text style={styles.menuText}>RELATÓRIOS</Text>
         </TouchableOpacity>
+        {activeSubmenu === "relatorios" && (
+          <View style={isMobileView ? styles.submenuMobile : styles.submenu}>
+            <TouchableOpacity
+              onPress={() => {
+                navigation.navigate("MyReports");
+                closeAllMenus();
+              }}
+            >
+              <Text
+                style={[
+                  styles.submenuText,
+                  isMobileView && styles.submenuTextMobile,
+                ]}
+              >
+                Meus Relatórios
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => {
+                navigation.navigate("GenerateReport");
+                closeAllMenus();
+              }}
+            >
+              <Text
+                style={[
+                  styles.submenuText,
+                  isMobileView && styles.submenuTextMobile,
+                ]}
+              >
+                Gerar Relatório
+              </Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
-      <View style={[styles.menuItem]}>
+
+      {/* NOTIFICAÇÕES */}
+      <View style={styles.menuItem}>
         <Notificacoes />
       </View>
-      <View style={[styles.menuItem]}>
+
+      {/* PERFIL */}
+      <View style={styles.menuItem}>
         <TouchableOpacity
           onPress={async () => {
             try {
@@ -292,7 +364,9 @@ const HeaderInterno = ({ onLogout }) => {
           <Text style={styles.icon}>👤</Text>
         </TouchableOpacity>
       </View>
-      <View style={[styles.menuItem]}>
+
+      {/* SAIR */}
+      <View style={styles.menuItem}>
         <TouchableOpacity
           style={[styles.menuItem, styles.logoutButton]}
           onPress={handleLogout}
@@ -479,10 +553,6 @@ const styles = StyleSheet.create({
     shadowRadius: 3.84,
     elevation: 5,
   },
-  relatorioContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
   iconButton: {
     marginLeft: 10,
   },
@@ -518,22 +588,6 @@ const styles = StyleSheet.create({
   },
   logoutText: {
     color: "#c62828",
-  },
-  userInfo: {
-    marginTop: 15,
-    paddingTop: 15,
-    borderTopWidth: 1,
-    borderTopColor: "#e0e0e0",
-  },
-  userName: {
-    fontSize: 16,
-    fontWeight: "bold",
-    color: "#2e7d32",
-  },
-  userEmail: {
-    fontSize: 14,
-    color: "#666",
-    marginTop: 5,
   },
 });
 

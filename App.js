@@ -29,6 +29,10 @@ import ReportScreenQuantitativo from "./screens/ReportScreenQuantitativo";
 import SearchSpecies from "./screens/SearchSpecies";
 import MyReports from "./screens/MyReports";
 import EditProject from "./screens/EditProject";
+import AjudemeAIdentificar from "./screens/AjudemeAIdentificar";
+import EuConhecoEssa from "./screens/EuConhecoEssa";
+import BuscarAjudaAjudeaIdentificar from "./screens/BuscarAjuda-AjudeaIdentificar";
+import ChatEuConhecoEssa from "./screens/Chat-EuConhecoEssa";
 
 const Stack = createNativeStackNavigator();
 
@@ -44,10 +48,31 @@ const App = () => {
             options={{ headerShown: false }}
           />
           <Stack.Screen
+            name="AjudemeAIdentificar"
+            component={AjudemeAIdentificar}
+            options={{ headerShown: false, gestureEnabled: true }}
+          />
+          <Stack.Screen
+            name="EuConhecoEssa"
+            component={EuConhecoEssa}
+            options={{ headerShown: false, gestureEnabled: true }}
+          />
+          <Stack.Screen
             name="Register"
             component={Register}
             options={{ headerShown: false }}
           />
+          <Stack.Screen
+            name="BuscarAjudaAjudeaIdentificar"
+            component={BuscarAjudaAjudeaIdentificar}
+            options={{ headerShown: false, gestureEnabled: true }}
+          />
+          <Stack.Screen
+            name="ChatEuConhecoEssa"
+            component={ChatEuConhecoEssa}
+            options={{ headerShown: false, gestureEnabled: true }}
+          />
+          
           <Stack.Screen
             name="Login"
             component={Login}

@@ -8,6 +8,7 @@ import {
   Image,
   ScrollView,
 } from 'react-native';
+import HeaderInterno from '../components/HeaderInterno';
 
 const ChatScreen = () => {
   const [message, setMessage] = useState('');
@@ -33,18 +34,7 @@ const ChatScreen = () => {
   return (
     <View style={styles.container}>
       {/* Cabeçalho */}
-      <View style={styles.header}>
-        <Image source={require('../assets/images/cabecalho.webp')} style={styles.headerImage} />
-        <View style={styles.headerContent}>
-          <Image source={require('../assets/images/logo.png')} style={styles.logo} />
-          <Text style={styles.logoText}>SUG - FLORA</Text>
-          <View style={styles.menu}>
-            <Text style={styles.menuItem}>FLORAMATCH</Text>
-            <Text style={styles.menuItem}>PÁGINA INICIAL</Text>
-            <Text style={styles.menuItem}>SAIR</Text>
-          </View>
-        </View>
-      </View>
+      <HeaderInterno />
 
       <View style={styles.chatTitleBox}>
         <Text style={styles.chatTitle}>CHAT DE AJUDA - MARIO ROCHA</Text>

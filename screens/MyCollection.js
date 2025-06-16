@@ -8,10 +8,13 @@ import {
   Dimensions,
   TouchableOpacity,
   ActivityIndicator,
+  Alert,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import HeaderInterno from "../components/HeaderInterno";
 import CampoApi from "../functions/api/CampoApi";
+import ColetaApi from "../functions/api/ColetaApi";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const MyCollectionsScreen = () => {
   const navigation = useNavigation();
@@ -25,29 +28,128 @@ const MyCollectionsScreen = () => {
     ? { id: 210, family: 270, genus: 230, species: 270, date: 250, field: 250 }
     : { id: 230, family: 300, genus: 270, species: 330, date: 270, field: 300 };
 
+  const formatDate = (dateString) => {
+    if (!dateString) return "Não definida";
+    try {
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return "Data inválida";
+      return date.toLocaleDateString("pt-BR");
+    } catch (error) {
+      return "Data inválida";
+    }
+  };
+
   async function fetchCampos() {
     try {
       setLoading(true);
       setError(null);
-      const user_id = localStorage.getItem("user_id");
+
+      // Verificar token e user_id
+      const token = await AsyncStorage.getItem("token");
+      const user_id = await AsyncStorage.getItem("user_id");
+
+      if (!token) {
+        throw new Error("Token não encontrado. Faça login novamente.");
+      }
 
       if (!user_id) {
-        throw new Error("Usuário não autenticado");
+        throw new Error("Usuário não identificado");
       }
 
+      // Buscar todos os campos do usuário
       const response = await CampoApi.getAllByUsuarioId(user_id);
+      console.log(
+        "Resposta completa da API de campos:",
+        JSON.stringify(response, null, 2)
+      );
 
-      if (response.status === 200) {
-        const todosCampos = response.data.data || [];
-        // Filtra apenas os campos ativos
-        const camposAtivos = todosCampos.filter((campo) => !campo.deleted);
-        setCampos(camposAtivos);
+      if (response.status === 200 && response.data && response.data.data) {
+        console.log(
+          "Dados brutos dos campos:",
+          JSON.stringify(response.data.data, null, 2)
+        );
+
+        // Filtrar apenas campos não deletados
+        const camposAtivos = response.data.data
+          .filter((campo) => campo !== null)
+          .filter((campo) => !campo.deleted);
+
+        console.log(
+          "Campos ativos encontrados:",
+          JSON.stringify(camposAtivos, null, 2)
+        );
+
+        // Buscar informações de coletas para cada campo
+        const camposComColetas = await Promise.all(
+          camposAtivos.map(async (campo) => {
+            try {
+              const coletasResponse = await ColetaApi.getColetasByCampoId(
+                campo.id
+              );
+              console.log(
+                `Coletas do campo ${campo.id}:`,
+                coletasResponse.data
+              );
+
+              const coletas = coletasResponse.data.data || [];
+
+              // Contar coletas identificadas e não identificadas
+              const identificadas = coletas.filter(
+                (coleta) => coleta && coleta.identificada
+              ).length;
+              const naoIdentificadas = coletas.filter(
+                (coleta) => coleta && !coleta.identificada
+              ).length;
+
+              return {
+                ...campo,
+                totalColetas: coletas.length,
+                identificadas,
+                naoIdentificadas,
+                projetoNome: campo.projeto?.nome || "Sem projeto",
+                dataInicio: formatDate(campo.data_inicio),
+                dataTermino: campo.data_termino
+                  ? formatDate(campo.data_termino)
+                  : "Não definida",
+                endereco: `${campo.endereco}, ${campo.cidade} - ${campo.estado}, ${campo.pais}`,
+              };
+            } catch (error) {
+              console.error(
+                `Erro ao buscar coletas do campo ${campo.id}:`,
+                error
+              );
+              return {
+                ...campo,
+                totalColetas: 0,
+                identificadas: 0,
+                naoIdentificadas: 0,
+                projetoNome: campo.projeto?.nome || "Sem projeto",
+                dataInicio: formatDate(campo.data_inicio),
+                dataTermino: campo.data_termino
+                  ? formatDate(campo.data_termino)
+                  : "Não definida",
+                endereco: `${campo.endereco}, ${campo.cidade} - ${campo.estado}, ${campo.pais}`,
+              };
+            }
+          })
+        );
+
+        console.log(
+          "Campos com coletas:",
+          JSON.stringify(camposComColetas, null, 2)
+        );
+        setCampos(camposComColetas);
       } else {
+        console.error("Resposta inválida da API:", response);
         throw new Error("Erro ao carregar campos");
       }
-    } catch (err) {
-      console.error("Erro:", err);
-      setError(err.message);
+    } catch (error) {
+      console.error("Erro ao buscar campos:", error);
+      setError(error.message || "Erro ao carregar campos");
+      Alert.alert(
+        "Erro",
+        "Não foi possível carregar os campos. Por favor, tente novamente."
+      );
     } finally {
       setLoading(false);
     }

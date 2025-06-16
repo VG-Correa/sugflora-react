@@ -14,29 +14,23 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import HeaderInterno from "../components/HeaderInterno";
-import projetoApi from "../functions/api/projetoApi";
-import DateTimePicker from "@react-native-community/datetimepicker";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Picker } from "@react-native-picker/picker";
 import * as ImagePicker from "expo-image-picker";
 import axios from "axios";
-import DateTimePickerAndroid from "@react-native-community/datetimepicker";
 
 const NewProject = () => {
   const navigation = useNavigation();
   const [loading, setLoading] = useState(false);
   const [usuarios, setUsuarios] = useState([]);
-  const [showInicioPicker, setShowInicioPicker] = useState(false);
-  const [showTerminoPicker, setShowTerminoPicker] = useState(false);
-  const [showPrevisaoPicker, setShowPrevisaoPicker] = useState(false);
   const [imagem, setImagem] = useState(null);
   const [projeto, setProjeto] = useState({
     nome: "",
     descricao: "",
     isPublic: false,
-    inicio: new Date(),
-    termino: null,
-    previsaoConclusao: null,
+    inicio: "",
+    termino: "",
+    previsaoConclusao: "",
     responsavel_uuid: null,
     imagemBase64: null,
   });
@@ -45,6 +39,20 @@ const NewProject = () => {
     carregarUsuarios();
     solicitarPermissaoCamera();
   }, []);
+
+  const carregarUsuarios = async () => {
+    try {
+      const token = await AsyncStorage.getItem("token");
+      const response = await axios.get("http://localhost:8080/api/usuario", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.data && response.data.data) {
+        setUsuarios(response.data.data);
+      }
+    } catch (error) {
+      console.error("Erro ao carregar usuários:", error);
+    }
+  };
 
   const solicitarPermissaoCamera = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -69,259 +77,209 @@ const NewProject = () => {
       if (!result.canceled) {
         const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
         setImagem(result.assets[0].uri);
-        setProjeto((prev) => ({
-          ...prev,
-          imagemBase64: base64Image,
-        }));
+        setProjeto((prev) => ({ ...prev, imagemBase64: base64Image }));
       }
     } catch (error) {
-      console.error("Erro ao selecionar imagem:", error);
       Alert.alert("Erro", "Não foi possível selecionar a imagem");
-    }
-  };
-
-  const carregarUsuarios = async () => {
-    try {
-      const token = await AsyncStorage.getItem("token");
-      const response = await axios.get("http://10.0.2.2:8080/api/usuario", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (response.data && response.data.data) {
-        setUsuarios(response.data.data);
-      }
-    } catch (error) {
-      console.error("Erro ao carregar usuários:", error);
-      Alert.alert("Erro", "Não foi possível carregar a lista de usuários");
     }
   };
 
   const formatarData = (data) => {
     if (!data) return "";
-    return data.toLocaleDateString("pt-BR");
+    const numeros = data.replace(/\D/g, "");
+    if (numeros.length <= 2) return numeros;
+    if (numeros.length <= 4)
+      return `${numeros.slice(0, 2)}/${numeros.slice(2)}`;
+    return `${numeros.slice(0, 2)}/${numeros.slice(2, 4)}/${numeros.slice(
+      4,
+      8
+    )}`;
   };
 
-  const handleDateChange = (event, selectedDate, tipo) => {
-    if (Platform.OS === "android") {
-      setShowInicioPicker(false);
-      setShowTerminoPicker(false);
-      setShowPrevisaoPicker(false);
-    }
-
-    if (selectedDate) {
-      const adjustedDate = new Date(selectedDate);
-      adjustedDate.setHours(0, 0, 0, 0);
-
-      switch (tipo) {
-        case "inicio":
-          setProjeto((prev) => ({ ...prev, inicio: adjustedDate }));
-          break;
-        case "termino":
-          setProjeto((prev) => ({ ...prev, termino: adjustedDate }));
-          break;
-        case "previsao":
-          setProjeto((prev) => ({ ...prev, previsaoConclusao: adjustedDate }));
-          break;
-      }
-    }
-  };
-
-  const validarDatas = () => {
-    const hoje = new Date();
-    hoje.setHours(0, 0, 0, 0);
-
-    if (projeto.inicio < hoje) {
-      Alert.alert("Erro", "A data de início não pode ser anterior a hoje");
-      return false;
-    }
-
-    if (projeto.termino && projeto.inicio > projeto.termino) {
-      Alert.alert(
-        "Erro",
-        "A data de término não pode ser anterior à data de início"
-      );
-      return false;
-    }
-
-    if (
-      projeto.previsaoConclusao &&
-      projeto.inicio > projeto.previsaoConclusao
-    ) {
-      Alert.alert(
-        "Erro",
-        "A previsão de conclusão não pode ser anterior à data de início"
-      );
-      return false;
-    }
-
-    return true;
+  const handleDataChange = (valor, campo) => {
+    const dataFormatada = formatarData(valor);
+    setProjeto((prev) => ({ ...prev, [campo]: dataFormatada }));
   };
 
   const handleSave = async () => {
-    if (!projeto.nome) {
-      Alert.alert("Erro", "Por favor, preencha o nome do projeto");
-      return;
-    }
-
-    if (!validarDatas()) {
-      return;
-    }
-
-    setLoading(true);
     try {
+      if (!projeto.nome) {
+        Alert.alert("Erro", "Por favor, preencha o nome do projeto");
+        return;
+      }
+
+      if (!projeto.inicio) {
+        Alert.alert("Erro", "Por favor, preencha a data de início");
+        return;
+      }
+
+      setLoading(true);
       const token = await AsyncStorage.getItem("token");
       const user_id = await AsyncStorage.getItem("user_id");
 
-      console.log("Token encontrado:", token ? "Sim" : "Não");
-      console.log("User ID encontrado:", user_id);
-
-      if (!user_id) {
-        throw new Error("Usuário não identificado");
-      }
-
-      if (!token) {
-        throw new Error("Token não encontrado. Faça login novamente.");
+      if (!user_id || !token) {
+        throw new Error("Usuário não identificado ou token inválido");
       }
 
       const projetoData = {
         id: 0,
         nome: projeto.nome.trim(),
         descricao: projeto.descricao?.trim() || "",
-        inicio: projeto.inicio.toISOString().split("T")[0],
-        previsaoConclusao: projeto.previsaoConclusao
-          ? projeto.previsaoConclusao.toISOString().split("T")[0]
-          : null,
+        inicio: projeto.inicio,
+        previsaoConclusao: projeto.previsaoConclusao || null,
         responsavel: projeto.responsavel_uuid || "",
         usuario_dono_uuid: user_id,
         imagemBase64: projeto.imagemBase64 || "",
         public: projeto.isPublic,
+        status: "pendente", // Status para controle de sincronização
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       };
 
-      console.log("Dados do projeto sendo enviados:", projetoData);
-      console.log("Headers sendo enviados:", {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-        Accept: "application/hal+json",
-      });
+      // Salvar localmente primeiro
+      try {
+        // Buscar projetos existentes
+        const projetosExistentes = await AsyncStorage.getItem("projetos");
+        let projetos = [];
 
-      const response = await axios.post(
-        "http://localhost:8080/api/projeto",
-        projetoData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-            Accept: "application/hal+json",
-          },
-          validateStatus: function (status) {
-            return status < 500;
-          },
+        if (projetosExistentes) {
+          projetos = JSON.parse(projetosExistentes);
         }
-      );
 
-      console.log("Resposta da API:", {
-        status: response.status,
-        data: response.data,
-        headers: response.headers,
-      });
+        // Adicionar novo projeto
+        projetos.push(projetoData);
 
-      if (response.status === 200) {
+        // Salvar no AsyncStorage
+        await AsyncStorage.setItem("projetos", JSON.stringify(projetos));
+
+        console.log("Projeto salvo localmente:", projetoData);
+        Alert.alert("Sucesso", "Projeto salvo localmente!");
+
+        // Tentar sincronizar com a API
+        try {
+          console.log("Tentando sincronizar com a API...");
+          const response = await axios.post(
+            "http://localhost:8080/api/projeto",
+            projetoData,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          if (response.status === 200) {
+            // Atualizar status do projeto local
+            const projetoAtualizado = {
+              ...projetoData,
+              id: response.data.id,
+              status: "sincronizado",
+            };
+
+            // Atualizar na lista local
+            const projetosAtualizados = projetos.map((p) =>
+              p.nome === projetoData.nome ? projetoAtualizado : p
+            );
+
+            await AsyncStorage.setItem(
+              "projetos",
+              JSON.stringify(projetosAtualizados)
+            );
+            console.log("Projeto sincronizado com sucesso!");
+          }
+        } catch (apiError) {
+          console.error("Erro ao sincronizar com a API:", apiError);
+          // O projeto continua salvo localmente
+        }
+
+        // Navegar de volta independente do resultado da API
         navigation.reset({
           index: 0,
           routes: [{ name: "MyProjects" }],
         });
-      } else {
-        throw new Error(
-          response.data?.message ||
-            response.data?.error ||
-            "Erro ao criar projeto"
-        );
+      } catch (storageError) {
+        console.error("Erro ao salvar localmente:", storageError);
+        throw new Error("Não foi possível salvar o projeto localmente");
       }
     } catch (error) {
-      console.error("Erro detalhado ao salvar projeto:", {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
-        headers: error.response?.headers,
-      });
-
-      let mensagemErro = "Não foi possível salvar o projeto. ";
-      if (error.response?.data?.message) {
-        mensagemErro += error.response.data.message;
-      } else if (error.response?.data?.error) {
-        mensagemErro += error.response.data.error;
-      } else {
-        mensagemErro += "Por favor, tente novamente.";
-      }
-
-      Alert.alert("Erro", mensagemErro);
+      console.error("Erro completo:", error);
+      Alert.alert(
+        "Erro",
+        `Não foi possível salvar o projeto. Erro: ${error.message}`
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  const renderDatePicker = (label, value, onChange, minDate) => {
-    if (Platform.OS === "web") {
-      return (
-        <View style={styles.inputContainer}>
-          <Text style={styles.label}>{label}</Text>
-          <input
-            type="date"
-            value={value ? value.toISOString().split("T")[0] : ""}
-            onChange={(e) => {
-              const date = new Date(e.target.value);
-              date.setHours(0, 0, 0, 0);
-              onChange(date);
-            }}
-            min={minDate ? minDate.toISOString().split("T")[0] : undefined}
-            style={{
-              padding: 10,
-              borderWidth: 1,
-              borderColor: "#ccc",
-              borderRadius: 5,
-              fontSize: 16,
-              width: "100%",
-              backgroundColor: "#fff",
-            }}
-          />
-        </View>
-      );
-    }
+  // Função para sincronizar projetos pendentes
+  const sincronizarProjetosPendentes = async () => {
+    try {
+      const token = await AsyncStorage.getItem("token");
+      if (!token) return;
 
-    return (
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>{label}</Text>
-        <TouchableOpacity
-          style={styles.dateButton}
-          onPress={() => {
-            DateTimePickerAndroid.open({
-              value: value || new Date(),
-              onChange: (event, selectedDate) => {
-                if (selectedDate) {
-                  onChange(selectedDate);
-                }
+      const projetosExistentes = await AsyncStorage.getItem("projetos");
+      if (!projetosExistentes) return;
+
+      const projetos = JSON.parse(projetosExistentes);
+      const projetosPendentes = projetos.filter((p) => p.status === "pendente");
+
+      for (const projeto of projetosPendentes) {
+        try {
+          const response = await axios.post(
+            "http://localhost:8080/api/projeto",
+            projeto,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
               },
-              mode: "date",
-              minimumDate: minDate,
-            });
-          }}
-        >
-          <Text style={styles.dateButtonText}>
-            {value ? formatarData(value) : "Selecione uma data"}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    );
+            }
+          );
+
+          if (response.status === 200) {
+            // Atualizar status do projeto
+            const projetoAtualizado = {
+              ...projeto,
+              id: response.data.id,
+              status: "sincronizado",
+            };
+
+            // Atualizar na lista local
+            const projetosAtualizados = projetos.map((p) =>
+              p.nome === projeto.nome ? projetoAtualizado : p
+            );
+
+            await AsyncStorage.setItem(
+              "projetos",
+              JSON.stringify(projetosAtualizados)
+            );
+            console.log(`Projeto ${projeto.nome} sincronizado com sucesso!`);
+          }
+        } catch (error) {
+          console.error(`Erro ao sincronizar projeto ${projeto.nome}:`, error);
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao sincronizar projetos:", error);
+    }
   };
 
-  if (loading) {
-    return (
-      <View style={[styles.container, styles.centerContent]}>
-        <ActivityIndicator size="large" color="#2e7d32" />
-      </View>
-    );
-  }
+  // Adicionar useEffect para sincronização periódica
+  useEffect(() => {
+    const sincronizarPeriodicamente = async () => {
+      await sincronizarProjetosPendentes();
+    };
+
+    // Sincronizar a cada 5 minutos
+    const intervalo = setInterval(sincronizarPeriodicamente, 5 * 60 * 1000);
+
+    // Sincronizar também quando o componente montar
+    sincronizarPeriodicamente();
+
+    return () => clearInterval(intervalo);
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -334,9 +292,10 @@ const NewProject = () => {
             <TextInput
               style={styles.input}
               value={projeto.nome}
-              onChangeText={(text) => setProjeto({ ...projeto, nome: text })}
+              onChangeText={(text) =>
+                setProjeto((prev) => ({ ...prev, nome: text }))
+              }
               placeholder="Digite o nome do projeto"
-              maxLength={100}
             />
           </View>
 
@@ -346,13 +305,89 @@ const NewProject = () => {
               style={[styles.input, styles.textArea]}
               value={projeto.descricao}
               onChangeText={(text) =>
-                setProjeto({ ...projeto, descricao: text })
+                setProjeto((prev) => ({ ...prev, descricao: text }))
               }
               placeholder="Digite a descrição do projeto"
               multiline
               numberOfLines={4}
-              maxLength={500}
             />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Data de Início *</Text>
+            <TextInput
+              style={styles.input}
+              value={projeto.inicio}
+              onChangeText={(text) => handleDataChange(text, "inicio")}
+              placeholder="DD/MM/AAAA"
+              keyboardType="numeric"
+              maxLength={10}
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Data de Término</Text>
+            <TextInput
+              style={styles.input}
+              value={projeto.termino}
+              onChangeText={(text) => handleDataChange(text, "termino")}
+              placeholder="DD/MM/AAAA"
+              keyboardType="numeric"
+              maxLength={10}
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Previsão de Conclusão</Text>
+            <TextInput
+              style={styles.input}
+              value={projeto.previsaoConclusao}
+              onChangeText={(text) =>
+                handleDataChange(text, "previsaoConclusao")
+              }
+              placeholder="DD/MM/AAAA"
+              keyboardType="numeric"
+              maxLength={10}
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Responsável</Text>
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={projeto.responsavel_uuid}
+                onValueChange={(value) =>
+                  setProjeto((prev) => ({ ...prev, responsavel_uuid: value }))
+                }
+                style={styles.picker}
+              >
+                <Picker.Item label="Selecione um responsável" value={null} />
+                {usuarios.map((usuario) => (
+                  <Picker.Item
+                    key={usuario.uuid}
+                    label={`${usuario.nome} ${usuario.sobrenome}`}
+                    value={usuario.uuid}
+                  />
+                ))}
+              </Picker>
+            </View>
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Projeto Público</Text>
+            <View style={styles.switchContainer}>
+              <Switch
+                value={projeto.isPublic}
+                onValueChange={(value) =>
+                  setProjeto((prev) => ({ ...prev, isPublic: value }))
+                }
+                trackColor={{ false: "#767577", true: "#81b0ff" }}
+                thumbColor={projeto.isPublic ? "#2e7d32" : "#f4f3f4"}
+              />
+              <Text style={styles.switchLabel}>
+                {projeto.isPublic ? "Sim" : "Não"}
+              </Text>
+            </View>
           </View>
 
           <View style={styles.inputGroup}>
@@ -368,69 +403,6 @@ const NewProject = () => {
             {imagem && (
               <Image source={{ uri: imagem }} style={styles.imagePreview} />
             )}
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Projeto Público</Text>
-            <View style={styles.switchContainer}>
-              <Switch
-                value={projeto.isPublic}
-                onValueChange={(value) =>
-                  setProjeto({ ...projeto, isPublic: value })
-                }
-                trackColor={{ false: "#767577", true: "#81b0ff" }}
-                thumbColor={projeto.isPublic ? "#2e7d32" : "#f4f3f4"}
-              />
-              <Text style={styles.switchLabel}>
-                {projeto.isPublic ? "Sim" : "Não"}
-              </Text>
-            </View>
-          </View>
-
-          {renderDatePicker(
-            "Data de Início",
-            projeto.inicio,
-            (date) => handleDateChange("inicio", date),
-            new Date()
-          )}
-
-          {renderDatePicker(
-            "Data de Término",
-            projeto.termino,
-            (date) => handleDateChange("termino", date),
-            projeto.inicio
-          )}
-
-          {renderDatePicker(
-            "Previsão de Conclusão",
-            projeto.previsaoConclusao,
-            (date) => handleDateChange("previsaoConclusao", date),
-            projeto.inicio
-          )}
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Responsável (opcional)</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={projeto.responsavel_uuid}
-                onValueChange={(itemValue) =>
-                  setProjeto({
-                    ...projeto,
-                    responsavel_uuid: itemValue,
-                  })
-                }
-                style={styles.picker}
-              >
-                <Picker.Item label="Selecione um responsável" value={null} />
-                {usuarios.map((usuario) => (
-                  <Picker.Item
-                    key={usuario.uuid}
-                    label={`${usuario.nome} ${usuario.sobrenome}`}
-                    value={usuario.uuid}
-                  />
-                ))}
-              </Picker>
-            </View>
           </View>
 
           <TouchableOpacity
@@ -454,10 +426,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#fff",
-  },
-  centerContent: {
-    justifyContent: "center",
-    alignItems: "center",
   },
   content: {
     flex: 1,
@@ -527,17 +495,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#333",
   },
-  dateButton: {
-    borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    padding: 12,
-    backgroundColor: "#f9f9f9",
-  },
-  dateButtonText: {
-    fontSize: 16,
-    color: "#333",
-  },
   imageButton: {
     backgroundColor: "#f0f0f0",
     padding: 12,
@@ -556,9 +513,6 @@ const styles = StyleSheet.create({
     height: 200,
     marginTop: 10,
     borderRadius: 8,
-  },
-  inputContainer: {
-    marginBottom: 20,
   },
 });
 

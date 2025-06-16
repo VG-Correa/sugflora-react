@@ -9,6 +9,7 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import HeaderInterno from '../components/HeaderInterno';
 
 const dadosSolicitacoes = [
   { especie: 'DESCONHECIDA 4', data: '22/03/2025', mensagem: 'BOA TARDE, ANALISANDO S...', status: 'ATIVO' },
@@ -48,18 +49,7 @@ export default function TelaSolicitacaoParaAjudar() {
   return (
     <SafeAreaView style={styles.container}>
       {/* Cabeçalho visual */}
-      <View style={styles.headerContainer}>
-        <Image source={require('../assets/images/cabecalho.webp')} style={styles.headerBackgroundImage} resizeMode="cover" />
-        <View style={styles.headerContent}>
-          <Image source={require('../assets/images/logo.png')} style={styles.logoImage} resizeMode="contain" />
-          <Text style={styles.logoText}>SUG - FLORA</Text>
-          <View style={styles.menuTop}>
-            <TouchableOpacity style={styles.menuItem}><Text style={styles.menuText}>FLORAMATCH</Text></TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem}><Text style={styles.menuText}>PÁGINA INICIAL</Text></TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem}><Text style={styles.menuText}>SAIR</Text></TouchableOpacity>
-          </View>
-        </View>
-      </View>
+      <HeaderInterno />
 
       <ScrollView style={styles.content} contentContainerStyle={{ padding: 15, paddingBottom: 80 }}>
         <Text style={styles.titulo}>EU CONHEÇO ESSA!</Text>

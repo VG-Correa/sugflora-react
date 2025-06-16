@@ -12,37 +12,13 @@ import {
   ScrollView,
 } from 'react-native';
 import { Picker } from '@react-native-picker/picker';
+import HeaderInterno from '../components/HeaderInterno';
 
 export default function ChatEuConhecoEssa() {
   return (
     <SafeAreaView style={styles.container}>
       {/* Cabeçalho */}
-      <View style={styles.headerContainer}>
-        <Image
-          source={require('../assets/images/cabecalho.webp')}
-          style={styles.headerBackgroundImage}
-          resizeMode="cover"
-        />
-        <View style={styles.headerContent}>
-          <Image
-            source={require('../assets/images/logo.png')}
-            style={styles.logoImage}
-            resizeMode="contain"
-          />
-          <Text style={styles.logoText}>SUG - FLORA</Text>
-          <View style={styles.menuTop}>
-            <TouchableOpacity style={styles.menuItem}>
-              <Text style={styles.menuText}>FLORAMATCH</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem}>
-              <Text style={styles.menuText}>PÁGINA INICIAL</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem}>
-              <Text style={styles.menuText}>SAIR</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
+      <HeaderInterno />
 
       {/* Conteúdo */}
       <ScrollView contentContainerStyle={styles.content}>

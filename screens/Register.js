@@ -264,7 +264,7 @@ const Register = ({ navigation }) => {
       const response = await UsuarioApi.create(userData);
       console.log("Resposta da API:", response);
 
-      if (response.status === 201 && response.data) {
+      if (response.status === 201 || response.status === 200) {
         console.log("Usuário criado com sucesso");
         // Limpa o formulário
         setFormData({
@@ -285,18 +285,23 @@ const Register = ({ navigation }) => {
           role: "USER",
         });
 
-        Alert.alert("Sucesso", "Cadastro realizado com sucesso!", [
-          {
-            text: "OK",
-            onPress: () => {
-              console.log("Redirecionando para Login...");
-              navigation.reset({
-                index: 0,
-                routes: [{ name: "Login" }],
-              });
+        Alert.alert(
+          "Sucesso",
+          "Cadastro realizado com sucesso! Você será redirecionado para a tela de login.",
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                console.log("Redirecionando para Login...");
+                navigation.reset({
+                  index: 0,
+                  routes: [{ name: "Login" }],
+                });
+              },
             },
-          },
-        ]);
+          ],
+          { cancelable: false }
+        );
       }
     } catch (error) {
       console.error("Erro detalhado ao cadastrar:", error);

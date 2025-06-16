@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -7,12 +7,13 @@ import {
   TextInput,
   ScrollView,
   Alert,
-} from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import CampoApi from '../functions/api/CampoApi';
-import HeaderInterno from '../components/HeaderInterno';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-
+  Platform,
+} from "react-native";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import axios from "axios";
+import HeaderInterno from "../components/HeaderInterno";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import DateTimePicker from "@react-native-community/datetimepicker";
 
 const NewField = () => {
   const navigation = useNavigation();
@@ -20,37 +21,60 @@ const NewField = () => {
   const { projeto } = route.params;
 
   const [loading, setLoading] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showEndDatePicker, setShowEndDatePicker] = useState(false);
+  const [datePickerMode, setDatePickerMode] = useState("inicio");
 
-  const [nome, setNome] = useState('');
-  const [dataInicio, setDataInicio] = useState('');
-  const [descricao, setDescricao] = useState('');
-  const [pais, setPais] = useState('Brasil'); 
-  const [estado, setEstado] = useState('');
-  const [cidade, setCidade] = useState('');
-  const [endereco, setEndereco] = useState('');
-  const [previsaoConclusao, setPrevisaoConclusao] = useState(''); 
+  const [campo, setCampo] = useState({
+    nome: "",
+    descricao: "",
+    pais: "Brasil",
+    estado: "",
+    cidade: "",
+    endereco: "",
+    data_inicio: new Date(),
+    data_termino: null,
+    cep: "",
+  });
 
   const validarCampos = () => {
-    if (!nome || !dataInicio || !pais || !estado || !cidade || !endereco) {
-      Alert.alert('Campos obrigatórios', 'Por favor, preencha todos os campos marcados com *');
+    if (!campo.nome || !campo.estado || !campo.cidade || !campo.endereco) {
+      Alert.alert(
+        "Campos obrigatórios",
+        "Por favor, preencha todos os campos marcados com *"
+      );
       return false;
     }
     return true;
   };
 
-  const formatDateToISO = (dateStr) => {
-    if (!dateStr || !dateStr.includes('/')) return null;
-    const [day, month, year] = dateStr.split('/');
-    if (day && month && year && year.length === 4) {
-      return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T00:00:00`;
+  const handleDateChange = (event, selectedDate, mode) => {
+    if (Platform.OS === "android") {
+      setShowDatePicker(false);
+      setShowEndDatePicker(false);
     }
-    return null; 
-  };
 
+    if (selectedDate) {
+      if (mode === "inicio") {
+        setCampo((prev) => ({
+          ...prev,
+          data_inicio: selectedDate,
+        }));
+      } else {
+        setCampo((prev) => ({
+          ...prev,
+          data_termino: selectedDate,
+        }));
+      }
+    }
+  };
 
   const handleSubmit = async () => {
     if (!projeto?.id) {
-      Alert.alert("Erro", "ID do projeto não encontrado. Volte e tente novamente.");
+      Alert.alert(
+        "Erro",
+        "ID do projeto não encontrado. Volte e tente novamente."
+      );
       return;
     }
 
@@ -61,49 +85,130 @@ const NewField = () => {
     setLoading(true);
 
     try {
+      const token = await AsyncStorage.getItem("token");
       const userId = await AsyncStorage.getItem("user_id");
-      const inicioISO = formatDateToISO(dataInicio);
-      const terminoISO = formatDateToISO(previsaoConclusao);
 
-      
-      if (!inicioISO) {
-        Alert.alert(
-          "Formato de Data Inválido",
-          "Por favor, insira a Data de Início no formato dd/mm/aaaa."
-        );
-        setLoading(false); 
-        return; 
+      if (!token) {
+        throw new Error("Token não encontrado. Faça login novamente.");
       }
 
-      const campoJson = {
-        id: null,
+      if (!userId) {
+        throw new Error("Usuário não identificado");
+      }
+
+      const campoData = {
+        nome: campo.nome.trim(),
+        descricao: campo.descricao?.trim() || "",
+        endereco: campo.endereco.trim(),
+        cidade: campo.cidade.trim(),
+        estado: campo.estado.trim(),
+        pais: campo.pais,
+        data_inicio: campo.data_inicio.toISOString().split("T")[0],
+        data_termino: campo.data_termino
+          ? campo.data_termino.toISOString().split("T")[0]
+          : null,
+        cep: campo.cep.trim(),
         usuario_responsavel_uuid: userId,
         projeto_id: projeto.id,
-        nome,
-        descricao,
-        endereco,
-        cidade,
-        estado,
-        pais,
-        data_inicio: inicioISO,
-        data_termino: terminoISO,
-        cep: ""
       };
 
-      console.log('Payload sendo enviado:', campoJson);
+      console.log("Dados do campo sendo enviados:", campoData);
 
-      const response = await CampoApi.create(campoJson);
+      const response = await axios.post(
+        "http://localhost:8080/api/campo",
+        campoData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+            Accept: "application/hal+json",
+          },
+        }
+      );
 
-      if (response.status === 201) {
-        Alert.alert('Sucesso!', 'Novo campo cadastrado com sucesso!');
-        navigation.goBack();
+      console.log("Resposta da API:", {
+        status: response.status,
+        data: response.data,
+      });
+
+      if (response.status === 200 || response.status === 201) {
+        Alert.alert("Sucesso!", "Novo campo cadastrado com sucesso!", [
+          {
+            text: "OK",
+            onPress: () => navigation.goBack(),
+          },
+        ]);
+      } else {
+        throw new Error(response.data?.message || "Erro ao criar campo");
       }
     } catch (error) {
-      console.error('Erro ao criar campo:', error.response?.data || error);
-      Alert.alert('Erro', 'Não foi possível criar o campo. Tente novamente.');
+      console.error("Erro ao criar campo:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
+
+      Alert.alert(
+        "Erro",
+        error.response?.data?.message ||
+          error.message ||
+          "Não foi possível criar o campo. Tente novamente."
+      );
     } finally {
       setLoading(false);
     }
+  };
+
+  const renderDatePicker = (label, value, onChange, minDate) => {
+    if (Platform.OS === "web") {
+      return (
+        <View style={styles.fieldGroupHalf}>
+          <Text style={styles.fieldLabel}>{label}</Text>
+          <input
+            type="date"
+            value={value ? value.toISOString().split("T")[0] : ""}
+            onChange={(e) => {
+              const date = new Date(e.target.value);
+              date.setHours(0, 0, 0, 0);
+              onChange(date);
+            }}
+            min={minDate ? minDate.toISOString().split("T")[0] : undefined}
+            style={{
+              height: 45,
+              borderWidth: 1,
+              borderColor: "#E0E0E0",
+              borderRadius: 8,
+              padding: 10,
+              fontSize: 14,
+              backgroundColor: "#fff",
+            }}
+          />
+        </View>
+      );
+    }
+
+    return (
+      <View style={styles.fieldGroupHalf}>
+        <Text style={styles.fieldLabel}>{label}</Text>
+        <TouchableOpacity
+          style={styles.dateButton}
+          onPress={() => {
+            setDatePickerMode(
+              label === "DATA DE INÍCIO" ? "inicio" : "termino"
+            );
+            if (label === "DATA DE INÍCIO") {
+              setShowDatePicker(true);
+            } else {
+              setShowEndDatePicker(true);
+            }
+          }}
+        >
+          <Text style={styles.dateButtonText}>
+            {value ? value.toLocaleDateString("pt-BR") : "Selecione uma data"}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
   };
 
   return (
@@ -117,13 +222,22 @@ const NewField = () => {
 
         <View style={styles.row}>
           <View style={styles.fieldGroupHalf}>
-            <Text style={styles.fieldLabel}>NOME DO CAMPO</Text>
-            <TextInput style={styles.input} placeholder="Nome" value={nome} onChangeText={setNome} />
+            <Text style={styles.fieldLabel}>NOME DO CAMPO *</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Nome"
+              value={campo.nome}
+              onChangeText={(text) =>
+                setCampo((prev) => ({ ...prev, nome: text }))
+              }
+            />
           </View>
-          <View style={styles.fieldGroupHalf}>
-            <Text style={styles.fieldLabel}>DATA DE INÍCIO</Text>
-            <TextInput style={styles.input} placeholder="dd/mm/aaaa" value={dataInicio} onChangeText={setDataInicio} />
-          </View>
+          {renderDatePicker(
+            "DATA DE INÍCIO *",
+            campo.data_inicio,
+            (date) => handleDateChange(null, date, "inicio"),
+            new Date()
+          )}
         </View>
 
         <View style={styles.fieldGroup}>
@@ -132,44 +246,96 @@ const NewField = () => {
             style={[styles.input, { height: 80 }]}
             placeholder="Digite aqui"
             multiline
-            value={descricao}
-            onChangeText={setDescricao}
+            value={campo.descricao}
+            onChangeText={(text) =>
+              setCampo((prev) => ({ ...prev, descricao: text }))
+            }
           />
         </View>
 
         <View style={styles.row}>
           <View style={styles.fieldGroupThird}>
             <Text style={styles.fieldLabel}>PAÍS</Text>
-            <TextInput style={styles.input} value={pais} onChangeText={setPais} editable={false} />
+            <TextInput
+              style={styles.input}
+              value={campo.pais}
+              editable={false}
+            />
           </View>
           <View style={styles.fieldGroupThird}>
-            <Text style={styles.fieldLabel}>ESTADO</Text>
-            <TextInput style={styles.input} placeholder="Ex: SP" value={estado} onChangeText={setEstado} />
+            <Text style={styles.fieldLabel}>ESTADO *</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ex: SP"
+              value={campo.estado}
+              onChangeText={(text) =>
+                setCampo((prev) => ({ ...prev, estado: text }))
+              }
+            />
           </View>
           <View style={styles.fieldGroupThird}>
-            <Text style={styles.fieldLabel}>CIDADE</Text>
-            <TextInput style={styles.input} placeholder="Ex: São Paulo" value={cidade} onChangeText={setCidade} />
+            <Text style={styles.fieldLabel}>CIDADE *</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ex: São Paulo"
+              value={campo.cidade}
+              onChangeText={(text) =>
+                setCampo((prev) => ({ ...prev, cidade: text }))
+              }
+            />
           </View>
         </View>
 
         <View style={styles.row}>
           <View style={styles.fieldGroupHalf}>
-            <Text style={styles.fieldLabel}>ENDEREÇO</Text>
-            <TextInput style={styles.input} placeholder="Rua, número, bairro" value={endereco} onChangeText={setEndereco} />
+            <Text style={styles.fieldLabel}>ENDEREÇO *</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Rua, número, bairro"
+              value={campo.endereco}
+              onChangeText={(text) =>
+                setCampo((prev) => ({ ...prev, endereco: text }))
+              }
+            />
           </View>
-          <View style={styles.fieldGroupHalf}>
-            <Text style={styles.fieldLabel}>PREVISÃO DE CONCLUSÃO</Text>
-            <TextInput style={styles.input} placeholder="dd/mm/aaaa" value={previsaoConclusao} onChangeText={setPrevisaoConclusao} />
-          </View>
+          {renderDatePicker(
+            "PREVISÃO DE CONCLUSÃO",
+            campo.data_termino,
+            (date) => handleDateChange(null, date, "termino"),
+            campo.data_inicio
+          )}
         </View>
+
+        {(showDatePicker || showEndDatePicker) && (
+          <DateTimePicker
+            value={
+              datePickerMode === "inicio"
+                ? campo.data_inicio
+                : campo.data_termino || new Date()
+            }
+            mode="date"
+            display="default"
+            onChange={(event, date) =>
+              handleDateChange(event, date, datePickerMode)
+            }
+            minimumDate={
+              datePickerMode === "inicio" ? new Date() : campo.data_inicio
+            }
+          />
+        )}
 
         <View style={styles.buttonContainer}>
           <TouchableOpacity
-            style={[styles.createButton, loading && styles.createButtonDisabled]}
+            style={[
+              styles.createButton,
+              loading && styles.createButtonDisabled,
+            ]}
             onPress={handleSubmit}
             disabled={loading}
           >
-            <Text style={styles.createButtonText}>{loading ? 'SALVANDO...' : 'Salvar Campo'}</Text>
+            <Text style={styles.createButtonText}>
+              {loading ? "SALVANDO..." : "Salvar Campo"}
+            </Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -178,67 +344,80 @@ const NewField = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#F4F8F4' },
+  container: { flex: 1, backgroundColor: "#F4F8F4" },
   content: { flex: 1 },
   formWrapper: { paddingHorizontal: 30, paddingVertical: 20 },
   pageTitle: {
     fontSize: 22,
-    fontWeight: 'bold',
-    textAlign: 'left',
+    fontWeight: "bold",
+    textAlign: "left",
     marginBottom: 30,
-    color: '#333',
+    color: "#333",
   },
   row: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 15,
   },
   fieldGroup: {
     marginBottom: 15,
   },
   fieldGroupHalf: {
-    width: '48%',
+    width: "48%",
   },
   fieldGroupThird: {
-    width: '31%',
+    width: "31%",
   },
   fieldLabel: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 8,
-    color: '#333',
+    color: "#333",
   },
   input: {
     height: 45,
-    borderColor: '#E0E0E0',
+    borderColor: "#E0E0E0",
     borderWidth: 1,
     borderRadius: 8,
     paddingHorizontal: 15,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     fontSize: 14,
   },
+  dateButton: {
+    height: 45,
+    borderColor: "#E0E0E0",
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 15,
+    backgroundColor: "#fff",
+    justifyContent: "center",
+  },
+  dateButtonText: {
+    fontSize: 14,
+    color: "#333",
+  },
   buttonContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     marginTop: 30,
   },
   createButton: {
-    backgroundColor: '#2e7d32',
+    backgroundColor: "#2e7d32",
     paddingVertical: 15,
     borderRadius: 8,
-    width: '50%',
-    alignItems: 'center',
+    width: "50%",
+    alignItems: "center",
     elevation: 2,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
   },
   createButtonDisabled: {
-    backgroundColor: '#a5d6a7',
+    backgroundColor: "#a5d6a7",
   },
   createButtonText: {
-    color: '#fff',
-    fontWeight: 'bold',
+    color: "#fff",
+    fontWeight: "bold",
     fontSize: 16,
   },
 });

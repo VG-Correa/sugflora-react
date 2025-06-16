@@ -72,6 +72,7 @@ const App = () => {
             component={ChatEuConhecoEssa}
             options={{ headerShown: false, gestureEnabled: true }}
           />
+          
           <Stack.Screen
             name="Login"
             component={Login}

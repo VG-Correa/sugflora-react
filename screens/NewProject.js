@@ -48,10 +48,10 @@ const NewProject = () => {
     return true;
   };
 
-  const formatDateToISO = (dateStr) => {
+  const formatDateOnlyToISO = (dateStr) => {
     if (!dateStr) return null;
     const [day, month, year] = dateStr.split('/');
-    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T00:00:00`;
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
   };
 
   const handleCreateProject = async () => {
@@ -67,21 +67,23 @@ const NewProject = () => {
         });
       }
 
-      const inicioISO = formatDateToISO(dataInicio);
-      const terminoISO = formatDateToISO(previsaoConclusao);
+      const dataInicioISO = formatDateOnlyToISO(dataInicio);
+      const previsaoConclusaoISO = formatDateOnlyToISO(previsaoConclusao);
 
       const payload = {
         id: null,
-        nome,
-        descricao,
-        inicio: inicioISO,
-        termino: terminoISO,
-        responsavel,
-        imagemBase64,
+        nome: nome,
+        descricao: descricao,
+        
+        // dataInicio: dataInicioISO,
+        // previsaoConclusao: previsaoConclusaoISO,
+        
         usuario_dono_uuid: userId,
         isPublic: false,
+        // inicioExecucao: null,
+        responsavel: responsavel,
+        imagemBase64: imagemBase64,
       };
-
       console.log('Payload para API:', payload);
 
       const response = await projetoApi.create(payload);

@@ -260,7 +260,7 @@ const HeaderInterno = ({ onLogout }) => {
         </TouchableOpacity>
       </View>
       <View style={[styles.menuItem]}>
-        <Notificacoes />
+        {/* <Notificacoes /> */}
       </View>
       <View style={[styles.menuItem]}>
         <TouchableOpacity

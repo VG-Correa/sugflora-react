@@ -30,7 +30,8 @@ import ReportScreenQuantitativo from "./screens/ReportScreenQuantitativo";
 import SearchSpecies from "./screens/SearchSpecies";
 import MyReports from "./screens/MyReports";
 import EditProject from "./screens/EditProject";
-// import AjudemeAIdentificar from "./screens/AjudemeAIdentificar"; 
+
+import AjudemeAIdentificar from "./screens/AjudemeAIdentificar";
 import EuConhecoEssa from "./screens/EuConhecoEssa";
 import BuscarAjudaAjudeaIdentificar from "./screens/BuscarAjuda-AjudeaIdentificar";
 import ChatEuConhecoEssa from "./screens/Chat-EuConhecoEssa";
@@ -85,7 +86,6 @@ const App = () => {
               component={Password}
               options={{ headerShown: false }}
             />
-
             {/* Telas institucionais */}
             <Stack.Screen
               name="About"

@@ -294,6 +294,7 @@ const Register = ({ navigation }) => {
       if (response.status === 201 && response.data) { // 201 Created é o esperado para sucesso
         console.log("Usuário criado com sucesso");
         // Limpa o formulário após o cadastro bem-sucedido
+
         setFormData({
           nome: "",
           sobrenome: "",
@@ -338,6 +339,7 @@ const Register = ({ navigation }) => {
       let errorMessage = "Erro ao realizar cadastro. Tente novamente.";
 
       // Trata erros específicos da API (se houver resposta do servidor)
+
       if (error.response) {
         if (error.response.status === 400) {
           errorMessage = "Dados inválidos. Verifique as informações.";

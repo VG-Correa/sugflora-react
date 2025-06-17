@@ -13,7 +13,8 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import HeaderInterno from "../components/HeaderInterno";
-import axios from "axios";
+import UsuarioApi from "../functions/api/usuarioApi";
+import MaskInput, { Masks } from "react-native-mask-input";
 
 const EditProfile = () => {
   const navigation = useNavigation();
@@ -69,14 +70,6 @@ const EditProfile = () => {
   const handleSave = async () => {
     setLoading(true);
     try {
-      const token = await AsyncStorage.getItem("token");
-      // Ajustando a URL para o ambiente correto
-      const API_URL = Platform.select({
-        android: "http://10.0.2.2:8080", // Android Emulator
-        ios: "http://localhost:8080", // iOS Simulator
-        default: "http://localhost:8080", // Fallback
-      });
-
       // Validação básica dos campos
       if (
         !userData.nome ||
@@ -114,33 +107,22 @@ const EditProfile = () => {
         email: userData.email.trim(),
         username: userData.username.trim(),
         cpf: userData.cpf.replace(/\D/g, ""),
-        rg: userData.rg.trim(),
+        rg: userData.rg.replace(/\D/g, ""),
         endereco: userData.endereco?.trim() || "",
         role: "USER",
       };
 
       console.log("Enviando dados para atualização:", userDataToUpdate);
-      console.log("URL da API:", `${API_URL}/api/usuario`);
-      console.log("Token:", token);
 
-      const response = await axios.put(
-        `${API_URL}/api/usuario`,
-        userDataToUpdate,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-            Accept: "application/json",
-          },
-          validateStatus: function (status) {
-            return status < 500;
-          },
-        }
-      );
+      const response = await UsuarioApi.update(userDataToUpdate);
+      console.log("Resposta do servidor:", response);
 
-      console.log("Resposta do servidor:", response.data);
-
-      if (response.status === 200 && response.data && response.data.data) {
+      if (
+        response &&
+        response.status === 200 &&
+        response.data &&
+        response.data.data
+      ) {
         // Atualiza os dados no AsyncStorage com os dados retornados do servidor
         const updatedUser = response.data.data;
         await AsyncStorage.multiSet([
@@ -168,7 +150,7 @@ const EditProfile = () => {
         Alert.alert("Sucesso", "Perfil atualizado com sucesso!");
         navigation.goBack();
       } else {
-        throw new Error(response.data?.message || "Erro ao atualizar perfil");
+        throw new Error(response?.data?.message || "Erro ao atualizar perfil");
       }
     } catch (error) {
       console.error("Erro ao atualizar perfil:", error);
@@ -186,8 +168,6 @@ const EditProfile = () => {
           errorMessage = "Acesso negado. Verifique suas permissões.";
         } else if (error.response.data && error.response.data.message) {
           errorMessage = error.response.data.message;
-        } else if (error.response.data && error.response.data.error) {
-          errorMessage = error.response.data.error;
         }
       }
 
@@ -244,6 +224,7 @@ const EditProfile = () => {
               onChangeText={(text) => setUserData({ ...userData, email: text })}
               placeholder="Digite seu e-mail"
               keyboardType="email-address"
+              autoCapitalize="none"
             />
           </View>
 
@@ -256,27 +237,48 @@ const EditProfile = () => {
                 setUserData({ ...userData, username: text })
               }
               placeholder="Digite seu nome de usuário"
+              autoCapitalize="none"
             />
           </View>
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>CPF</Text>
-            <TextInput
+            <MaskInput
               style={styles.input}
               value={userData.cpf}
-              onChangeText={(text) => setUserData({ ...userData, cpf: text })}
-              placeholder="Digite seu CPF"
+              onChangeText={(masked, unmasked) =>
+                setUserData({ ...userData, cpf: masked })
+              }
+              mask={Masks.BRL_CPF}
               keyboardType="numeric"
+              placeholder="000.000.000-00"
             />
           </View>
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>RG</Text>
-            <TextInput
+            <MaskInput
               style={styles.input}
               value={userData.rg}
-              onChangeText={(text) => setUserData({ ...userData, rg: text })}
-              placeholder="Digite seu RG"
+              onChangeText={(masked, unmasked) =>
+                setUserData({ ...userData, rg: masked })
+              }
+              mask={[
+                /\d/,
+                /\d/,
+                ".",
+                /\d/,
+                /\d/,
+                /\d/,
+                ".",
+                /\d/,
+                /\d/,
+                /\d/,
+                "-",
+                /[\dXx]/,
+              ]}
+              keyboardType="numeric"
+              placeholder="00.000.000-0"
             />
           </View>
 
@@ -293,8 +295,16 @@ const EditProfile = () => {
           </View>
         </View>
 
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-          <Text style={styles.saveButtonText}>SALVAR ALTERAÇÕES</Text>
+        <TouchableOpacity
+          style={[styles.saveButton, loading && styles.disabledButton]}
+          onPress={handleSave}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.saveButtonText}>SALVAR ALTERAÇÕES</Text>
+          )}
         </TouchableOpacity>
       </ScrollView>
     </View>
@@ -354,6 +364,9 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  disabledButton: {
+    opacity: 0.7,
   },
 });
 

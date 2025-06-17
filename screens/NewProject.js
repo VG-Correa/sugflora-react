@@ -1,192 +1,420 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   TextInput,
-  Image,
   ScrollView,
   Alert,
-} from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as ImagePicker from 'expo-image-picker';
-import projetoApi from '../functions/api/projetoApi';
-import * as FileSystem from 'expo-file-system';
-
-const API_BASE_URL = 'https://seu-endereco-api.com'; 
+  ActivityIndicator,
+  Switch,
+  Platform,
+  Image,
+} from "react-native";
+import { useNavigation } from "@react-navigation/native";
+import HeaderInterno from "../components/HeaderInterno";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Picker } from "@react-native-picker/picker";
+import * as ImagePicker from "expo-image-picker";
+import axios from "axios";
 
 const NewProject = () => {
   const navigation = useNavigation();
+  const [loading, setLoading] = useState(false);
+  const [usuarios, setUsuarios] = useState([]);
+  const [imagem, setImagem] = useState(null);
+  const [projeto, setProjeto] = useState({
+    nome: "",
+    descricao: "",
+    isPublic: false,
+    inicio: "",
+    termino: "",
+    previsaoConclusao: "",
+    responsavel_uuid: null,
+    imagemBase64: null,
+  });
 
-  const [nome, setNome] = useState('');
-  const [descricao, setDescricao] = useState('');
-  const [dataInicio, setDataInicio] = useState('');
-  const [previsaoConclusao, setPrevisaoConclusao] = useState('');
-  const [responsavel, setResponsavel] = useState('');
-  const [imagemUri, setImagemUri] = useState(null);
+  useEffect(() => {
+    carregarUsuarios();
+    solicitarPermissaoCamera();
+  }, []);
 
-  const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.5,
-    });
-
-    if (!result.canceled) {
-      setImagemUri(result.assets[0].uri);
-    }
-  };
-
-  const validarCampos = () => {
-    if (!nome || !descricao || !dataInicio || !previsaoConclusao || !responsavel) {
-      Alert.alert('Campos obrigatórios', 'Por favor, preencha todos os campos.');
-      return false;
-    }
-    return true;
-  };
-
-  const formatDateOnlyToISO = (dateStr) => {
-    if (!dateStr) return null;
-    const [day, month, year] = dateStr.split('/');
-    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
-  };
-
-  const handleCreateProject = async () => {
-    if (!validarCampos()) return;
-
+  const carregarUsuarios = async () => {
     try {
-      const userId = await AsyncStorage.getItem('user_id');
-
-      let imagemBase64 = null;
-      if (imagemUri) {
-        imagemBase64 = await FileSystem.readAsStringAsync(imagemUri, {
-          encoding: FileSystem.EncodingType.Base64,
-        });
-      }
-
-      const dataInicioISO = formatDateOnlyToISO(dataInicio);
-      const previsaoConclusaoISO = formatDateOnlyToISO(previsaoConclusao);
-
-      const payload = {
-        id: null,
-        nome: nome,
-        descricao: descricao,
-        
-        // dataInicio: dataInicioISO,
-        // previsaoConclusao: previsaoConclusaoISO,
-        
-        usuario_dono_uuid: userId,
-        isPublic: false,
-        // inicioExecucao: null,
-        responsavel: responsavel,
-        imagemBase64: imagemBase64,
-      };
-      console.log('Payload para API:', payload);
-
-      const response = await projetoApi.create(payload);
-
-      console.log('Resposta da criação:', response?.status, response?.data);
-
-      if (response?.status === 201) {
-        navigation.navigate('MyProjects');
-      } else {
-        Alert.alert('Erro', 'Erro ao salvar o projeto');
+      const token = await AsyncStorage.getItem("token");
+      const response = await axios.get("http://localhost:8080/api/usuario", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (response.data && response.data.data) {
+        setUsuarios(response.data.data);
       }
     } catch (error) {
-      console.error('Erro ao criar projeto', error);
-      Alert.alert('Erro', 'Erro ao tentar salvar projeto');
+      console.error("Erro ao carregar usuários:", error);
     }
   };
+
+  const solicitarPermissaoCamera = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        "Permissão necessária",
+        "Precisamos de permissão para acessar suas fotos."
+      );
+    }
+  };
+
+  const selecionarImagem = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [16, 9],
+        quality: 0.5,
+        base64: true,
+      });
+
+      if (!result.canceled) {
+        const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
+        setImagem(result.assets[0].uri);
+        setProjeto((prev) => ({ ...prev, imagemBase64: base64Image }));
+      }
+    } catch (error) {
+      Alert.alert("Erro", "Não foi possível selecionar a imagem");
+    }
+  };
+
+  const formatarData = (data) => {
+    if (!data) return "";
+    const numeros = data.replace(/\D/g, "");
+    if (numeros.length <= 2) return numeros;
+    if (numeros.length <= 4)
+      return `${numeros.slice(0, 2)}/${numeros.slice(2)}`;
+    return `${numeros.slice(0, 2)}/${numeros.slice(2, 4)}/${numeros.slice(
+      4,
+      8
+    )}`;
+  };
+
+  const handleDataChange = (valor, campo) => {
+    const dataFormatada = formatarData(valor);
+    setProjeto((prev) => ({ ...prev, [campo]: dataFormatada }));
+  };
+
+  const handleSave = async () => {
+    try {
+      if (!projeto.nome) {
+        Alert.alert("Erro", "Por favor, preencha o nome do projeto");
+        return;
+      }
+
+      if (!projeto.inicio) {
+        Alert.alert("Erro", "Por favor, preencha a data de início");
+        return;
+      }
+
+      setLoading(true);
+      const token = await AsyncStorage.getItem("token");
+      const user_id = await AsyncStorage.getItem("user_id");
+
+      if (!user_id || !token) {
+        throw new Error("Usuário não identificado ou token inválido");
+      }
+
+      const projetoData = {
+        id: 0,
+        nome: projeto.nome.trim(),
+        descricao: projeto.descricao?.trim() || "",
+        inicio: projeto.inicio,
+        previsaoConclusao: projeto.previsaoConclusao || null,
+        responsavel: projeto.responsavel_uuid || "",
+        usuario_dono_uuid: user_id,
+        imagemBase64: projeto.imagemBase64 || "",
+        public: projeto.isPublic,
+        status: "pendente", // Status para controle de sincronização
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
+      // Salvar localmente primeiro
+      try {
+        // Buscar projetos existentes
+        const projetosExistentes = await AsyncStorage.getItem("projetos");
+        let projetos = [];
+
+        if (projetosExistentes) {
+          projetos = JSON.parse(projetosExistentes);
+        }
+
+        // Adicionar novo projeto
+        projetos.push(projetoData);
+
+        // Salvar no AsyncStorage
+        await AsyncStorage.setItem("projetos", JSON.stringify(projetos));
+
+        console.log("Projeto salvo localmente:", projetoData);
+        Alert.alert("Sucesso", "Projeto salvo localmente!");
+
+        // Tentar sincronizar com a API
+        try {
+          console.log("Tentando sincronizar com a API...");
+          const response = await axios.post(
+            "http://localhost:8080/api/projeto",
+            projetoData,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          if (response.status === 200) {
+            // Atualizar status do projeto local
+            const projetoAtualizado = {
+              ...projetoData,
+              id: response.data.id,
+              status: "sincronizado",
+            };
+
+            // Atualizar na lista local
+            const projetosAtualizados = projetos.map((p) =>
+              p.nome === projetoData.nome ? projetoAtualizado : p
+            );
+
+            await AsyncStorage.setItem(
+              "projetos",
+              JSON.stringify(projetosAtualizados)
+            );
+            console.log("Projeto sincronizado com sucesso!");
+          }
+        } catch (apiError) {
+          console.error("Erro ao sincronizar com a API:", apiError);
+          // O projeto continua salvo localmente
+        }
+
+        // Navegar de volta independente do resultado da API
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "MyProjects" }],
+        });
+      } catch (storageError) {
+        console.error("Erro ao salvar localmente:", storageError);
+        throw new Error("Não foi possível salvar o projeto localmente");
+      }
+    } catch (error) {
+      console.error("Erro completo:", error);
+      Alert.alert(
+        "Erro",
+        `Não foi possível salvar o projeto. Erro: ${error.message}`
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Função para sincronizar projetos pendentes
+  const sincronizarProjetosPendentes = async () => {
+    try {
+      const token = await AsyncStorage.getItem("token");
+      if (!token) return;
+
+      const projetosExistentes = await AsyncStorage.getItem("projetos");
+      if (!projetosExistentes) return;
+
+      const projetos = JSON.parse(projetosExistentes);
+      const projetosPendentes = projetos.filter((p) => p.status === "pendente");
+
+      for (const projeto of projetosPendentes) {
+        try {
+          const response = await axios.post(
+            "http://localhost:8080/api/projeto",
+            projeto,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          if (response.status === 200) {
+            // Atualizar status do projeto
+            const projetoAtualizado = {
+              ...projeto,
+              id: response.data.id,
+              status: "sincronizado",
+            };
+
+            // Atualizar na lista local
+            const projetosAtualizados = projetos.map((p) =>
+              p.nome === projeto.nome ? projetoAtualizado : p
+            );
+
+            await AsyncStorage.setItem(
+              "projetos",
+              JSON.stringify(projetosAtualizados)
+            );
+            console.log(`Projeto ${projeto.nome} sincronizado com sucesso!`);
+          }
+        } catch (error) {
+          console.error(`Erro ao sincronizar projeto ${projeto.nome}:`, error);
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao sincronizar projetos:", error);
+    }
+  };
+
+  // Adicionar useEffect para sincronização periódica
+  useEffect(() => {
+    const sincronizarPeriodicamente = async () => {
+      await sincronizarProjetosPendentes();
+    };
+
+    // Sincronizar a cada 5 minutos
+    const intervalo = setInterval(sincronizarPeriodicamente, 5 * 60 * 1000);
+
+    // Sincronizar também quando o componente montar
+    sincronizarPeriodicamente();
+
+    return () => clearInterval(intervalo);
+  }, []);
 
   return (
     <View style={styles.container}>
-      <View style={styles.headerContainer}>
-        <Image
-          source={require('../assets/images/cabecalho.webp')}
-          style={styles.headerBackgroundImage}
-          resizeMode="cover"
-        />
-        <View style={styles.headerContent}>
-          <Image
-            source={require('../assets/images/logo.png')}
-            style={styles.logoImage}
-            resizeMode="contain"
-          />
-          <Text style={styles.logoText}>SUG - FLORA</Text>
-          <View style={styles.menuTop}>
-            <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('MyProjects')}>
-              <Text style={styles.menuText}>MEUS PROJETOS</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('NewProject')}>
-              <Text style={styles.menuText}>CRIAR PROJETO</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem} onPress={() => navigation.navigate('HomePage')}>
-              <Text style={styles.menuText}>PÁGINA INICIAL</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem}>
-              <Text style={styles.menuText}>SAIR</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
-
-      <ScrollView style={styles.content} contentContainerStyle={styles.formWrapper}>
+      <HeaderInterno />
+      <ScrollView style={styles.content}>
         <Text style={styles.pageTitle}>CRIAR PROJETO</Text>
-
-        <View style={styles.row}>
-          <View style={styles.imageSection}>
-            <Text style={styles.photoLabel}>Imagem</Text>
-            {imagemUri ? (
-              <Image source={{ uri: imagemUri }} style={styles.photoPreview} />
-            ) : (
-              <View style={styles.photoPlaceholder}></View>
-            )}
-            <TouchableOpacity style={styles.changePhotoButton} onPress={pickImage}>
-              <Text style={styles.changePhotoText}>Adicionar imagem</Text>
-            </TouchableOpacity>
+        <View style={styles.formContainer}>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Nome do Projeto *</Text>
+            <TextInput
+              style={styles.input}
+              value={projeto.nome}
+              onChangeText={(text) =>
+                setProjeto((prev) => ({ ...prev, nome: text }))
+              }
+              placeholder="Digite o nome do projeto"
+            />
           </View>
 
-          <View style={styles.fieldsSection}>
-            <View style={styles.doubleFieldRow}>
-              <View style={styles.fieldGroupHalf}>
-                <Text style={styles.fieldLabel}>NOME DO PROJETO</Text>
-                <TextInput style={styles.input} value={nome} onChangeText={setNome} />
-              </View>
-              <View style={styles.fieldGroupHalf}>
-                <Text style={styles.fieldLabel}>DATA DE INÍCIO</Text>
-                <TextInput style={styles.input} placeholder="dd/mm/aaaa" value={dataInicio} onChangeText={setDataInicio} />
-              </View>
-            </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Descrição</Text>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              value={projeto.descricao}
+              onChangeText={(text) =>
+                setProjeto((prev) => ({ ...prev, descricao: text }))
+              }
+              placeholder="Digite a descrição do projeto"
+              multiline
+              numberOfLines={4}
+            />
+          </View>
 
-            <View style={styles.fieldGroup}>
-              <Text style={styles.fieldLabel}>DESCRIÇÃO</Text>
-              <TextInput
-                style={[styles.input, { height: 80 }]}
-                multiline
-                value={descricao}
-                onChangeText={setDescricao}
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Data de Início *</Text>
+            <TextInput
+              style={styles.input}
+              value={projeto.inicio}
+              onChangeText={(text) => handleDataChange(text, "inicio")}
+              placeholder="DD/MM/AAAA"
+              keyboardType="numeric"
+              maxLength={10}
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Data de Término</Text>
+            <TextInput
+              style={styles.input}
+              value={projeto.termino}
+              onChangeText={(text) => handleDataChange(text, "termino")}
+              placeholder="DD/MM/AAAA"
+              keyboardType="numeric"
+              maxLength={10}
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Previsão de Conclusão</Text>
+            <TextInput
+              style={styles.input}
+              value={projeto.previsaoConclusao}
+              onChangeText={(text) =>
+                handleDataChange(text, "previsaoConclusao")
+              }
+              placeholder="DD/MM/AAAA"
+              keyboardType="numeric"
+              maxLength={10}
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Responsável</Text>
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={projeto.responsavel_uuid}
+                onValueChange={(value) =>
+                  setProjeto((prev) => ({ ...prev, responsavel_uuid: value }))
+                }
+                style={styles.picker}
+              >
+                <Picker.Item label="Selecione um responsável" value={null} />
+                {usuarios.map((usuario) => (
+                  <Picker.Item
+                    key={usuario.uuid}
+                    label={`${usuario.nome} ${usuario.sobrenome}`}
+                    value={usuario.uuid}
+                  />
+                ))}
+              </Picker>
+            </View>
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Projeto Público</Text>
+            <View style={styles.switchContainer}>
+              <Switch
+                value={projeto.isPublic}
+                onValueChange={(value) =>
+                  setProjeto((prev) => ({ ...prev, isPublic: value }))
+                }
+                trackColor={{ false: "#767577", true: "#81b0ff" }}
+                thumbColor={projeto.isPublic ? "#2e7d32" : "#f4f3f4"}
               />
-            </View>
-
-            <View style={styles.doubleFieldRow}>
-              <View style={styles.fieldGroupHalf}>
-                <Text style={styles.fieldLabel}>PREVISÃO DE CONCLUSÃO</Text>
-                <TextInput style={styles.input} placeholder="dd/mm/aaaa" value={previsaoConclusao} onChangeText={setPrevisaoConclusao} />
-              </View>
-              <View style={styles.fieldGroupHalf}>
-                <Text style={styles.fieldLabel}>RESPONSÁVEL</Text>
-                <TextInput style={styles.input} value={responsavel} onChangeText={setResponsavel} />
-              </View>
+              <Text style={styles.switchLabel}>
+                {projeto.isPublic ? "Sim" : "Não"}
+              </Text>
             </View>
           </View>
-        </View>
 
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.createButton} onPress={handleCreateProject}>
-            <Text style={styles.createButtonText}>Salvar Projeto</Text>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Imagem do Projeto</Text>
+            <TouchableOpacity
+              style={styles.imageButton}
+              onPress={selecionarImagem}
+            >
+              <Text style={styles.imageButtonText}>
+                {imagem ? "Alterar Imagem" : "Selecionar Imagem"}
+              </Text>
+            </TouchableOpacity>
+            {imagem && (
+              <Image source={{ uri: imagem }} style={styles.imagePreview} />
+            )}
+          </View>
+
+          <TouchableOpacity
+            style={[styles.saveButton, loading && styles.disabledButton]}
+            onPress={handleSave}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.saveButtonText}>CRIAR PROJETO</Text>
+            )}
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -195,56 +423,97 @@ const NewProject = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  headerContainer: { width: '100%', height: 220, position: 'relative' },
-  headerBackgroundImage: { width: '100%', height: '100%', position: 'absolute' },
-  headerContent: { position: 'absolute', width: '100%', alignItems: 'center', paddingTop: 20 },
-  logoImage: { width: 80, height: 80, marginBottom: 5 },
-  logoText: {
+  container: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
+  content: {
+    flex: 1,
+  },
+  pageTitle: {
     fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    textShadowColor: 'rgba(0,0,0,0.8)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 5,
-    marginBottom: 15,
+    fontWeight: "bold",
+    color: "#2e7d32",
+    textAlign: "center",
+    marginVertical: 20,
   },
-  menuTop: { flexDirection: 'row', justifyContent: 'space-around', width: '100%', paddingVertical: 10 },
-  menuItem: { paddingHorizontal: 10 },
-  menuText: {
+  formContainer: {
+    padding: 20,
+  },
+  inputGroup: {
+    marginBottom: 20,
+  },
+  label: {
     fontSize: 16,
-    fontWeight: 'bold',
-    color: '#fff',
-    textShadowColor: 'rgba(0,0,0,0.8)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 5,
+    fontWeight: "bold",
+    marginBottom: 8,
+    color: "#333",
   },
-  content: { flex: 1 },
-  formWrapper: { padding: 20 },
-  pageTitle: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', marginVertical: 20, color: '#2e7d32' },
-  row: { flexDirection: 'row', justifyContent: 'space-between' },
-  imageSection: { width: '30%', alignItems: 'center' },
-  photoLabel: { fontSize: 16, fontWeight: 'bold', marginBottom: 10, color: '#2e7d32' },
-  photoPlaceholder: { width: 100, height: 100, backgroundColor: '#e8f5e9', marginBottom: 10 },
-  photoPreview: { width: 100, height: 100, borderRadius: 5, marginBottom: 10 },
-  changePhotoButton: { backgroundColor: '#2e7d32', padding: 8, borderRadius: 5 },
-  changePhotoText: { color: '#fff', fontSize: 12 },
-  fieldsSection: { width: '65%' },
-  fieldGroup: { marginBottom: 15 },
-  fieldGroupHalf: { flex: 1, marginEnd: 10 },
-  doubleFieldRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 15 },
-  fieldLabel: { fontSize: 14, fontWeight: 'bold', marginBottom: 5, color: '#2e7d32' },
   input: {
-    height: 40,
-    borderColor: '#ddd',
     borderWidth: 1,
-    borderRadius: 5,
-    paddingHorizontal: 10,
-    backgroundColor: '#f9f9f9',
+    borderColor: "#ddd",
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    backgroundColor: "#f9f9f9",
   },
-  buttonContainer: { alignItems: 'center', marginTop: 20 },
-  createButton: { backgroundColor: '#2e7d32', padding: 15, borderRadius: 5, width: 200, alignItems: 'center' },
-  createButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  textArea: {
+    height: 100,
+    textAlignVertical: "top",
+  },
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    backgroundColor: "#f9f9f9",
+  },
+  picker: {
+    height: 50,
+  },
+  saveButton: {
+    backgroundColor: "#2e7d32",
+    padding: 15,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 20,
+  },
+  saveButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  disabledButton: {
+    opacity: 0.7,
+  },
+  switchContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 8,
+  },
+  switchLabel: {
+    marginLeft: 10,
+    fontSize: 16,
+    color: "#333",
+  },
+  imageButton: {
+    backgroundColor: "#f0f0f0",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#ddd",
+  },
+  imageButtonText: {
+    color: "#2e7d32",
+    fontSize: 16,
+    fontWeight: "500",
+  },
+  imagePreview: {
+    width: "100%",
+    height: 200,
+    marginTop: 10,
+    borderRadius: 8,
+  },
 });
 
 export default NewProject;

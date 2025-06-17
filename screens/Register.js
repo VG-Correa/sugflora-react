@@ -17,12 +17,20 @@ import {
 import Header from "../components/Header"; // Importando o Header igual ao Home.js
 import MaskInput, { Masks } from "react-native-mask-input";
 import axios from "axios";
-import UsuarioApi from "../functions/api/usuarioApi";
+import UsuarioApi from "../functions/api/usuarioApi"; // Importação não utilizada, pode ser removida se não for necessária.
+import Usuario from "../data/usuarios/Usuario"
+import Message from "../Messages/Message" // Importação não utilizada diretamente aqui, mas pode ser usada por UsuarioData.
+import { useUsuarioData } from "../data/usuarios/UsuarioDataContext";
 
 const Register = ({ navigation }) => {
+  // Obtém a função addUsuario do contexto de dados do usuário
+  const { addUsuario } = useUsuarioData();
+  // Obtém a largura da tela para adaptar o layout
   const { width: screenWidth } = useWindowDimensions();
+  // Determina se a tela é grande (para layout responsivo)
   const isLargeScreen = screenWidth > 768;
 
+  // Estado para armazenar os dados do formulário
   const [formData, setFormData] = useState({
     nome: "",
     sobrenome: "",
@@ -38,22 +46,26 @@ const Register = ({ navigation }) => {
     cidade: "",
     estado: "",
     cep: "",
-    role: "USER",
+    role: "USER", // Define o papel padrão como 'USER'
   });
 
+  // Estados para gerenciar a lista de estados e cidades, e seus carregamentos
   const [estados, setEstados] = useState([]);
   const [cidades, setCidades] = useState([]);
   const [loadingCidades, setLoadingCidades] = useState(false);
+  // Estado para aceitação dos termos e condições
   const [termsAccepted, setTermsAccepted] = useState(false);
+  // Estado para indicar o carregamento geral da tela (ex: ao buscar CEP ou registrar)
   const [loading, setLoading] = useState(false);
 
-  // Buscar estados do IBGE
+  // Efeito para buscar a lista de estados do IBGE ao montar o componente
   useEffect(() => {
     const fetchEstados = async () => {
       try {
         const response = await axios.get(
           "https://servicodados.ibge.gov.br/api/v1/localidades/estados"
         );
+        // Ordena os estados por nome em ordem alfabética
         const estadosOrdenados = response.data.sort((a, b) =>
           a.nome.localeCompare(b.nome)
         );
@@ -63,18 +75,20 @@ const Register = ({ navigation }) => {
       }
     };
     fetchEstados();
-  }, []);
+  }, []); // Executa apenas uma vez ao montar
 
-  // Buscar cidades quando o estado for selecionado
+  // Efeito para buscar a lista de cidades do IBGE quando um estado é selecionado
   useEffect(() => {
     const fetchCidades = async () => {
+      // Retorna se nenhum estado foi selecionado
       if (!formData.estado) return;
 
-      setLoadingCidades(true);
+      setLoadingCidades(true); // Ativa o indicador de carregamento de cidades
       try {
         const response = await axios.get(
           `https://servicodados.ibge.gov.br/api/v1/localidades/estados/${formData.estado}/municipios`
         );
+        // Ordena as cidades por nome em ordem alfabética
         const cidadesOrdenadas = response.data.sort((a, b) =>
           a.nome.localeCompare(b.nome)
         );
@@ -82,12 +96,13 @@ const Register = ({ navigation }) => {
       } catch (error) {
         console.error("Erro ao buscar cidades:", error);
       } finally {
-        setLoadingCidades(false);
+        setLoadingCidades(false); // Desativa o indicador de carregamento de cidades
       }
     };
     fetchCidades();
-  }, [formData.estado]);
+  }, [formData.estado]); // Executa sempre que o estado selecionado muda
 
+  // Função genérica para atualizar os campos do formulário
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({
       ...prev,
@@ -95,11 +110,12 @@ const Register = ({ navigation }) => {
     }));
   };
 
+  // Função para validar os dados do formulário antes do envio
   const validateForm = () => {
     console.log("Iniciando validação do formulário...");
     console.log("Dados do formulário:", formData);
 
-    // Validação de CPF
+    // Validação de CPF: verifica se tem 11 dígitos numéricos
     const cpfLimpo = formData.cpf.replace(/\D/g, "");
     if (cpfLimpo.length !== 11) {
       console.log("CPF inválido:", formData.cpf);
@@ -107,7 +123,7 @@ const Register = ({ navigation }) => {
       return false;
     }
 
-    // Validação de email
+    // Validação de email: verifica formato básico
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
       console.log("Email inválido:", formData.email);
@@ -115,7 +131,7 @@ const Register = ({ navigation }) => {
       return false;
     }
 
-    // Validação de CEP
+    // Validação de CEP: verifica se tem 8 dígitos numéricos
     const cepLimpo = formData.cep.replace(/\D/g, "");
     if (cepLimpo.length !== 8) {
       console.log("CEP inválido:", formData.cep);
@@ -123,7 +139,7 @@ const Register = ({ navigation }) => {
       return false;
     }
 
-    // Validação dos campos obrigatórios
+    // Validação de campos obrigatórios
     const camposObrigatorios = {
       nome: "Nome",
       email: "Email",
@@ -144,12 +160,14 @@ const Register = ({ navigation }) => {
       }
     }
 
+    // Validação de correspondência das senhas
     if (formData.senha !== formData.confirmarSenha) {
       console.log("Senhas não coincidem");
       Alert.alert("Erro", "As senhas não coincidem");
       return false;
     }
 
+    // Validação da aceitação dos termos
     if (!termsAccepted) {
       console.log("Termos não aceitos");
       Alert.alert("Erro", "Você precisa aceitar os termos e condições");
@@ -160,20 +178,22 @@ const Register = ({ navigation }) => {
     return true;
   };
 
-  // Buscar endereço pelo CEP
+  // Função para buscar endereço pelo CEP usando a API ViaCEP
   const buscarCep = async (cep) => {
     const cepLimpo = cep.replace(/\D/g, "");
-    if (cepLimpo.length !== 8) return;
+    if (cepLimpo.length !== 8) return; // Só busca se o CEP tiver 8 dígitos
 
     try {
-      setLoading(true);
+      setLoading(true); // Ativa o indicador de carregamento
       const response = await axios.get(
         `https://viacep.com.br/ws/${cepLimpo}/json/`
       );
 
+      // Verifica se a resposta não contém erro
       if (response.data && !response.data.erro) {
         setFormData((prev) => ({
           ...prev,
+          // Atualiza os campos do endereço com os dados da API, mantendo os anteriores se não houver dados
           endereco: response.data.logradouro || prev.endereco,
           bairro: response.data.bairro || prev.bairro,
           cidade: response.data.localidade || prev.cidade,
@@ -184,11 +204,11 @@ const Register = ({ navigation }) => {
       console.error("Erro ao buscar CEP:", error);
       Alert.alert("Erro", "Não foi possível buscar o CEP. Tente novamente.");
     } finally {
-      setLoading(false);
+      setLoading(false); // Desativa o indicador de carregamento
     }
   };
 
-  // Adicionar debounce para a busca do CEP
+  // Função de debounce para evitar múltiplas chamadas à API de CEP
   const debounce = (func, wait) => {
     let timeout;
     return function executedFunction(...args) {
@@ -201,8 +221,10 @@ const Register = ({ navigation }) => {
     };
   };
 
+  // Versão debounced da função buscarCep
   const debouncedBuscarCep = debounce(buscarCep, 1000);
 
+  // Lida com a mudança do campo CEP e chama a busca com debounce
   const handleCepChange = (value) => {
     handleInputChange("cep", value);
     if (value.replace(/\D/g, "").length === 8) {
@@ -210,21 +232,23 @@ const Register = ({ navigation }) => {
     }
   };
 
+  // Função principal para lidar com o registro do usuário
   const handleRegister = async () => {
     console.log("Iniciando cadastro...");
     console.log("Estado do formulário:", formData);
     console.log("Termos aceitos:", termsAccepted);
 
+    // Valida o formulário antes de prosseguir
     if (!validateForm()) {
       console.log("Validação do formulário falhou");
       return;
     }
 
-    setLoading(true);
+    setLoading(true); // Ativa o indicador de carregamento
     try {
       console.log("Formulário válido, preparando dados...");
 
-      // Formata o endereço completo
+      // Constrói o endereço completo a partir dos campos do formulário
       const enderecoCompleto = `${formData.endereco}${
         formData.numero ? `, ${formData.numero}` : ""
       }${formData.complemento ? `, ${formData.complemento}` : ""} - ${
@@ -233,40 +257,44 @@ const Register = ({ navigation }) => {
         formData.cep ? ` - CEP: ${formData.cep}` : ""
       }`;
 
-      // Limpa e formata os dados antes de enviar
-      const userData = {
-        username: formData.email.trim(),
-        nome: formData.nome.trim(),
-        sobrenome: formData.sobrenome?.trim() || "",
-        email: formData.email.trim(),
-        senha: formData.senha,
-        cpf: formData.cpf.replace(/\D/g, ""),
-        rg: formData.rg.replace(/\D/g, ""),
-        endereco: enderecoCompleto.trim(),
-        role: "USER",
-      };
+      // Prepara os dados para o objeto Usuario
+      const username = formData.email.trim(); // Usando email como username
+      const nome = formData.nome.trim();
+      const sobrenome = formData.sobrenome?.trim() || "";
+      const email = formData.email.trim();
+      const senha = formData.senha; // A SENHA É O formData.senha!
+      const cpf = formData.cpf.replace(/\D/g, "");
+      const rg = formData.rg.replace(/\D/g, "");
+      const endereco = enderecoCompleto.trim();
+      const role = "USER";
 
-      console.log("Dados formatados:", userData);
-
-      // Verifica se o usuário já existe
-      console.log("Verificando se usuário já existe...");
-      const existingUser = await UsuarioApi.getUserByUsername(
-        userData.username
+      // Cria uma nova instância de Usuario com os dados formatados.
+      // id é undefined para que seja gerado automaticamente pelo UsuarioData.
+      const usuario = new Usuario(
+        undefined, // id
+        nome, // nome
+        sobrenome, // sobrenome
+        username, // username
+        senha, // senha (CORREÇÃO APLICADA AQUI)
+        rg, // rg
+        cpf, // cpf
+        endereco, // endereco 
+        email, // email
+        role // role
       );
-      if (existingUser && existingUser.data) {
-        console.log("Usuário já existe");
-        Alert.alert("Erro", "Este e-mail já está cadastrado");
-        setLoading(false);
-        return;
-      }
 
-      console.log("Tentando criar usuário...");
-      const response = await UsuarioApi.create(userData);
-      console.log("Resposta da API:", response);
+      console.log("Dados formatados para o usuário:", usuario);
 
-      if (response.status === 201 || response.status === 200) {
+      // Chama a função addUsuario do contexto para adicionar o novo usuário
+      const response = addUsuario(usuario);
+
+      console.log("Response de adição de usuário: ", response);
+
+      // Verifica o status da resposta do addUsuario
+      if (response.status === 201 && response.data) { // 201 Created é o esperado para sucesso
         console.log("Usuário criado com sucesso");
-        // Limpa o formulário
+        // Limpa o formulário após o cadastro bem-sucedido
+
         setFormData({
           nome: "",
           sobrenome: "",
@@ -285,30 +313,32 @@ const Register = ({ navigation }) => {
           role: "USER",
         });
 
-        Alert.alert(
-          "Sucesso",
-          "Cadastro realizado com sucesso! Você será redirecionado para a tela de login.",
-          [
-            {
-              text: "OK",
-              onPress: () => {
-                console.log("Redirecionando para Login...");
-                navigation.reset({
-                  index: 0,
-                  routes: [{ name: "Login" }],
-                });
-              },
+        // Exibe um alerta de sucesso e redireciona para a tela de Login
+        Alert.alert("Sucesso", "Cadastro realizado com sucesso!", [
+          {
+            text: "OK",
+            onPress: () => {
+              console.log("Redirecionando para Login...");
+              navigation.reset({
+                index: 0,
+                routes: [{ name: "Login" }],
+              });
             },
-          ],
-          { cancelable: false }
-        );
+          },
+        ]);
+      } else {
+        // Se a resposta não for 201, exibe uma mensagem de erro vinda do Message
+        Alert.alert("Erro", response.message || "Erro ao realizar cadastro. Tente novamente.");
       }
     } catch (error) {
       console.error("Erro detalhado ao cadastrar:", error);
-      console.error("Resposta do erro:", error.response?.data);
-      console.error("Status do erro:", error.response?.status);
+      // Logs adicionais para depuração de erros de rede
+      console.error("Resposta do erro (se houver):", error.response?.data);
+      console.error("Status do erro (se houver):", error.response?.status);
 
       let errorMessage = "Erro ao realizar cadastro. Tente novamente.";
+
+      // Trata erros específicos da API (se houver resposta do servidor)
 
       if (error.response) {
         if (error.response.status === 400) {
@@ -322,7 +352,7 @@ const Register = ({ navigation }) => {
 
       Alert.alert("Erro", errorMessage);
     } finally {
-      setLoading(false);
+      setLoading(false); // Desativa o indicador de carregamento
     }
   };
 
@@ -551,7 +581,7 @@ const Register = ({ navigation }) => {
                 <Picker
                   selectedValue={formData.cidade}
                   style={styles.picker}
-                  enabled={!loadingCidades}
+                  enabled={!loadingCidades} // Desabilita o picker enquanto as cidades estão carregando
                   onValueChange={(itemValue) =>
                     handleInputChange("cidade", itemValue)
                   }
@@ -587,7 +617,7 @@ const Register = ({ navigation }) => {
                 <MaskInput
                   style={styles.input}
                   placeholder="*****"
-                  secureTextEntry={true}
+                  secureTextEntry={true} // Oculta a senha
                   value={formData.senha}
                   onChangeText={(text) => handleInputChange("senha", text)}
                 />
@@ -599,7 +629,7 @@ const Register = ({ navigation }) => {
                 <MaskInput
                   style={styles.input}
                   placeholder="*****"
-                  secureTextEntry={true}
+                  secureTextEntry={true} // Oculta a confirmação de senha
                   value={formData.confirmarSenha}
                   onChangeText={(text) =>
                     handleInputChange("confirmarSenha", text)
@@ -628,10 +658,10 @@ const Register = ({ navigation }) => {
                 console.log("Botão de cadastro pressionado");
                 handleRegister();
               }}
-              disabled={loading}
+              disabled={loading} // Desabilita o botão durante o carregamento
             >
               {loading ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color="#fff" /> // Indicador de carregamento
               ) : (
                 <Text style={styles.registerButtonText}>Cadastrar-se</Text>
               )}

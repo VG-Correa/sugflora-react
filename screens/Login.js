@@ -20,6 +20,8 @@ import forestImage from "../assets/images/forest.webp";
 import loginApi from "../functions/api/loginApi";
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useUsuarioData } from "../data/usuarios/UsuarioDataContext";
+import Message from '../Messages/Message'
 
 const Login = () => {
   const navigation = useNavigation();
@@ -27,6 +29,8 @@ const Login = () => {
   const [password, setPassword] = useState("adm");
   const [loading, setLoading] = useState(false);
   const windowDimensions = Dimensions.get("window");
+  const { login } = useUsuarioData();
+
 
   const handleLogin = async () => {
     if (!username || !password) {
@@ -35,63 +39,19 @@ const Login = () => {
     }
 
     setLoading(true);
-    try {
-      console.log("Tentando login com:", { username, password });
+    
+    const message = login(username, password);
+    console.log("Messagem: ", message)
 
-      const loginResponse = await loginApi.login(username, password);
-
-      console.log("Resposta do login:", loginResponse.data.data[0]);
-
-      console.log("STATUS 200? ", loginResponse.data.status === 200);
-
-      if (loginResponse.data.status === 200) {
-        const token = loginResponse.data.data[0].token;
-
-        await AsyncStorage.setItem(
-          "uuid",
-          loginResponse.data.data[0].usuario.uuid
-        );
-        await AsyncStorage.setItem(
-          "user_id",
-          loginResponse.data.data[0].usuario.id
-        );
-        await AsyncStorage.setItem(
-          "nome",
-          loginResponse.data.data[0].usuario.nome
-        );
-        await AsyncStorage.setItem(
-          "sobrenome",
-          loginResponse.data.data[0].usuario.sobrenome
-        );
-        await AsyncStorage.setItem(
-          "username",
-          loginResponse.data.data[0].usuario.username
-        );
-        await AsyncStorage.setItem("rg", loginResponse.data.data[0].usuario.rg);
-        await AsyncStorage.setItem(
-          "cpf",
-          loginResponse.data.data[0].usuario.cpf
-        );
-        await AsyncStorage.setItem(
-          "email",
-          loginResponse.data.data[0].usuario.email
-        );
-
-        await AsyncStorage.setItem("token", token);
-
-        setUsername("");
-        setPassword("");
-
-        setLoading(false);
-
-        console.log("Login bem-sucedido, navegando para HomePage");
-        navigation.replace("HomePage");
-      }
-    } catch (error) {
-      console.error("Erro ao salvar dados:", error);
-      Alert.alert("Erro", "Erro ao salvar dados do usuário");
-      setLoading(false);
+    if (message.status === 200) {
+      AsyncStorage.setItem("token", message.data.id)
+      navigation.replace("HomePage")
+    } else {
+      alert("Credenciais incorretas!!")
     }
+
+    setLoading(false)
+
   };
 
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();

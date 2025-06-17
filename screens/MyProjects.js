@@ -13,61 +13,19 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import projetoApi from "../functions/api/projetoApi";
 import HeaderInterno from "../components/HeaderInterno";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import axios from "axios";
-
+import { useProjetoData } from "../data/projetos/ProjetoDataContext";
 const coresAbas = ["#b2d8b2", "#ccc", "#f8a5a5"];
 
 const MyProjects = () => {
-  const [projetos, setProjetos] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const navigation = useNavigation();
   const { width } = useWindowDimensions();
+  const {projetos, deleteProjeto, setCurrentProjeto} = useProjetoData();
 
+  console.log("Projetos carregados:", projetos);
+  
   const cardWidth = width > 768 ? "30%" : width > 480 ? "45%" : "90%";
-
-  const fetchProjetos = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const user_id = await AsyncStorage.getItem("user_id");
-
-      if (!user_id) {
-        throw new Error("Usuário não autenticado");
-      }
-
-      console.log("Buscando projetos para o usuário:", user_id);
-      const response = await projetoApi.getProjetos(user_id);
-
-      if (response.status === 200 && response.data && response.data.data) {
-        const projetosAtivos = response.data.data.filter(
-          (projeto) => !projeto.deleted
-        );
-        console.log("Projetos encontrados:", projetosAtivos);
-        setProjetos(projetosAtivos);
-      } else {
-        throw new Error("Erro ao carregar projetos");
-      }
-    } catch (err) {
-      console.error("Erro ao carregar projetos:", err);
-      setError(err.message || "Erro ao carregar projetos");
-      Alert.alert(
-        "Erro",
-        "Não foi possível carregar seus projetos. Por favor, tente novamente."
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    const unsubscribe = navigation.addListener("focus", () => {
-      fetchProjetos();
-    });
-
-    return unsubscribe;
-  }, [navigation]);
 
   const formatDate = (dateString) => {
     try {
@@ -83,7 +41,7 @@ const MyProjects = () => {
     }
   };
 
-  const handleDeleteProject = async (projetoId) => {
+  const handleDeleteProject = (projetoId) => {
     console.log("Botão de exclusão clicado para o projeto:", projetoId);
 
     try {
@@ -103,32 +61,7 @@ const MyProjects = () => {
                 setLoading(true);
                 console.log("Iniciando exclusão do projeto ID:", projetoId);
 
-                const token = await AsyncStorage.getItem("token");
-                if (!token) {
-                  throw new Error(
-                    "Token não encontrado. Faça login novamente."
-                  );
-                }
-
-                // URL correta para exclusão do projeto
-                const url = `http://localhost:8080/api/projeto/${projetoId}`;
-                console.log("URL da requisição DELETE:", url);
-
-                const response = await axios({
-                  method: "delete",
-                  url: url,
-                  headers: {
-                    Authorization: `Bearer ${token}`,
-                    Accept: "application/hal+json",
-                    "Content-Type": "application/json",
-                  },
-                });
-
-                console.log("Resposta da API:", {
-                  status: response.status,
-                  data: response.data,
-                });
-
+                const response = deleteProjeto(projetoId);
                 if (response.status === 200) {
                   console.log("Projeto excluído com sucesso!");
                   // Atualizar a lista de projetos
@@ -168,14 +101,8 @@ const MyProjects = () => {
   };
 
   const handleViewProject = (projeto) => {
-    navigation.navigate("ProjectScreen", {
-      projeto: {
-        ...projeto,
-        imagemUrl: projeto.imagem
-          ? `${projetoApi.baseUrl}/${projeto.id}/imagem`
-          : null,
-      },
-    });
+    setCurrentProjeto(projeto);
+    navigation.navigate("ProjectScreen");
   };
 
   if (loading) {
@@ -217,7 +144,6 @@ const MyProjects = () => {
             <Text style={styles.newProjectButtonText}>+ Novo Projeto</Text>
           </TouchableOpacity>
         </View>
-
         {projetos.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>Você ainda não tem projetos</Text>
@@ -232,18 +158,19 @@ const MyProjects = () => {
           </View>
         ) : (
           <View style={[styles.projectsGrid, { width: "100%" }]}>
-            {projetos.map((projeto, index) => {
-              const corAba = coresAbas[index % coresAbas.length];
+            {projetos.map((projeto) => {
+              console.log("Renderizando projeto:", projeto);
+              // const corAba = coresAbas[index % coresAbas.length];
               return (
                 <View
                   key={projeto.id}
-                  style={[styles.projectCard, { width: cardWidth }]}
+                  style={[styles.projectCard, { width: cardWidth }]} 
                 >
-                  <View style={[styles.folderTab, { backgroundColor: corAba }]}>
+                  <View style={[styles.folderTab, { backgroundColor: 'white' }]}>
                     <Text style={styles.projectTitle} numberOfLines={1}>
                       {projeto.nome}
                     </Text>
-                    {projeto.imagem && (
+                    {projeto.image && (
                       <Image
                         source={{
                           uri: `${projetoApi.baseUrl}/${projeto.id}/imagem`,
@@ -276,15 +203,15 @@ const MyProjects = () => {
                     {projeto.responsavel && (
                       <>
                         <Text style={styles.label}>Responsável:</Text>
-                        <Text style={styles.value}>{projeto.responsavel}</Text>
+                        <Text style={styles.value}>{projeto.responsavel.nome}</Text>
                       </>
-                    )}
+                    )} 
 
                     <View style={styles.buttonContainer}>
                       <TouchableOpacity
                         style={[
                           styles.actionButton,
-                          { backgroundColor: corAba },
+                          { backgroundColor: "green" },
                         ]}
                         onPress={() => handleViewProject(projeto)}
                       >

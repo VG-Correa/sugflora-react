@@ -15,21 +15,18 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Notificacoes from "./Notificacoes";
+import { useUsuarioData } from "../data/usuarios/UsuarioDataContext";
 
-const HeaderInterno = ({ onLogout }) => {
+const HeaderInterno = ({ handleLogout }) => {
   const navigation = useNavigation();
   const [activeSubmenu, setActiveSubmenu] = useState(null);
   const [menuAberto, setMenuAberto] = useState(false);
   const [notificacaoAberta, setNotificacaoAberta] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const { currentUser } = useUsuarioData();
 
   const windowWidth = Dimensions.get("window").width;
   const isMobile = windowWidth < 768;
-
-  const [nome, setNome] = useState("");
-  const [sobrenome, setSobrenome] = useState("");
-  const [email, setEmail] = useState("");
-  const [username, setUsername] = useState("");
 
   const toggleSubmenu = (menuName) => {
     setActiveSubmenu(activeSubmenu === menuName ? null : menuName);
@@ -62,54 +59,20 @@ const HeaderInterno = ({ onLogout }) => {
     }).start();
   };
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      try {
-        const token = await AsyncStorage.getItem("token");
-        const nomeStored = await AsyncStorage.getItem("nome");
-        const sobrenomeStored = await AsyncStorage.getItem("sobrenome");
-        const emailStored = await AsyncStorage.getItem("email");
-        const usernameStored = await AsyncStorage.getItem("username");
-
-        if (!token) {
-          console.log("Token não encontrado");
-          return;
-        }
-
-        setNome(nomeStored || "");
-        setSobrenome(sobrenomeStored || "");
-        setEmail(emailStored || "");
-        setUsername(usernameStored || "");
-      } catch (error) {
-        console.error("Erro ao carregar dados:", error);
-      }
-    };
-
-    fetchUserData();
-  }, []);
-
-  const handleLogout = async () => {
-    try {
-      await AsyncStorage.multiRemove([
-        "token",
-        "nome",
-        "sobrenome",
-        "email",
-        "username",
-        "user_id",
-      ]);
-
-      navigation.reset({
-        index: 0,
-        routes: [{ name: "Login" }],
-      });
-
-      closeAllMenus();
-    } catch (error) {
-      console.error("Erro ao fazer logout:", error);
-      Alert.alert("Erro", "Não foi possível fazer logout. Tente novamente.");
+  const checkAuthentication = () => {
+    if (currentUser && currentUser.username) {
+      // Usuário já está autenticado, não faz nada
+    } else {
+      // Usuário não está autenticado, redireciona para a tela de login
+      navigation.navigate("Login");
     }
-  };
+  } 
+
+  useEffect(() => {
+    checkAuthentication();
+
+  }, [])
+
 
   const renderMenuItems = (isMobileView) => (
     <>
@@ -328,18 +291,18 @@ const HeaderInterno = ({ onLogout }) => {
         )}
       </View>
 
-      {/* NOTIFICAÇÕES */}
+      {/* NOTIFICAÇÕES
       <View style={styles.menuItem}>
         <Notificacoes />
-      </View>
+      </View> */}
 
       {/* PERFIL */}
       <View style={styles.menuItem}>
         <TouchableOpacity
           onPress={async () => {
             try {
-              const token = await AsyncStorage.getItem("token");
-              if (token) {
+              
+              if (currentUser && currentUser.username) {
                 navigation.navigate("Profile");
                 closeAllMenus();
               } else {
@@ -357,6 +320,7 @@ const HeaderInterno = ({ onLogout }) => {
             } catch (error) {
               console.error("Erro ao verificar autenticação:", error);
               Alert.alert("Erro", "Não foi possível acessar seu perfil");
+              navigation.navigate("Login");
             }
           }}
           style={styles.iconButton}

@@ -12,75 +12,23 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import HeaderInterno from "../components/HeaderInterno";
+import { useUsuarioData } from "../data/usuarios/UsuarioDataContext";
 
 const HomePage = () => {
   const navigation = useNavigation();
   const windowWidth = Dimensions.get("window").width;
   const isMobile = windowWidth < 768;
-const [nome, setNome] = useState("");
-const [sobrenome, setSobrenome] = useState("");
-
-useEffect(() => {
-  const fetchUserData = async () => {
-    try {
-      const token = await AsyncStorage.getItem("token");
-      const nomeStored = await AsyncStorage.getItem("nome");
-      const sobrenomeStored = await AsyncStorage.getItem("sobrenome");
-
-      if (!token) {
-        Alert.alert("Erro", "Sessão expirada");
-        navigation.reset({
-          index: 0,
-          routes: [{ name: "Login" }],
-        });
-        return;
-      }
-
-      setNome(nomeStored || "");
-      setSobrenome(sobrenomeStored || "");
-    } catch (error) {
-      console.error("Erro ao carregar dados:", error);
-      Alert.alert("Erro", "Erro ao carregar dados do usuário");
-    }
-  };
-
-  fetchUserData();
-}, []);
-
-  useEffect(() => {
-    const checkUserData = async () => {
-      try {
-        const userToken = await AsyncStorage.getItem("token");
-
-        if (!userToken) {
-          Alert.alert("Erro", "Sessão expirada");
-          navigation.reset({
-            index: 0,
-            routes: [{ name: "Login" }],
-          });
-          return;
-        }
-
-      } catch (error) {
-        console.error("Erro ao carregar dados do usuário:", error);
-        Alert.alert("Erro", "Erro ao carregar dados do usuário");
-      }
-    };
-
-    checkUserData();
-  }, []);
+  const { currentUser, logout } = useUsuarioData();
 
   const handleLogout = async () => {
     try {
-      await AsyncStorage.clear();
-      navigation.reset({
-        index: 0,
-        routes: [{ name: "Login" }],
-      });
+      await logout();
+      navigation.navigate("login");
     } catch (error) {
       console.error("Erro ao fazer logout:", error);
+      Alert.alert("Erro", "Não foi possível fazer logout. Tente novamente.");
     }
-  };
+  }  
 
   return (
     <View style={styles.container}>
@@ -90,7 +38,7 @@ useEffect(() => {
           {/* Seção de boas-vindas */}
           <View style={styles.welcomeSection}>
             <Text style={styles.welcomeText}>
-              Bem-vindo(a), {nome} {sobrenome}!
+              Bem-vindo(a), {currentUser.nome} {currentUser.username}!
             </Text>
           </View>
 

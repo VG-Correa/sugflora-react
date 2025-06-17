@@ -16,18 +16,18 @@ const api = axios.create({
   },
 });
 
-api.interceptors.request.use(async (config) => {
-  try {
-    const token = await AsyncStorage.getItem("token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  } catch (error) {
-    console.error("Erro ao configurar requisição:", error);
-    return Promise.reject(error);
-  }
-});
+// api.interceptors.request.use(async (config) => {
+//   try {
+//     const token = await AsyncStorage.getItem("token");
+//     if (token) {
+//       config.headers.Authorization = `Bearer ${token}`;
+//     }
+//     return config;
+//   } catch (error) {
+//     console.error("Erro ao configurar requisição:", error);
+//     return Promise.reject(error);
+//   }
+// });
 
 api.interceptors.response.use(
   (response) => response,

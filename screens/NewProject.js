@@ -6,280 +6,169 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
-  Alert,
+  Alert, // Usamos o Alert nativo do React Native para feedback simples
   ActivityIndicator,
-  Switch,
-  Platform,
   Image,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import HeaderInterno from "../components/HeaderInterno";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Picker } from "@react-native-picker/picker";
 import * as ImagePicker from "expo-image-picker";
-import axios from "axios";
+import { useProjetoData } from "../data/projetos/ProjetoDataContext"; // Importa o hook do seu contexto
+import Projeto from "../data/projetos/Projeto"; // Importa a classe Projeto
 
 const NewProject = () => {
-  const navigation = useNavigation();
   const [loading, setLoading] = useState(false);
-  const [usuarios, setUsuarios] = useState([]);
-  const [imagem, setImagem] = useState(null);
+  const [imagemPreviewUri, setImagemPreviewUri] = useState(null); // Estado para a URI da imagem para preview
   const [projeto, setProjeto] = useState({
     nome: "",
     descricao: "",
-    isPublic: false,
+    isPublic: false, // Mantido caso você queira reintroduzir o Switch
     inicio: "",
     termino: "",
-    previsaoConclusao: "",
-    responsavel_uuid: null,
+    // previsaoConclusao: "", // Não usado no construtor de Projeto atualmente, considere remover ou mapear
+    responsavel_uuid: null, // Mantido caso você queira reintroduzir o Picker de responsável
     imagemBase64: null,
   });
+  const { addProjeto } = useProjetoData(); // Obtém a função addProjeto do seu contexto
+  const navigation = useNavigation();
 
   useEffect(() => {
-    carregarUsuarios();
-    solicitarPermissaoCamera();
+    // Solicita permissão da galeria de mídia ao carregar o componente
+    requestMediaLibraryPermission();
   }, []);
 
-  const carregarUsuarios = async () => {
-    try {
-      const token = await AsyncStorage.getItem("token");
-      const response = await axios.get("http://localhost:8080/api/usuario", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (response.data && response.data.data) {
-        setUsuarios(response.data.data);
-      }
-    } catch (error) {
-      console.error("Erro ao carregar usuários:", error);
-    }
-  };
-
-  const solicitarPermissaoCamera = async () => {
+  const requestMediaLibraryPermission = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
       Alert.alert(
         "Permissão necessária",
-        "Precisamos de permissão para acessar suas fotos."
+        "Precisamos de permissão para acessar suas fotos para que você possa selecionar uma imagem para o projeto."
       );
     }
   };
 
-  const selecionarImagem = async () => {
+  const selectImage = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [16, 9],
         quality: 0.5,
-        base64: true,
+        base64: true, // Solicita a imagem em base64
       });
 
       if (!result.canceled) {
+        // Formata a imagem base64 para uso em tags <img> ou envio para API
         const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
-        setImagem(result.assets[0].uri);
-        setProjeto((prev) => ({ ...prev, imagemBase64: base64Image }));
+        setImagemPreviewUri(result.assets[0].uri); // Define a URI para mostrar no preview
+        setProjeto((prev) => ({ ...prev, imagemBase64: base64Image })); // Armazena o base64 no estado do projeto
       }
     } catch (error) {
-      Alert.alert("Erro", "Não foi possível selecionar a imagem");
+      console.error("Erro ao selecionar imagem:", error);
+      Alert.alert("Erro", "Não foi possível selecionar a imagem.");
     }
   };
 
-  const formatarData = (data) => {
+  // Função para formatar a entrada de data (DD/MM/AAAA)
+  const formatarDataInput = (data) => {
     if (!data) return "";
-    const numeros = data.replace(/\D/g, "");
-    if (numeros.length <= 2) return numeros;
-    if (numeros.length <= 4)
-      return `${numeros.slice(0, 2)}/${numeros.slice(2)}`;
-    return `${numeros.slice(0, 2)}/${numeros.slice(2, 4)}/${numeros.slice(
-      4,
-      8
-    )}`;
+    const numeros = data.replace(/\D/g, ""); // Remove caracteres não numéricos
+    let formatted = "";
+    if (numeros.length > 0) {
+      formatted += numeros.substring(0, 2);
+    }
+    if (numeros.length > 2) {
+      formatted += `/${numeros.substring(2, 4)}`;
+    }
+    if (numeros.length > 4) {
+      formatted += `/${numeros.substring(4, 8)}`;
+    }
+    return formatted;
   };
 
-  const handleDataChange = (valor, campo) => {
-    const dataFormatada = formatarData(valor);
+  // Lida com a mudança no campo de input de data
+  const handleDateChange = (valor, campo) => {
+    const dataFormatada = formatarDataInput(valor);
     setProjeto((prev) => ({ ...prev, [campo]: dataFormatada }));
+  };
+
+  // Função auxiliar para converter "DD/MM/AAAA" para um objeto Date
+  const parseDateString = (dateString) => {
+    if (!dateString) return null;
+    const parts = dateString.split("/");
+    // Verifica se temos 3 partes (dia, mês, ano) e se são números
+    if (parts.length === 3 && parts.every(part => !isNaN(parseInt(part)))) {
+        const [day, month, year] = parts.map(Number);
+        const date = new Date(year, month - 1, day); // Mês é baseado em 0 (janeiro = 0)
+        // Valida se a data criada é válida
+        return isNaN(date.getTime()) ? null : date;
+    }
+    return null; // Retorna null se o formato for inválido
   };
 
   const handleSave = async () => {
     try {
-      if (!projeto.nome) {
-        Alert.alert("Erro", "Por favor, preencha o nome do projeto");
+      if (!projeto.nome.trim()) {
+        Alert.alert("Erro", "Por favor, preencha o nome do projeto.");
         return;
       }
 
-      if (!projeto.inicio) {
-        Alert.alert("Erro", "Por favor, preencha a data de início");
+      if (!projeto.inicio.trim()) {
+        Alert.alert("Erro", "Por favor, preencha a data de início.");
         return;
       }
 
-      setLoading(true);
-      const token = await AsyncStorage.getItem("token");
-      const user_id = await AsyncStorage.getItem("user_id");
-
-      if (!user_id || !token) {
-        throw new Error("Usuário não identificado ou token inválido");
+      const parsedInicio = parseDateString(projeto.inicio);
+      if (!parsedInicio) {
+        Alert.alert("Erro", "Formato de Data de Início inválido. Use DD/MM/AAAA.");
+        return;
       }
 
-      const projetoData = {
-        id: 0,
-        nome: projeto.nome.trim(),
-        descricao: projeto.descricao?.trim() || "",
-        inicio: projeto.inicio,
-        previsaoConclusao: projeto.previsaoConclusao || null,
-        responsavel: projeto.responsavel_uuid || "",
-        usuario_dono_uuid: user_id,
-        imagemBase64: projeto.imagemBase64 || "",
-        public: projeto.isPublic,
-        status: "pendente", // Status para controle de sincronização
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      };
+      const parsedTermino = parseDateString(projeto.termino);
+      if (projeto.termino && !parsedTermino) {
+        Alert.alert("Erro", "Formato de Data de Término inválido. Use DD/MM/AAAA.");
+        return;
+      }
 
-      // Salvar localmente primeiro
-      try {
-        // Buscar projetos existentes
-        const projetosExistentes = await AsyncStorage.getItem("projetos");
-        let projetos = [];
+      setLoading(true); // Ativa o indicador de carregamento
 
-        if (projetosExistentes) {
-          projetos = JSON.parse(projetosExistentes);
-        }
+      // Cria uma nova instância da classe Projeto com os dados formatados
+      const newProjectInstance = new Projeto(
+        0, // ID 0 para novos projetos, assumindo que o ID é gerado no serviço ou backend
+        projeto.nome.trim(),
+        projeto.descricao?.trim() || "",
+        parsedInicio, // Data de início como objeto Date
+        parsedTermino, // Data de término como objeto Date ou null
+        "pendente", // Status inicial do projeto
+        // projeto.responsavel_uuid || null, // Descomente se você reintroduzir o responsável
+        null, // Placeholder se responsavel_uuid não for usado
+        projeto.imagemBase64 || null
+      );
 
-        // Adicionar novo projeto
-        projetos.push(projetoData);
+      // Chama a função addProjeto do contexto
+      const response = await addProjeto(newProjectInstance);
 
-        // Salvar no AsyncStorage
-        await AsyncStorage.setItem("projetos", JSON.stringify(projetos));
-
-        console.log("Projeto salvo localmente:", projetoData);
-        Alert.alert("Sucesso", "Projeto salvo localmente!");
-
-        // Tentar sincronizar com a API
-        try {
-          console.log("Tentando sincronizar com a API...");
-          const response = await axios.post(
-            "http://localhost:8080/api/projeto",
-            projetoData,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-              },
-            }
-          );
-
-          if (response.status === 200) {
-            // Atualizar status do projeto local
-            const projetoAtualizado = {
-              ...projetoData,
-              id: response.data.id,
-              status: "sincronizado",
-            };
-
-            // Atualizar na lista local
-            const projetosAtualizados = projetos.map((p) =>
-              p.nome === projetoData.nome ? projetoAtualizado : p
-            );
-
-            await AsyncStorage.setItem(
-              "projetos",
-              JSON.stringify(projetosAtualizados)
-            );
-            console.log("Projeto sincronizado com sucesso!");
-          }
-        } catch (apiError) {
-          console.error("Erro ao sincronizar com a API:", apiError);
-          // O projeto continua salvo localmente
-        }
-
-        // Navegar de volta independente do resultado da API
-        navigation.reset({
-          index: 0,
-          routes: [{ name: "MyProjects" }],
-        });
-      } catch (storageError) {
-        console.error("Erro ao salvar localmente:", storageError);
-        throw new Error("Não foi possível salvar o projeto localmente");
+      // Verifica o status da resposta do contexto (201 para sucesso de criação)
+      if (response && response.status === 201) { // <-- AQUI É A MUDANÇA PRINCIPAL (200 para 201)
+        Alert.alert("Sucesso", "Projeto criado com sucesso!");
+        navigation.navigate("MyProjects"); // Navega de volta para a lista de projetos
+      } else {
+        // Exibe mensagem de erro se a adição falhar
+        Alert.alert(
+          "Erro",
+          response?.message || "Não foi possível adicionar o projeto. Tente novamente."
+        );
       }
     } catch (error) {
-      console.error("Erro completo:", error);
+      console.error("Erro ao salvar projeto:", error);
       Alert.alert(
         "Erro",
-        `Não foi possível salvar o projeto. Erro: ${error.message}`
+        `Não foi possível salvar o projeto. Erro: ${error.message || "Erro desconhecido"}`
       );
     } finally {
-      setLoading(false);
+      setLoading(false); // Desativa o indicador de carregamento
     }
   };
-
-  // Função para sincronizar projetos pendentes
-  const sincronizarProjetosPendentes = async () => {
-    try {
-      const token = await AsyncStorage.getItem("token");
-      if (!token) return;
-
-      const projetosExistentes = await AsyncStorage.getItem("projetos");
-      if (!projetosExistentes) return;
-
-      const projetos = JSON.parse(projetosExistentes);
-      const projetosPendentes = projetos.filter((p) => p.status === "pendente");
-
-      for (const projeto of projetosPendentes) {
-        try {
-          const response = await axios.post(
-            "http://localhost:8080/api/projeto",
-            projeto,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-                "Content-Type": "application/json",
-              },
-            }
-          );
-
-          if (response.status === 200) {
-            // Atualizar status do projeto
-            const projetoAtualizado = {
-              ...projeto,
-              id: response.data.id,
-              status: "sincronizado",
-            };
-
-            // Atualizar na lista local
-            const projetosAtualizados = projetos.map((p) =>
-              p.nome === projeto.nome ? projetoAtualizado : p
-            );
-
-            await AsyncStorage.setItem(
-              "projetos",
-              JSON.stringify(projetosAtualizados)
-            );
-            console.log(`Projeto ${projeto.nome} sincronizado com sucesso!`);
-          }
-        } catch (error) {
-          console.error(`Erro ao sincronizar projeto ${projeto.nome}:`, error);
-        }
-      }
-    } catch (error) {
-      console.error("Erro ao sincronizar projetos:", error);
-    }
-  };
-
-  // Adicionar useEffect para sincronização periódica
-  useEffect(() => {
-    const sincronizarPeriodicamente = async () => {
-      await sincronizarProjetosPendentes();
-    };
-
-    // Sincronizar a cada 5 minutos
-    const intervalo = setInterval(sincronizarPeriodicamente, 5 * 60 * 1000);
-
-    // Sincronizar também quando o componente montar
-    sincronizarPeriodicamente();
-
-    return () => clearInterval(intervalo);
-  }, []);
 
   return (
     <View style={styles.container}>
@@ -287,6 +176,7 @@ const NewProject = () => {
       <ScrollView style={styles.content}>
         <Text style={styles.pageTitle}>CRIAR PROJETO</Text>
         <View style={styles.formContainer}>
+          {/* Campo Nome do Projeto */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Nome do Projeto *</Text>
             <TextInput
@@ -299,6 +189,7 @@ const NewProject = () => {
             />
           </View>
 
+          {/* Campo Descrição */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Descrição</Text>
             <TextInput
@@ -313,44 +204,34 @@ const NewProject = () => {
             />
           </View>
 
+          {/* Campo Data de Início */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Data de Início *</Text>
             <TextInput
               style={styles.input}
               value={projeto.inicio}
-              onChangeText={(text) => handleDataChange(text, "inicio")}
+              onChangeText={(text) => handleDateChange(text, "inicio")}
               placeholder="DD/MM/AAAA"
               keyboardType="numeric"
               maxLength={10}
             />
           </View>
 
+          {/* Campo Data de Término */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Data de Término</Text>
             <TextInput
               style={styles.input}
               value={projeto.termino}
-              onChangeText={(text) => handleDataChange(text, "termino")}
+              onChangeText={(text) => handleDateChange(text, "termino")}
               placeholder="DD/MM/AAAA"
               keyboardType="numeric"
               maxLength={10}
             />
           </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Previsão de Conclusão</Text>
-            <TextInput
-              style={styles.input}
-              value={projeto.previsaoConclusao}
-              onChangeText={(text) =>
-                handleDataChange(text, "previsaoConclusao")
-              }
-              placeholder="DD/MM/AAAA"
-              keyboardType="numeric"
-              maxLength={10}
-            />
-          </View>
-
+          {/* Seções comentadas para "Responsável" e "Projeto Público" - descomente se for usar */}
+          {/*
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Responsável</Text>
             <View style={styles.pickerContainer}>
@@ -362,7 +243,7 @@ const NewProject = () => {
                 style={styles.picker}
               >
                 <Picker.Item label="Selecione um responsável" value={null} />
-                {usuarios.map((usuario) => (
+                {usuarios.map((usuario) => ( // 'usuarios' array precisa ser definido e populado
                   <Picker.Item
                     key={usuario.uuid}
                     label={`${usuario.nome} ${usuario.sobrenome}`}
@@ -389,22 +270,25 @@ const NewProject = () => {
               </Text>
             </View>
           </View>
+          */}
 
+          {/* Seleção e Preview de Imagem */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Imagem do Projeto</Text>
             <TouchableOpacity
               style={styles.imageButton}
-              onPress={selecionarImagem}
+              onPress={selectImage}
             >
               <Text style={styles.imageButtonText}>
-                {imagem ? "Alterar Imagem" : "Selecionar Imagem"}
+                {imagemPreviewUri ? "Alterar Imagem" : "Selecionar Imagem"}
               </Text>
             </TouchableOpacity>
-            {imagem && (
-              <Image source={{ uri: imagem }} style={styles.imagePreview} />
+            {imagemPreviewUri && (
+              <Image source={{ uri: imagemPreviewUri }} style={styles.imagePreview} />
             )}
           </View>
 
+          {/* Botão Salvar/Criar Projeto */}
           <TouchableOpacity
             style={[styles.saveButton, loading && styles.disabledButton]}
             onPress={handleSave}

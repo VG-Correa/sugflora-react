@@ -15,11 +15,14 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
 import axios from "axios";
 import HeaderInterno from "../components/HeaderInterno";
+import { useProjetoData} from "../data/projetos/ProjetoDataContext";
+import Projeto from "../data/projetos/Projeto";
 
 const EditProject = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { projeto } = route.params;
+  const {addProjeto} = useProjetoData();
 
   const [projetoEditado, setProjetoEditado] = useState({
     id: projeto.id,
@@ -102,17 +105,6 @@ const EditProject = () => {
 
     setLoading(true);
     try {
-      const token = await AsyncStorage.getItem("token");
-      const user_id = await AsyncStorage.getItem("user_id");
-
-      if (!user_id) {
-        throw new Error("Usuário não identificado");
-      }
-
-      if (!token) {
-        throw new Error("Token não encontrado. Faça login novamente.");
-      }
-
       const projetoData = {
         id: projetoEditado.id,
         nome: projetoEditado.nome.trim(),
@@ -132,17 +124,18 @@ const EditProject = () => {
 
       console.log("Dados do projeto sendo enviados:", projetoData);
 
-      const response = await axios.put(
-        `http://localhost:8080/api/projeto/${projetoEditado.id}`,
-        projetoData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-            Accept: "application/hal+json",
-          },
-        }
+      const novoprojeto = new Projeto(
+        projetoData.id,
+        projetoData.nome,
+        projetoData.descricao,
+        new Date(projetoData.inicio),
+        projetoData.termino ? new Date(projetoData.termino) : null,
+        projetoData.status,
+        projetoData.responsavel,
+        projetoData.imagemBase64,
       );
+
+      const response = addProjeto(novoprojeto);
 
       console.log("Resposta da API:", {
         status: response.status,

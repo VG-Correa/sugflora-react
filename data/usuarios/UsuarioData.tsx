@@ -10,7 +10,7 @@ class UsuarioData {
       'Administrador',
       'do sistema',
       'adm',
-      '123',
+      'adm',
       '111.111.111-1',
       '111.111.111-11',
       'Rua A, 123',

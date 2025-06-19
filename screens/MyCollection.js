@@ -12,9 +12,9 @@ import {
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import HeaderInterno from "../components/HeaderInterno";
-import CampoApi from "../functions/api/CampoApi";
-import ColetaApi from "../functions/api/ColetaApi";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useCampoData } from "../data/campos/CampoDataContext";
+import { useColetaData } from "../data/coletas/ColetaDataContext";
 
 const MyCollectionsScreen = () => {
   const navigation = useNavigation();
@@ -24,17 +24,33 @@ const MyCollectionsScreen = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Usando os contextos de dados
+  const { getCamposByUsuarioId } = useCampoData();
+  const { getByCampoId } = useColetaData();
+
   const tableColumnSizes = isMobile
     ? { id: 210, family: 270, genus: 230, species: 270, date: 250, field: 250 }
     : { id: 230, family: 300, genus: 270, species: 330, date: 270, field: 300 };
 
   const formatDate = (dateString) => {
-    if (!dateString) return "Não definida";
     try {
+      if (!dateString || dateString === undefined || dateString === null) {
+        return "Não definida";
+      }
+
+      // Se já é uma string formatada (dd/mm/yyyy), retorna como está
+      if (typeof dateString === "string" && dateString.includes("/")) {
+        return dateString;
+      }
+
       const date = new Date(dateString);
-      if (isNaN(date.getTime())) return "Data inválida";
+      if (isNaN(date.getTime())) {
+        return "Data inválida";
+      }
+
       return date.toLocaleDateString("pt-BR");
-    } catch (error) {
+    } catch (e) {
+      console.error("Erro ao formatar data:", e, "Valor recebido:", dateString);
       return "Data inválida";
     }
   };
@@ -56,42 +72,30 @@ const MyCollectionsScreen = () => {
         throw new Error("Usuário não identificado");
       }
 
-      // Buscar todos os campos do usuário
-      const response = await CampoApi.getAllByUsuarioId(user_id);
+      // Buscar todos os campos do usuário usando o contexto
+      const camposResponse = getCamposByUsuarioId(user_id);
       console.log(
-        "Resposta completa da API de campos:",
-        JSON.stringify(response, null, 2)
+        "Resposta dos campos do contexto:",
+        JSON.stringify(camposResponse, null, 2)
       );
 
-      if (response.status === 200 && response.data && response.data.data) {
+      if (camposResponse.status === 200 && camposResponse.data) {
         console.log(
-          "Dados brutos dos campos:",
-          JSON.stringify(response.data.data, null, 2)
-        );
-
-        // Filtrar apenas campos não deletados
-        const camposAtivos = response.data.data
-          .filter((campo) => campo !== null)
-          .filter((campo) => !campo.deleted);
-
-        console.log(
-          "Campos ativos encontrados:",
-          JSON.stringify(camposAtivos, null, 2)
+          "Dados dos campos:",
+          JSON.stringify(camposResponse.data, null, 2)
         );
 
         // Buscar informações de coletas para cada campo
         const camposComColetas = await Promise.all(
-          camposAtivos.map(async (campo) => {
+          camposResponse.data.map(async (campo) => {
             try {
-              const coletasResponse = await ColetaApi.getColetasByCampoId(
-                campo.id
-              );
+              const coletasResponse = getByCampoId(campo.id);
               console.log(
                 `Coletas do campo ${campo.id}:`,
                 coletasResponse.data
               );
 
-              const coletas = coletasResponse.data.data || [];
+              const coletas = coletasResponse.data || [];
 
               // Contar coletas identificadas e não identificadas
               const identificadas = coletas.filter(
@@ -140,7 +144,7 @@ const MyCollectionsScreen = () => {
         );
         setCampos(camposComColetas);
       } else {
-        console.error("Resposta inválida da API:", response);
+        console.error("Resposta inválida do contexto:", camposResponse);
         throw new Error("Erro ao carregar campos");
       }
     } catch (error) {

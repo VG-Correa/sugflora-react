@@ -29,7 +29,7 @@ const Profile = () => {
   useEffect(() => {
     const loadUserData = async () => {
       try {
-        const uuid = await AsyncStorage.getItem("uuid");
+        const uuid = await AsyncStorage.getItem("user_id");
         const nome = await AsyncStorage.getItem("nome");
         const sobrenome = await AsyncStorage.getItem("sobrenome");
         const email = await AsyncStorage.getItem("email");

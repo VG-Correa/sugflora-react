@@ -21,10 +21,10 @@ const Notificacoes = () => {
     const conectarWebSocket = async () => {
       try {
         const token = await AsyncStorage.getItem("token");
-        const uuid = await AsyncStorage.getItem("uuid");
+        const uuid = await AsyncStorage.getItem("user_id");
 
         if (!token || !uuid) {
-          console.error("Token ou UUID não encontrados");
+          console.error("Token ou ID do usuário não encontrados");
           return;
         }
 

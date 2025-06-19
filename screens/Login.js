@@ -17,11 +17,10 @@ import {
 } from "react-native";
 import Header from "../components/Header";
 import forestImage from "../assets/images/forest.webp";
-import loginApi from "../functions/api/loginApi";
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useUsuarioData } from "../data/usuarios/UsuarioDataContext";
-import Message from '../Messages/Message'
+import Message from "../Messages/Message";
 
 const Login = () => {
   const navigation = useNavigation();
@@ -31,7 +30,6 @@ const Login = () => {
   const windowDimensions = Dimensions.get("window");
   const { login } = useUsuarioData();
 
-
   const handleLogin = async () => {
     if (!username || !password) {
       Alert.alert("Erro", "Por favor, preencha todos os campos");
@@ -39,19 +37,36 @@ const Login = () => {
     }
 
     setLoading(true);
-    
-    const message = login(username, password);
-    console.log("Messagem: ", message)
 
-    if (message.status === 200) {
-      AsyncStorage.setItem("token", message.data.id)
-      navigation.replace("HomePage")
-    } else {
-      alert("Credenciais incorretas!!")
+    try {
+      const message = await login(username, password);
+      console.log("Mensagem: ", message);
+
+      if (message.status === 200) {
+        await AsyncStorage.setItem("token", message.data.id.toString());
+        await AsyncStorage.setItem("user_id", message.data.id.toString());
+
+        // Salvar dados do usuário no AsyncStorage
+        await AsyncStorage.multiSet([
+          ["nome", message.data.nome || ""],
+          ["sobrenome", message.data.sobrenome || ""],
+          ["email", message.data.email || ""],
+          ["username", message.data.username || ""],
+          ["cpf", message.data.cpf || ""],
+          ["rg", message.data.rg || ""],
+          ["endereco", message.data.endereco || ""],
+        ]);
+
+        navigation.replace("HomePage");
+      } else {
+        Alert.alert("Erro", "Credenciais incorretas!");
+      }
+    } catch (error) {
+      console.error("Erro no login:", error);
+      Alert.alert("Erro", "Erro ao fazer login. Tente novamente.");
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false)
-
   };
 
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();

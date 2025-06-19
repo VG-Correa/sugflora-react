@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   SafeAreaView,
   View,
@@ -7,44 +7,48 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
-  Dimensions
-} from 'react-native';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import HeaderInterno from '../components/HeaderInterno';
-import FamiliaApi from '../functions/api/FamiliaApi';
-import GeneroApi from '../functions/api/GeneroApi';
-import EspecieApi from '../functions/api/EspecieApi';
-import CustomPicker from '../components/CustomPicker';
-import ImageSelector from '../components/ImageSelector';
-import ColetaApi from '../functions/api/ColetaApi';
+  Dimensions,
+} from "react-native";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import HeaderInterno from "../components/HeaderInterno";
+import CustomPicker from "../components/CustomPicker";
+import ImageSelector from "../components/ImageSelector";
+import { useFamiliaData } from "../data/familias/FamiliaDataContext";
+import { useGeneroData } from "../data/generos/GeneroDataContext";
+import { useEspecieData } from "../data/especies/EspecieDataContext";
+import { useColetaData } from "../data/coletas/ColetaDataContext";
+import Coleta from "../data/coletas/Coleta";
 
-const { width } = Dimensions.get('window');
+const { width } = Dimensions.get("window");
 
 export default function AddCollection() {
   const navigation = useNavigation();
   const route = useRoute();
   const { campo } = route.params;
 
-  const [nomeColeta, setNomeColeta] = useState('');
-  const [dataColeta, setDataColeta] = useState('');
-  const [familias, setFamilias] = useState([]);
-  const [generos, setGeneros] = useState([]);
-  const [especies, setEspecies] = useState([]);
+  const [nomeColeta, setNomeColeta] = useState("");
+  const [dataColeta, setDataColeta] = useState("");
   const [familia, setFamilia] = useState(null);
   const [genero, setGenero] = useState(null);
   const [especie, setEspecie] = useState(null);
-  const [nomeComum, setNomeComum] = useState('');
+  const [nomeComum, setNomeComum] = useState("");
   const [images, setImages] = useState([]);
 
+  // Usando os contextos de dados
+  const { familias } = useFamiliaData();
+  const { generos, getGenerosByFamilia } = useGeneroData();
+  const { especies, getEspeciesByGenero } = useEspecieData();
+  const { addColeta } = useColetaData();
+
   const toISODate = (ddmmaaaa) => {
-    const [dd, mm, yyyy] = ddmmaaaa.split('/');
+    const [dd, mm, yyyy] = ddmmaaaa.split("/");
     return `${yyyy}-${mm}-${dd}`;
   };
 
   // Função para formatar a data enquanto o usuário digita
   const formatDate = (input) => {
     // Remove tudo que não é dígito
-    let cleaned = input.replace(/\D/g, '');
+    let cleaned = input.replace(/\D/g, "");
 
     // Limita o tamanho máximo
     if (cleaned.length > 8) {
@@ -52,10 +56,10 @@ export default function AddCollection() {
     }
 
     // Aplica a formatação
-    let formatted = '';
+    let formatted = "";
     for (let i = 0; i < cleaned.length; i++) {
       if (i === 2 || i === 4) {
-        formatted += '/';
+        formatted += "/";
       }
       formatted += cleaned[i];
     }
@@ -68,55 +72,41 @@ export default function AddCollection() {
     setDataColeta(formatted);
   };
 
-  // Carrega famílias
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await FamiliaApi.getAll();
-        setFamilias(res.data.data);
-      } catch (e) {
-        alert('Erro ao carregar famílias');
-      }
-    })();
-  }, []);
-
   // Carrega gêneros quando família muda
   useEffect(() => {
     const famId = familia?.id;
     if (!famId) {
-      setGeneros([]);
       setGenero(null);
       return;
     }
 
-    (async () => {
-      try {
-        const res = await GeneroApi.getByFamilia(famId);
-        setGeneros(res.data.data);
-      } catch {
-        alert('Erro ao carregar gêneros');
+    try {
+      const generosResponse = getGenerosByFamilia(famId);
+      if (generosResponse.status !== 200) {
+        console.error("Erro ao carregar gêneros:", generosResponse.message);
       }
-    })();
-  }, [familia?.id]);
+    } catch (error) {
+      console.error("Erro ao carregar gêneros:", error);
+    }
+  }, [familia?.id, getGenerosByFamilia]);
 
   // Carrega espécies quando gênero muda
   useEffect(() => {
     const genId = genero?.id;
     if (!genId) {
-      setEspecies([]);
       setEspecie(null);
       return;
     }
 
-    (async () => {
-      try {
-        const res = await EspecieApi.getByGenero(genId);
-        setEspecies(res.data.data);
-      } catch {
-        alert('Erro ao carregar espécies');
+    try {
+      const especiesResponse = getEspeciesByGenero(genId);
+      if (especiesResponse.status !== 200) {
+        console.error("Erro ao carregar espécies:", especiesResponse.message);
       }
-    })();
-  }, [genero?.id]);
+    } catch (error) {
+      console.error("Erro ao carregar espécies:", error);
+    }
+  }, [genero?.id, getEspeciesByGenero]);
 
   // Sincroniza família e gênero quando espécie é alterada
   useEffect(() => {
@@ -138,30 +128,40 @@ export default function AddCollection() {
   const saveCollection = async () => {
     // Valida a data antes de enviar
     if (dataColeta && dataColeta.length !== 10) {
-      alert('Por favor, insira uma data válida no formato DD/MM/AAAA');
+      alert("Por favor, insira uma data válida no formato DD/MM/AAAA");
       return;
     }
 
-    const payload = {
-      id: null,
-      nome: nomeColeta,
-      campo_id: campo.id,
-      data_coleta: toISODate(dataColeta),
-      familia_id: familia?.id,
-      genero_id: genero?.id,
-      especie_id: especie?.id,
-      // imagens: images,
-    };
+    const coleta = new Coleta(
+      null,
+      nomeColeta,
+      campo.id,
+      toISODate(dataColeta),
+      familia?.id,
+      genero?.id,
+      especie?.id,
+      nomeComum,
+      !!especie?.id, // identificada se tem espécie
+      images.length > 0 ? images : null,
+      null, // observacoes
+      new Date().toISOString(),
+      new Date().toISOString(),
+      false
+    );
 
-    console.log('Payload:', payload);
+    console.log("Coleta a ser criada:", coleta);
     try {
-      const response = await ColetaApi.create(payload)
-      console.log(response)
+      const result = addColeta(coleta);
+      if (result.status === 201) {
+        alert("Coleta criada com sucesso!");
+        navigation.goBack();
+      } else {
+        alert("Erro ao criar coleta: " + result.message);
+      }
     } catch (error) {
-      console.log(error);
-
+      console.error("Erro ao criar coleta:", error);
+      alert("Erro ao criar coleta");
     }
-
   };
 
   return (
@@ -187,7 +187,7 @@ export default function AddCollection() {
         />
 
         <CustomPicker
-          items={familias.map(f => ({ id: f.id, label: f.nome }))}
+          items={familias.map((f) => ({ id: f.id, label: f.nome }))}
           placeholder="Selecione a família"
           searchable
           value={familia?.id}
@@ -195,7 +195,7 @@ export default function AddCollection() {
         />
 
         <CustomPicker
-          items={generos.map(g => ({ id: g.id, label: g.nome }))}
+          items={generos.map((g) => ({ id: g.id, label: g.nome }))}
           placeholder="Selecione o gênero"
           searchable
           value={genero?.id}
@@ -203,11 +203,11 @@ export default function AddCollection() {
         />
 
         <CustomPicker
-          items={especies.map(e => ({
+          items={especies.map((e) => ({
             id: e.id,
             label: e.nome,
             genero: e.genero,
-            familia: e.genero.familia
+            familia: e.genero.familia,
           }))}
           placeholder="Selecione a espécie"
           searchable
@@ -217,16 +217,26 @@ export default function AddCollection() {
 
         <ImageSelector
           images={images}
-          onAddImage={uri => setImages(prev => [...prev, uri])}
-          onRemoveImage={uri => setImages(prev => prev.filter(i => i !== uri))}
+          onAddImage={(uri) => setImages((prev) => [...prev, uri])}
+          onRemoveImage={(uri) =>
+            setImages((prev) => prev.filter((i) => i !== uri))
+          }
         />
 
         <View style={styles.buttonsRow}>
-          <TouchableOpacity style={styles.cancelBtn} onPress={() => navigation.goBack()}>
+          <TouchableOpacity
+            style={styles.cancelBtn}
+            onPress={() => navigation.goBack()}
+          >
             <Text style={styles.btnText}>Cancelar</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.saveBtn} onPress={async () => { await saveCollection() }}>
-            <Text style={[styles.btnText, { color: '#fff' }]}>Salvar</Text>
+          <TouchableOpacity
+            style={styles.saveBtn}
+            onPress={async () => {
+              await saveCollection();
+            }}
+          >
+            <Text style={[styles.btnText, { color: "#fff" }]}>Salvar</Text>
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -235,36 +245,46 @@ export default function AddCollection() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f7f7f7' },
+  container: { flex: 1, backgroundColor: "#f7f7f7" },
   content: { padding: 20, paddingBottom: 40 },
-  title: { fontSize: 22, fontWeight: '600', textAlign: 'center', marginBottom: 20, color: '#333' },
+  title: {
+    fontSize: 22,
+    fontWeight: "600",
+    textAlign: "center",
+    marginBottom: 20,
+    color: "#333",
+  },
   input: {
     height: 48,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 8,
     paddingHorizontal: 12,
     marginBottom: 15,
     fontSize: 16,
     borderWidth: 1,
-    borderColor: '#ddd'
+    borderColor: "#ddd",
   },
-  buttonsRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 30 },
+  buttonsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 30,
+  },
   cancelBtn: {
     flex: 1,
     height: 48,
     borderRadius: 8,
-    backgroundColor: '#ccc',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 10
+    backgroundColor: "#ccc",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 10,
   },
   saveBtn: {
     flex: 1,
     height: 48,
     borderRadius: 8,
-    backgroundColor: '#4CAF50',
-    justifyContent: 'center',
-    alignItems: 'center'
+    backgroundColor: "#4CAF50",
+    justifyContent: "center",
+    alignItems: "center",
   },
-  btnText: { fontSize: 16, fontWeight: '500', color: '#333' }
+  btnText: { fontSize: 16, fontWeight: "500", color: "#333" },
 });

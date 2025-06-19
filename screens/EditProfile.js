@@ -13,12 +13,14 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import HeaderInterno from "../components/HeaderInterno";
-import UsuarioApi from "../functions/api/usuarioApi";
+import { useUsuarioData } from "../data/usuarios/UsuarioDataContext";
 import MaskInput, { Masks } from "react-native-mask-input";
+import Usuario from "../data/usuarios/Usuario";
 
 const EditProfile = () => {
   const navigation = useNavigation();
   const [loading, setLoading] = useState(false);
+  const { getUsuarioById, updateUsuario } = useUsuarioData();
   const [userData, setUserData] = useState({
     uuid: "",
     nome: "",
@@ -100,31 +102,29 @@ const EditProfile = () => {
       }
 
       // Prepara os dados para envio
-      const userDataToUpdate = {
-        uuid: userData.uuid,
-        nome: userData.nome.trim(),
-        sobrenome: userData.sobrenome?.trim() || "",
-        email: userData.email.trim(),
-        username: userData.username.trim(),
-        cpf: userData.cpf.replace(/\D/g, ""),
-        rg: userData.rg.replace(/\D/g, ""),
-        endereco: userData.endereco?.trim() || "",
-        role: "USER",
-      };
+      const userDataToUpdate = new Usuario(
+        parseInt(userData.uuid),
+        userData.nome.trim(),
+        userData.sobrenome?.trim() || "",
+        userData.username.trim(),
+        "", // senha - não alterar
+        userData.rg.replace(/\D/g, ""),
+        userData.cpf.replace(/\D/g, ""),
+        userData.endereco?.trim() || "",
+        userData.email.trim(),
+        "USER",
+        undefined, // created_at - não alterar
+        new Date().toISOString() // updated_at
+      );
 
       console.log("Enviando dados para atualização:", userDataToUpdate);
 
-      const response = await UsuarioApi.update(userDataToUpdate);
+      const response = await updateUsuario(userDataToUpdate);
       console.log("Resposta do servidor:", response);
 
-      if (
-        response &&
-        response.status === 200 &&
-        response.data &&
-        response.data.data
-      ) {
+      if (response && response.status === 200) {
         // Atualiza os dados no AsyncStorage com os dados retornados do servidor
-        const updatedUser = response.data.data;
+        const updatedUser = response.data;
         await AsyncStorage.multiSet([
           ["nome", updatedUser.nome || ""],
           ["sobrenome", updatedUser.sobrenome || ""],
@@ -150,25 +150,15 @@ const EditProfile = () => {
         Alert.alert("Sucesso", "Perfil atualizado com sucesso!");
         navigation.goBack();
       } else {
-        throw new Error(response?.data?.message || "Erro ao atualizar perfil");
+        throw new Error(response?.message || "Erro ao atualizar perfil");
       }
     } catch (error) {
       console.error("Erro ao atualizar perfil:", error);
       let errorMessage =
         "Não foi possível atualizar seu perfil. Por favor, tente novamente.";
 
-      if (error.response) {
-        console.log("Detalhes do erro:", error.response.data);
-        console.log("Status do erro:", error.response.status);
-
-        if (error.response.status === 401) {
-          errorMessage = "Sua sessão expirou. Por favor, faça login novamente.";
-          navigation.navigate("Login");
-        } else if (error.response.status === 403) {
-          errorMessage = "Acesso negado. Verifique suas permissões.";
-        } else if (error.response.data && error.response.data.message) {
-          errorMessage = error.response.data.message;
-        }
+      if (error.message) {
+        errorMessage = error.message;
       }
 
       Alert.alert("Erro", errorMessage);

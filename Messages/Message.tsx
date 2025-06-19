@@ -9,6 +9,7 @@ class Message<Data> {
     status: number, 
     message: string | undefined = undefined,
     data: Data | undefined = undefined, 
+    dataList: Data[] | undefined = undefined,
     error: boolean = false
   ) {
     this.status = status;

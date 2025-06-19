@@ -12,14 +12,13 @@ import {
   StatusBar,
   Alert,
   ActivityIndicator,
-  Picker,
 } from "react-native";
+import { Picker } from "@react-native-picker/picker";
 import Header from "../components/Header"; // Importando o Header igual ao Home.js
 import MaskInput, { Masks } from "react-native-mask-input";
 import axios from "axios";
-import UsuarioApi from "../functions/api/usuarioApi"; // Importação não utilizada, pode ser removida se não for necessária.
-import Usuario from "../data/usuarios/Usuario"
-import Message from "../Messages/Message" // Importação não utilizada diretamente aqui, mas pode ser usada por UsuarioData.
+import Usuario from "../data/usuarios/Usuario";
+import Message from "../Messages/Message"; // Importação não utilizada diretamente aqui, mas pode ser usada por UsuarioData.
 import { useUsuarioData } from "../data/usuarios/UsuarioDataContext";
 
 const Register = ({ navigation }) => {
@@ -278,7 +277,7 @@ const Register = ({ navigation }) => {
         senha, // senha (CORREÇÃO APLICADA AQUI)
         rg, // rg
         cpf, // cpf
-        endereco, // endereco 
+        endereco, // endereco
         email, // email
         role // role
       );
@@ -286,15 +285,15 @@ const Register = ({ navigation }) => {
       console.log("Dados formatados para o usuário:", usuario);
 
       // Chama a função addUsuario do contexto para adicionar o novo usuário
-      const response = addUsuario(usuario);
+      const response = await addUsuario(usuario);
 
       console.log("Response de adição de usuário: ", response);
 
       // Verifica o status da resposta do addUsuario
-      if (response.status === 201 && response.data) { // 201 Created é o esperado para sucesso
+      if (response.status === 201 && response.data) {
+        // 201 Created é o esperado para sucesso
         console.log("Usuário criado com sucesso");
         // Limpa o formulário após o cadastro bem-sucedido
-
         setFormData({
           nome: "",
           sobrenome: "",
@@ -328,7 +327,10 @@ const Register = ({ navigation }) => {
         ]);
       } else {
         // Se a resposta não for 201, exibe uma mensagem de erro vinda do Message
-        Alert.alert("Erro", response.message || "Erro ao realizar cadastro. Tente novamente.");
+        Alert.alert(
+          "Erro",
+          response.message || "Erro ao realizar cadastro. Tente novamente."
+        );
       }
     } catch (error) {
       console.error("Erro detalhado ao cadastrar:", error);
@@ -339,7 +341,6 @@ const Register = ({ navigation }) => {
       let errorMessage = "Erro ao realizar cadastro. Tente novamente.";
 
       // Trata erros específicos da API (se houver resposta do servidor)
-
       if (error.response) {
         if (error.response.status === 400) {
           errorMessage = "Dados inválidos. Verifique as informações.";

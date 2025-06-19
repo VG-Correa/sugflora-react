@@ -9,161 +9,131 @@ import {
   ScrollView,
   Alert,
   Platform,
+  ActivityIndicator,
+  Switch,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
-import axios from "axios";
+import { Picker } from "@react-native-picker/picker";
 import HeaderInterno from "../components/HeaderInterno";
-import { useProjetoData} from "../data/projetos/ProjetoDataContext";
-import Projeto from "../data/projetos/Projeto";
+import { useProjetoData } from "../data/projetos/ProjetoDataContext";
+import { useUsuarioData } from "../data/usuarios/UsuarioDataContext";
 
 const EditProject = () => {
   const navigation = useNavigation();
   const route = useRoute();
   const { projeto } = route.params;
-  const {addProjeto} = useProjetoData();
-
+  const [loading, setLoading] = useState(false);
+  const [usuarios, setUsuarios] = useState([]);
+  const [imagem, setImagem] = useState(null);
+  const { updateProjeto } = useProjetoData();
+  const { usuarios: listaUsuarios } = useUsuarioData();
   const [projetoEditado, setProjetoEditado] = useState({
     id: projeto.id,
-    nome: projeto.nome || "",
+    nome: projeto.nome,
     descricao: projeto.descricao || "",
-    inicio: projeto.inicio ? new Date(projeto.inicio) : new Date(),
-    termino: projeto.termino ? new Date(projeto.termino) : null,
-    previsaoConclusao: projeto.previsaoConclusao
-      ? new Date(projeto.previsaoConclusao)
-      : null,
-    responsavel_uuid: projeto.responsavel_uuid || "",
-    imagemBase64: null,
-    isPublic: projeto.isPublic || false,
+    inicio: projeto.inicio,
+    termino: projeto.termino || "",
+    previsaoConclusao: projeto.previsaoConclusao || "",
+    responsavel_uuid: projeto.responsavel_uuid || null,
+    imagemBase64: projeto.imagemBase64 || null,
+    isPublic: projeto.public || false,
   });
 
-  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    carregarUsuarios();
+    solicitarPermissaoCamera();
+  }, []);
 
-  const handleDateChange = (field, date) => {
-    setProjetoEditado((prev) => ({
-      ...prev,
-      [field]: date,
-    }));
+  const carregarUsuarios = async () => {
+    try {
+      setUsuarios(listaUsuarios);
+    } catch (error) {
+      console.error("Erro ao carregar usuários:", error);
+    }
   };
 
-  const handleSelectImage = async () => {
+  const solicitarPermissaoCamera = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      Alert.alert(
+        "Permissão necessária",
+        "Precisamos de permissão para acessar suas fotos."
+      );
+    }
+  };
+
+  const selecionarImagem = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
-        aspect: [4, 3],
+        aspect: [16, 9],
         quality: 0.5,
         base64: true,
       });
 
       if (!result.canceled) {
-        setProjetoEditado((prev) => ({
-          ...prev,
-          imagemBase64: result.assets[0].base64,
-        }));
+        const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
+        setImagem(result.assets[0].uri);
+        setProjetoEditado((prev) => ({ ...prev, imagemBase64: base64Image }));
       }
     } catch (error) {
-      console.error("Erro ao selecionar imagem:", error);
       Alert.alert("Erro", "Não foi possível selecionar a imagem");
     }
   };
 
-  const validarDatas = () => {
-    if (
-      projetoEditado.termino &&
-      projetoEditado.termino < projetoEditado.inicio
-    ) {
-      Alert.alert(
-        "Erro",
-        "A data de término não pode ser anterior à data de início"
-      );
-      return false;
-    }
-    if (
-      projetoEditado.previsaoConclusao &&
-      projetoEditado.previsaoConclusao < projetoEditado.inicio
-    ) {
-      Alert.alert(
-        "Erro",
-        "A previsão de conclusão não pode ser anterior à data de início"
-      );
-      return false;
-    }
-    return true;
+  const formatarData = (data) => {
+    if (!data) return "";
+    const numeros = data.replace(/\D/g, "");
+    if (numeros.length <= 2) return numeros;
+    if (numeros.length <= 4)
+      return `${numeros.slice(0, 2)}/${numeros.slice(2)}`;
+    return `${numeros.slice(0, 2)}/${numeros.slice(2, 4)}/${numeros.slice(
+      4,
+      8
+    )}`;
+  };
+
+  const handleDataChange = (valor, campo) => {
+    const dataFormatada = formatarData(valor);
+    setProjetoEditado((prev) => ({ ...prev, [campo]: dataFormatada }));
   };
 
   const handleSave = async () => {
-    if (!projetoEditado.nome) {
-      Alert.alert("Erro", "Por favor, preencha o nome do projeto");
-      return;
-    }
-
-    if (!validarDatas()) {
-      return;
-    }
-
-    setLoading(true);
     try {
-      const projetoData = {
-        id: projetoEditado.id,
-        nome: projetoEditado.nome.trim(),
-        descricao: projetoEditado.descricao?.trim() || "",
-        inicio: projetoEditado.inicio.toISOString().split("T")[0],
-        termino: projetoEditado.termino
-          ? projetoEditado.termino.toISOString().split("T")[0]
-          : null,
-        previsaoConclusao: projetoEditado.previsaoConclusao
-          ? projetoEditado.previsaoConclusao.toISOString().split("T")[0]
-          : null,
-        responsavel: projetoEditado.responsavel_uuid || "",
-        usuario_dono_uuid: user_id,
-        imagemBase64: projetoEditado.imagemBase64 || "",
-        public: projetoEditado.isPublic,
-      };
+      if (!projetoEditado.nome) {
+        Alert.alert("Erro", "Por favor, preencha o nome do projeto");
+        return;
+      }
 
-      console.log("Dados do projeto sendo enviados:", projetoData);
+      if (!projetoEditado.inicio) {
+        Alert.alert("Erro", "Por favor, preencha a data de início");
+        return;
+      }
 
-      const novoprojeto = new Projeto(
-        projetoData.id,
-        projetoData.nome,
-        projetoData.descricao,
-        new Date(projetoData.inicio),
-        projetoData.termino ? new Date(projetoData.termino) : null,
-        projetoData.status,
-        projetoData.responsavel,
-        projetoData.imagemBase64,
-      );
+      setLoading(true);
 
-      const response = addProjeto(novoprojeto);
-
-      console.log("Resposta da API:", {
-        status: response.status,
-        data: response.data,
+      const response = updateProjeto({
+        ...projetoEditado,
+        updated_at: new Date().toISOString(),
       });
 
       if (response.status === 200) {
-        Alert.alert("Sucesso", "Projeto atualizado com sucesso!", [
-          {
-            text: "OK",
-            onPress: () => navigation.navigate("MyProjects"),
-          },
-        ]);
+        Alert.alert("Sucesso", "Projeto atualizado com sucesso!");
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "MyProjects" }],
+        });
       } else {
-        throw new Error(response.data?.message || "Erro ao atualizar projeto");
+        throw new Error(response.message || "Erro ao atualizar projeto");
       }
     } catch (error) {
-      console.error("Erro ao atualizar projeto:", {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
-      });
-
+      console.error("Erro ao atualizar projeto:", error);
       Alert.alert(
         "Erro",
-        error.response?.data?.message ||
-          error.message ||
-          "Não foi possível atualizar o projeto. Tente novamente."
+        `Não foi possível atualizar o projeto. Erro: ${error.message}`
       );
     } finally {
       setLoading(false);
@@ -217,7 +187,9 @@ const EditProject = () => {
           }}
         >
           <Text style={styles.dateButtonText}>
-            {value ? value.toLocaleDateString("pt-BR") : "Selecione uma data"}
+            {value && value.toLocaleDateString
+              ? value.toLocaleDateString("pt-BR")
+              : "Selecione uma data"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -228,11 +200,10 @@ const EditProject = () => {
     <View style={styles.container}>
       <HeaderInterno />
       <ScrollView style={styles.content}>
-        <View style={styles.form}>
-          <Text style={styles.title}>Editar Projeto</Text>
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Nome do Projeto</Text>
+        <Text style={styles.pageTitle}>EDITAR PROJETO</Text>
+        <View style={styles.formContainer}>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Nome do Projeto *</Text>
             <TextInput
               style={styles.input}
               value={projetoEditado.nome}
@@ -243,7 +214,7 @@ const EditProject = () => {
             />
           </View>
 
-          <View style={styles.inputContainer}>
+          <View style={styles.inputGroup}>
             <Text style={styles.label}>Descrição</Text>
             <TextInput
               style={[styles.input, styles.textArea]}
@@ -257,80 +228,116 @@ const EditProject = () => {
             />
           </View>
 
-          {renderDatePicker(
-            "Data de Início",
-            projetoEditado.inicio,
-            (date) => handleDateChange("inicio", date),
-            new Date()
-          )}
-
-          {renderDatePicker(
-            "Data de Término",
-            projetoEditado.termino,
-            (date) => handleDateChange("termino", date),
-            projetoEditado.inicio
-          )}
-
-          {renderDatePicker(
-            "Previsão de Conclusão",
-            projetoEditado.previsaoConclusao,
-            (date) => handleDateChange("previsaoConclusao", date),
-            projetoEditado.inicio
-          )}
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.label}>Responsável</Text>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Data de Início *</Text>
             <TextInput
               style={styles.input}
-              value={projetoEditado.responsavel_uuid}
+              value={projetoEditado.inicio}
+              onChangeText={(text) => handleDataChange(text, "inicio")}
+              placeholder="DD/MM/AAAA"
+              keyboardType="numeric"
+              maxLength={10}
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Data de Término</Text>
+            <TextInput
+              style={styles.input}
+              value={projetoEditado.termino}
+              onChangeText={(text) => handleDataChange(text, "termino")}
+              placeholder="DD/MM/AAAA"
+              keyboardType="numeric"
+              maxLength={10}
+            />
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Previsão de Conclusão</Text>
+            <TextInput
+              style={styles.input}
+              value={projetoEditado.previsaoConclusao}
               onChangeText={(text) =>
-                setProjetoEditado((prev) => ({
-                  ...prev,
-                  responsavel_uuid: text,
-                }))
+                handleDataChange(text, "previsaoConclusao")
               }
-              placeholder="Digite o UUID do responsável"
+              placeholder="DD/MM/AAAA"
+              keyboardType="numeric"
+              maxLength={10}
             />
           </View>
 
-          <View style={styles.switchContainer}>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Responsável</Text>
+            <View style={styles.pickerContainer}>
+              <Picker
+                selectedValue={projetoEditado.responsavel_uuid}
+                onValueChange={(value) =>
+                  setProjetoEditado((prev) => ({
+                    ...prev,
+                    responsavel_uuid: value,
+                  }))
+                }
+                style={styles.picker}
+              >
+                <Picker.Item label="Selecione um responsável" value={null} />
+                {usuarios.map((usuario) => (
+                  <Picker.Item
+                    key={usuario.id}
+                    label={`${usuario.nome} ${usuario.sobrenome}`}
+                    value={usuario.id}
+                  />
+                ))}
+              </Picker>
+            </View>
+          </View>
+
+          <View style={styles.inputGroup}>
             <Text style={styles.label}>Projeto Público</Text>
-            <Switch
-              value={projetoEditado.isPublic}
-              onValueChange={(value) =>
-                setProjetoEditado((prev) => ({ ...prev, isPublic: value }))
-              }
-            />
+            <View style={styles.switchContainer}>
+              <Switch
+                value={projetoEditado.isPublic}
+                onValueChange={(value) =>
+                  setProjetoEditado((prev) => ({ ...prev, isPublic: value }))
+                }
+                trackColor={{ false: "#767577", true: "#81b0ff" }}
+                thumbColor={projetoEditado.isPublic ? "#2e7d32" : "#f4f3f4"}
+              />
+              <Text style={styles.switchLabel}>
+                {projetoEditado.isPublic ? "Sim" : "Não"}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Imagem do Projeto</Text>
+            <TouchableOpacity
+              style={styles.imageButton}
+              onPress={selecionarImagem}
+            >
+              <Text style={styles.imageButtonText}>
+                {imagem || projetoEditado.imagemBase64
+                  ? "Alterar Imagem"
+                  : "Selecionar Imagem"}
+              </Text>
+            </TouchableOpacity>
+            {(imagem || projetoEditado.imagemBase64) && (
+              <Image
+                source={{ uri: imagem || projetoEditado.imagemBase64 }}
+                style={styles.imagePreview}
+              />
+            )}
           </View>
 
           <TouchableOpacity
-            style={styles.imageButton}
-            onPress={handleSelectImage}
-          >
-            <Text style={styles.imageButtonText}>
-              {projetoEditado.imagemBase64
-                ? "Alterar Imagem"
-                : "Adicionar Imagem"}
-            </Text>
-          </TouchableOpacity>
-
-          {projetoEditado.imagemBase64 && (
-            <Image
-              source={{
-                uri: `data:image/jpeg;base64,${projetoEditado.imagemBase64}`,
-              }}
-              style={styles.imagePreview}
-            />
-          )}
-
-          <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
+            style={[styles.saveButton, loading && styles.disabledButton]}
             onPress={handleSave}
             disabled={loading}
           >
-            <Text style={styles.buttonText}>
-              {loading ? "Salvando..." : "Salvar Alterações"}
-            </Text>
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.saveButtonText}>SALVAR ALTERAÇÕES</Text>
+            )}
           </TouchableOpacity>
         </View>
       </ScrollView>
@@ -346,81 +353,89 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
-  form: {
-    padding: 20,
-  },
-  title: {
+  pageTitle: {
     fontSize: 24,
     fontWeight: "bold",
-    marginBottom: 20,
     color: "#2e7d32",
+    textAlign: "center",
+    marginVertical: 20,
   },
-  inputContainer: {
+  formContainer: {
+    padding: 20,
+  },
+  inputGroup: {
     marginBottom: 20,
   },
   label: {
     fontSize: 16,
-    marginBottom: 5,
+    fontWeight: "bold",
+    marginBottom: 8,
     color: "#333",
   },
   input: {
     borderWidth: 1,
     borderColor: "#ddd",
-    borderRadius: 5,
-    padding: 10,
+    borderRadius: 8,
+    padding: 12,
     fontSize: 16,
+    backgroundColor: "#f9f9f9",
   },
   textArea: {
     height: 100,
     textAlignVertical: "top",
   },
-  dateButton: {
+  pickerContainer: {
     borderWidth: 1,
     borderColor: "#ddd",
-    borderRadius: 5,
-    padding: 10,
-    backgroundColor: "#fff",
+    borderRadius: 8,
+    backgroundColor: "#f9f9f9",
   },
-  dateButtonText: {
+  picker: {
+    height: 50,
+  },
+  saveButton: {
+    backgroundColor: "#2e7d32",
+    padding: 15,
+    borderRadius: 8,
+    alignItems: "center",
+    marginTop: 20,
+  },
+  saveButtonText: {
+    color: "#fff",
     fontSize: 16,
-    color: "#333",
+    fontWeight: "bold",
+  },
+  disabledButton: {
+    opacity: 0.7,
   },
   switchContainer: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: 20,
+    marginTop: 8,
+  },
+  switchLabel: {
+    marginLeft: 10,
+    fontSize: 16,
+    color: "#333",
   },
   imageButton: {
-    backgroundColor: "#2e7d32",
-    padding: 10,
-    borderRadius: 5,
+    backgroundColor: "#f0f0f0",
+    padding: 12,
+    borderRadius: 8,
     alignItems: "center",
-    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: "#ddd",
   },
   imageButtonText: {
-    color: "#fff",
+    color: "#2e7d32",
     fontSize: 16,
+    fontWeight: "500",
   },
   imagePreview: {
     width: "100%",
     height: 200,
-    borderRadius: 5,
-    marginBottom: 20,
-  },
-  button: {
-    backgroundColor: "#2e7d32",
-    padding: 15,
-    borderRadius: 5,
-    alignItems: "center",
-  },
-  buttonDisabled: {
-    opacity: 0.7,
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "bold",
+    marginTop: 10,
+    borderRadius: 8,
   },
 });
 

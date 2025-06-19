@@ -6,172 +6,224 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
-  Alert, // Usamos o Alert nativo do React Native para feedback simples
+  Alert,
   ActivityIndicator,
+  Switch,
+  Platform,
   Image,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import HeaderInterno from "../components/HeaderInterno";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Picker } from "@react-native-picker/picker";
 import * as ImagePicker from "expo-image-picker";
-import { useProjetoData } from "../data/projetos/ProjetoDataContext"; // Importa o hook do seu contexto
-import Projeto from "../data/projetos/Projeto"; // Importa a classe Projeto
-import {useUsuarioData} from '../data/usuarios/UsuarioDataContext'
+import { useProjetoData } from "../data/projetos/ProjetoDataContext";
+import { useUsuarioData } from "../data/usuarios/UsuarioDataContext";
+import Projeto from "../data/projetos/Projeto";
 
 const NewProject = () => {
+  const navigation = useNavigation();
   const [loading, setLoading] = useState(false);
-  const [imagemPreviewUri, setImagemPreviewUri] = useState(null); // Estado para a URI da imagem para preview
+  const [usuarios, setUsuarios] = useState([]);
+  const [imagem, setImagem] = useState(null);
+  const { addProjeto } = useProjetoData();
+  const { usuarios: listaUsuarios } = useUsuarioData();
   const [projeto, setProjeto] = useState({
     nome: "",
     descricao: "",
-    isPublic: false, // Mantido caso você queira reintroduzir o Switch
+    isPublic: false,
     inicio: "",
     termino: "",
-    // previsaoConclusao: "", // Não usado no construtor de Projeto atualmente, considere remover ou mapear
-    responsavel: null, // Mantido caso você queira reintroduzir o Picker de responsável
+    previsaoConclusao: "",
+    responsavel_uuid: null,
     imagemBase64: null,
   });
-  const { addProjeto } = useProjetoData(); // Obtém a função addProjeto do seu contexto
-  const { currentUser } = useUsuarioData();
-  const navigation = useNavigation();
 
   useEffect(() => {
-    // Solicita permissão da galeria de mídia ao carregar o componente
-    requestMediaLibraryPermission();
+    carregarUsuarios();
+    solicitarPermissaoCamera();
   }, []);
 
-  const requestMediaLibraryPermission = async () => {
+  const carregarUsuarios = async () => {
+    try {
+      setUsuarios(listaUsuarios);
+    } catch (error) {
+      console.error("Erro ao carregar usuários:", error);
+    }
+  };
+
+  const solicitarPermissaoCamera = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
       Alert.alert(
         "Permissão necessária",
-        "Precisamos de permissão para acessar suas fotos para que você possa selecionar uma imagem para o projeto."
+        "Precisamos de permissão para acessar suas fotos."
       );
     }
   };
 
-  const selectImage = async () => {
+  const selecionarImagem = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [16, 9],
         quality: 0.5,
-        base64: true, // Solicita a imagem em base64
+        base64: true,
       });
 
       if (!result.canceled) {
-        // Formata a imagem base64 para uso em tags <img> ou envio para API
         const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
-        setImagemPreviewUri(result.assets[0].uri); // Define a URI para mostrar no preview
-        setProjeto((prev) => ({ ...prev, imagemBase64: base64Image })); // Armazena o base64 no estado do projeto
+        setImagem(result.assets[0].uri);
+        setProjeto((prev) => ({ ...prev, imagemBase64: base64Image }));
       }
     } catch (error) {
-      console.error("Erro ao selecionar imagem:", error);
-      Alert.alert("Erro", "Não foi possível selecionar a imagem.");
+      Alert.alert("Erro", "Não foi possível selecionar a imagem");
     }
   };
 
-  // Função para formatar a entrada de data (DD/MM/AAAA)
-  const formatarDataInput = (data) => {
+  const formatarData = (data) => {
     if (!data) return "";
-    const numeros = data.replace(/\D/g, ""); // Remove caracteres não numéricos
-    let formatted = "";
-    if (numeros.length > 0) {
-      formatted += numeros.substring(0, 2);
-    }
-    if (numeros.length > 2) {
-      formatted += `/${numeros.substring(2, 4)}`;
-    }
-    if (numeros.length > 4) {
-      formatted += `/${numeros.substring(4, 8)}`;
-    }
-    return formatted;
+    const numeros = data.replace(/\D/g, "");
+    if (numeros.length <= 2) return numeros;
+    if (numeros.length <= 4)
+      return `${numeros.slice(0, 2)}/${numeros.slice(2)}`;
+    return `${numeros.slice(0, 2)}/${numeros.slice(2, 4)}/${numeros.slice(
+      4,
+      8
+    )}`;
   };
 
-  // Lida com a mudança no campo de input de data
-  const handleDateChange = (valor, campo) => {
-    const dataFormatada = formatarDataInput(valor);
+  const handleDataChange = (valor, campo) => {
+    const dataFormatada = formatarData(valor);
     setProjeto((prev) => ({ ...prev, [campo]: dataFormatada }));
-  };
-
-  // Função auxiliar para converter "DD/MM/AAAA" para um objeto Date
-  const parseDateString = (dateString) => {
-    if (!dateString) return null;
-    const parts = dateString.split("/");
-    // Verifica se temos 3 partes (dia, mês, ano) e se são números
-    if (parts.length === 3 && parts.every(part => !isNaN(parseInt(part)))) {
-        const [day, month, year] = parts.map(Number);
-        const date = new Date(year, month - 1, day); // Mês é baseado em 0 (janeiro = 0)
-        // Valida se a data criada é válida
-        return isNaN(date.getTime()) ? null : date;
-    }
-    return null; // Retorna null se o formato for inválido
   };
 
   const handleSave = async () => {
     try {
-      if (!projeto.nome.trim()) {
-        Alert.alert("Erro", "Por favor, preencha o nome do projeto.");
+      if (!projeto.nome) {
+        Alert.alert("Erro", "Por favor, preencha o nome do projeto");
         return;
       }
 
-      if (!projeto.inicio.trim()) {
-        Alert.alert("Erro", "Por favor, preencha a data de início.");
+      if (!projeto.inicio) {
+        Alert.alert("Erro", "Por favor, preencha a data de início");
         return;
       }
 
-      const parsedInicio = parseDateString(projeto.inicio);
-      if (!parsedInicio) {
-        Alert.alert("Erro", "Formato de Data de Início inválido. Use DD/MM/AAAA.");
-        return;
+      setLoading(true);
+      const user_id = await AsyncStorage.getItem("user_id");
+
+      if (!user_id) {
+        throw new Error("Usuário não identificado");
       }
 
-      const parsedTermino = parseDateString(projeto.termino);
-      if (projeto.termino && !parsedTermino) {
-        Alert.alert("Erro", "Formato de Data de Término inválido. Use DD/MM/AAAA.");
-        return;
-      }
-
-      setLoading(true); // Ativa o indicador de carregamento
-
-      // Cria uma nova instância da classe Projeto com os dados formatados
-      const newProjectInstance = new Projeto(
-        null, // ID 0 para novos projetos, assumindo que o ID é gerado no serviço ou backend
+      const novoProjeto = new Projeto(
+        undefined,
         projeto.nome.trim(),
         projeto.descricao?.trim() || "",
-        parsedInicio, // Data de início como objeto Date
-        parsedTermino, // Data de término como objeto Date ou null
-        "pendente", // Status inicial do projeto
-        currentUser,
-        // projeto.responsavel_uuid || null, // Descomente se você reintroduzir o responsável
-         // Placeholder se responsavel_uuid não for usado
-        projeto.imagemBase64 || null
+        projeto.inicio,
+        projeto.previsaoConclusao || null,
+        projeto.termino || null,
+        projeto.responsavel_uuid || null,
+        user_id,
+        projeto.imagemBase64 || null,
+        projeto.isPublic,
+        "pendente",
+        new Date().toISOString(),
+        new Date().toISOString(),
+        false
       );
 
-      // Chama a função addProjeto do contexto
-      const response = addProjeto(newProjectInstance);
+      const response = addProjeto(novoProjeto);
 
-      // Verifica o status da resposta do contexto (201 para sucesso de criação)
-      if (response && response.status === 201) { // <-- AQUI É A MUDANÇA PRINCIPAL (200 para 201)
+      if (response.status === 201) {
         Alert.alert("Sucesso", "Projeto criado com sucesso!");
-        navigation.navigate("MyProjects"); // Navega de volta para a lista de projetos
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "MyProjects" }],
+        });
       } else {
-        // Exibe mensagem de erro se a adição falhar
-        Alert.alert(
-          "Erro",
-          response?.message || "Não foi possível adicionar o projeto. Tente novamente."
-        );
+        throw new Error(response.message || "Erro ao criar projeto");
       }
     } catch (error) {
-      console.error("Erro ao salvar projeto:", error);
+      console.error("Erro ao criar projeto:", error);
       Alert.alert(
         "Erro",
-        `Não foi possível salvar o projeto. Erro: ${error.message || "Erro desconhecido"}`
+        `Não foi possível criar o projeto. Erro: ${error.message}`
       );
     } finally {
-      setLoading(false); // Desativa o indicador de carregamento
+      setLoading(false);
     }
   };
+
+  // Função para sincronizar projetos pendentes
+  const sincronizarProjetosPendentes = async () => {
+    try {
+      const token = await AsyncStorage.getItem("token");
+      if (!token) return;
+
+      const projetosExistentes = await AsyncStorage.getItem("projetos");
+      if (!projetosExistentes) return;
+
+      const projetos = JSON.parse(projetosExistentes);
+      const projetosPendentes = projetos.filter((p) => p.status === "pendente");
+
+      for (const projeto of projetosPendentes) {
+        try {
+          const response = await axios.post(
+            "http://localhost:8080/api/projeto",
+            projeto,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          if (response.status === 200) {
+            // Atualizar status do projeto
+            const projetoAtualizado = {
+              ...projeto,
+              id: response.data.id,
+              status: "sincronizado",
+            };
+
+            // Atualizar na lista local
+            const projetosAtualizados = projetos.map((p) =>
+              p.nome === projeto.nome ? projetoAtualizado : p
+            );
+
+            await AsyncStorage.setItem(
+              "projetos",
+              JSON.stringify(projetosAtualizados)
+            );
+            console.log(`Projeto ${projeto.nome} sincronizado com sucesso!`);
+          }
+        } catch (error) {
+          console.error(`Erro ao sincronizar projeto ${projeto.nome}:`, error);
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao sincronizar projetos:", error);
+    }
+  };
+
+  // Adicionar useEffect para sincronização periódica
+  useEffect(() => {
+    const sincronizarPeriodicamente = async () => {
+      await sincronizarProjetosPendentes();
+    };
+
+    // Sincronizar a cada 5 minutos
+    const intervalo = setInterval(sincronizarPeriodicamente, 5 * 60 * 1000);
+
+    // Sincronizar também quando o componente montar
+    sincronizarPeriodicamente();
+
+    return () => clearInterval(intervalo);
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -179,7 +231,6 @@ const NewProject = () => {
       <ScrollView style={styles.content}>
         <Text style={styles.pageTitle}>CRIAR PROJETO</Text>
         <View style={styles.formContainer}>
-          {/* Campo Nome do Projeto */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Nome do Projeto *</Text>
             <TextInput
@@ -192,7 +243,6 @@ const NewProject = () => {
             />
           </View>
 
-          {/* Campo Descrição */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Descrição</Text>
             <TextInput
@@ -207,34 +257,44 @@ const NewProject = () => {
             />
           </View>
 
-          {/* Campo Data de Início */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Data de Início *</Text>
             <TextInput
               style={styles.input}
               value={projeto.inicio}
-              onChangeText={(text) => handleDateChange(text, "inicio")}
+              onChangeText={(text) => handleDataChange(text, "inicio")}
               placeholder="DD/MM/AAAA"
               keyboardType="numeric"
               maxLength={10}
             />
           </View>
 
-          {/* Campo Data de Término */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Data de Término</Text>
             <TextInput
               style={styles.input}
               value={projeto.termino}
-              onChangeText={(text) => handleDateChange(text, "termino")}
+              onChangeText={(text) => handleDataChange(text, "termino")}
               placeholder="DD/MM/AAAA"
               keyboardType="numeric"
               maxLength={10}
             />
           </View>
 
-          {/* Seções comentadas para "Responsável" e "Projeto Público" - descomente se for usar */}
-          {/*
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Previsão de Conclusão</Text>
+            <TextInput
+              style={styles.input}
+              value={projeto.previsaoConclusao}
+              onChangeText={(text) =>
+                handleDataChange(text, "previsaoConclusao")
+              }
+              placeholder="DD/MM/AAAA"
+              keyboardType="numeric"
+              maxLength={10}
+            />
+          </View>
+
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Responsável</Text>
             <View style={styles.pickerContainer}>
@@ -246,7 +306,7 @@ const NewProject = () => {
                 style={styles.picker}
               >
                 <Picker.Item label="Selecione um responsável" value={null} />
-                {usuarios.map((usuario) => ( // 'usuarios' array precisa ser definido e populado
+                {usuarios.map((usuario) => (
                   <Picker.Item
                     key={usuario.uuid}
                     label={`${usuario.nome} ${usuario.sobrenome}`}
@@ -273,25 +333,22 @@ const NewProject = () => {
               </Text>
             </View>
           </View>
-          */}
 
-          {/* Seleção e Preview de Imagem */}
           <View style={styles.inputGroup}>
             <Text style={styles.label}>Imagem do Projeto</Text>
             <TouchableOpacity
               style={styles.imageButton}
-              onPress={selectImage}
+              onPress={selecionarImagem}
             >
               <Text style={styles.imageButtonText}>
-                {imagemPreviewUri ? "Alterar Imagem" : "Selecionar Imagem"}
+                {imagem ? "Alterar Imagem" : "Selecionar Imagem"}
               </Text>
             </TouchableOpacity>
-            {imagemPreviewUri && (
-              <Image source={{ uri: imagemPreviewUri }} style={styles.imagePreview} />
+            {imagem && (
+              <Image source={{ uri: imagem }} style={styles.imagePreview} />
             )}
           </View>
 
-          {/* Botão Salvar/Criar Projeto */}
           <TouchableOpacity
             style={[styles.saveButton, loading && styles.disabledButton]}
             onPress={handleSave}

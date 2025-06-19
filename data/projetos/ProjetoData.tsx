@@ -66,7 +66,6 @@ class ProjetoData {
         }
         const lastProjeto = this.projetos[this.projetos.length - 1];
         return lastProjeto.id, 10; // Retorna o ID do último projeto
-        
     }
 
     add(projeto: Projeto): Message<Projeto> {

@@ -14,11 +14,11 @@ import CampoApi from "../functions/api/CampoApi";
 import ColetaApi from "../functions/api/ColetaApi";
 import HeaderInterno from "../components/HeaderInterno";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useProjetoData } from "../data/projetos/ProjetoDataContext";
 
 const ProjectScreen = () => {
   const navigation = useNavigation();
-  const route = useRoute();
-  const { projeto } = route.params;
+  const { currentProjeto } = useProjetoData();
 
   const [campos, setCampos] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -211,7 +211,7 @@ const ProjectScreen = () => {
                 <Text style={styles.infoLabel}>DATA DE INÍCIO</Text>
                 <View style={styles.infoBox}>
                   <Text style={styles.infoValue}>
-                    {formatDate(projeto.inicio)}
+                    {currentProjeto.dataInicio}
                   </Text>
                 </View>
               </View>
@@ -219,7 +219,7 @@ const ProjectScreen = () => {
                 <Text style={styles.infoLabel}>PREVISÃO DE CONCLUSÃO</Text>
                 <View style={styles.infoBox}>
                   <Text style={styles.infoValue}>
-                    {formatDate(projeto.termino)}
+                    {currentProjeto.dataFim}
                   </Text>
                 </View>
               </View>
@@ -240,17 +240,18 @@ const ProjectScreen = () => {
             <View style={styles.fullWidthRow}>
               <Text style={styles.infoLabel}>DESCRIÇÃO</Text>
               <View style={styles.infoBox}>
-                <Text style={styles.infoValue}>{projeto.descricao}</Text>
+                <Text style={styles.infoValue}>{currentProjeto.descricao}</Text>
               </View>
             </View>
             <View style={styles.fullWidthRow}>
               <Text style={styles.infoLabel}>RESPONSÁVEL</Text>
               <View style={styles.infoBox}>
-                <Text style={styles.infoValue}>{projeto.responsavel}</Text>
+                <Text style={styles.infoValue}>{currentProjeto.responsavel.nome}</Text>
               </View>
             </View>
           </View>
           <View style={styles.projectImageContainer}>
+            {console.log(currentProjeto)}
             <Image
               source={require("../assets/images/sem-imagem.webp")}
               style={styles.projectImage}

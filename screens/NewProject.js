@@ -15,6 +15,7 @@ import HeaderInterno from "../components/HeaderInterno";
 import * as ImagePicker from "expo-image-picker";
 import { useProjetoData } from "../data/projetos/ProjetoDataContext"; // Importa o hook do seu contexto
 import Projeto from "../data/projetos/Projeto"; // Importa a classe Projeto
+import {useUsuarioData} from '../data/usuarios/UsuarioDataContext'
 
 const NewProject = () => {
   const [loading, setLoading] = useState(false);
@@ -26,10 +27,11 @@ const NewProject = () => {
     inicio: "",
     termino: "",
     // previsaoConclusao: "", // Não usado no construtor de Projeto atualmente, considere remover ou mapear
-    responsavel_uuid: null, // Mantido caso você queira reintroduzir o Picker de responsável
+    responsavel: null, // Mantido caso você queira reintroduzir o Picker de responsável
     imagemBase64: null,
   });
   const { addProjeto } = useProjetoData(); // Obtém a função addProjeto do seu contexto
+  const { currentUser } = useUsuarioData();
   const navigation = useNavigation();
 
   useEffect(() => {
@@ -134,19 +136,20 @@ const NewProject = () => {
 
       // Cria uma nova instância da classe Projeto com os dados formatados
       const newProjectInstance = new Projeto(
-        0, // ID 0 para novos projetos, assumindo que o ID é gerado no serviço ou backend
+        null, // ID 0 para novos projetos, assumindo que o ID é gerado no serviço ou backend
         projeto.nome.trim(),
         projeto.descricao?.trim() || "",
         parsedInicio, // Data de início como objeto Date
         parsedTermino, // Data de término como objeto Date ou null
         "pendente", // Status inicial do projeto
+        currentUser,
         // projeto.responsavel_uuid || null, // Descomente se você reintroduzir o responsável
-        null, // Placeholder se responsavel_uuid não for usado
+         // Placeholder se responsavel_uuid não for usado
         projeto.imagemBase64 || null
       );
 
       // Chama a função addProjeto do contexto
-      const response = await addProjeto(newProjectInstance);
+      const response = addProjeto(newProjectInstance);
 
       // Verifica o status da resposta do contexto (201 para sucesso de criação)
       if (response && response.status === 201) { // <-- AQUI É A MUDANÇA PRINCIPAL (200 para 201)

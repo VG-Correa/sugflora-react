@@ -14,6 +14,7 @@ import { Client } from "@stomp/stompjs";
 import { useColetaNotifications } from "../data/hooks/useColetaNotifications";
 
 const Notificacoes = () => {
+  return ;
   const [modalVisible, setModalVisible] = useState(false);
   const [stompClient, setStompClient] = useState(null);
   const {

@@ -17,13 +17,13 @@ export const NotificationProvider = ({ children }) => {
   return (
     <NotificationContext.Provider value={{ showNotification }}>
       {children}
-      {notification && (
+      {/* {notification && (
         <NotificationComponent
           message={notification.message}
           duration={notification.duration}
           onClose={hideNotification}
         />
-      )}
+      )} */}
     </NotificationContext.Provider>
   );
 };

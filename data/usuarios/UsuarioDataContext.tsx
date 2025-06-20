@@ -49,12 +49,12 @@ interface UsuarioDataProviderProps {
 export const UsuarioDataProvider: React.FC<UsuarioDataProviderProps> = ({
   children,
 }) => {
-  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
+  
   // Usar uma instância única do UsuarioData
   const [usuarioData] = useState(() => new UsuarioData());
+  const [usuarios, setUsuarios] = useState<Usuario[]>(usuarioData.getAll().data || []);
   const persistenceService = PersistenceService.getInstance();
   const cacheService = CacheService.getInstance();
   const syncService = SyncService.getInstance();
@@ -311,8 +311,10 @@ export const UsuarioDataProvider: React.FC<UsuarioDataProviderProps> = ({
   ): Promise<{ status: number; data?: any; message?: string }> => {
     try {
       // Buscar usuário no estado local
+      console.log("Tentando fazer login com:", username, password);
+      console.log("Usuários no estado local:", usuarios);
       const usuario = usuarios.find((u) => u.username === username);
-
+      console.log("Usuário encontrado:", usuario);
       if (usuario) {
         if (usuario.senha === password) {
           return {

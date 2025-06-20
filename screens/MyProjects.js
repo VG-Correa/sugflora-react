@@ -37,9 +37,9 @@ const MyProjects = () => {
         throw new Error("Usuário não autenticado");
       }
 
-      console.log("Buscando projetos para o usuário:", user_id);
-      const response = getProjetosByUsuarioDono(user_id);
-
+      console.log("Buscando projetos para o usuário:", Number(user_id));
+      const response = getProjetosByUsuarioDono(Number(user_id));
+      console.log("Resposta da API:", response);
       if (response.status === 200 && response.data) {
         console.log("Projetos encontrados:", response.data);
         setProjetos(response.data);

@@ -4,6 +4,12 @@ import Message from "../../Messages/Message";
 class CampoData {
   private campos: Campo[] = [];
 
+  constructor() {
+    this.campos.push(
+      new Campo(1, "Campo 1", "Descrição do Campo 1", "2023-01-01T00:00:00Z", "2023-01-02T00:00:00Z", "Rua tal","Ferraz", "SP", "Brasil", 1, 1, "2023-01-03T00:00:00Z", "usuario_1", false),
+    )
+  }
+
   public getAll(): Message<Campo[]> {
     const camposAtivos = this.campos.filter((campo) => !campo.deleted);
     if (camposAtivos.length > 0) {
@@ -22,7 +28,7 @@ class CampoData {
     }
   }
 
-  public getByUsuarioId(usuario_id: string): Message<Campo[]> {
+  public getByUsuarioId(usuario_id: number): Message<Campo[]> {
     const campos = this.campos.filter(
       (campo) => campo.usuario_id === usuario_id && !campo.deleted
     );

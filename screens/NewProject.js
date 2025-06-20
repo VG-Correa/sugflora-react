@@ -24,35 +24,17 @@ import Projeto from "../data/projetos/Projeto";
 import DatePicker from "../components/DatePicker";
 
 const NewProject = () => {
+
   const navigation = useNavigation();
   const [loading, setLoading] = useState(false);
-  const [usuarios, setUsuarios] = useState([]);
   const [imagem, setImagem] = useState(null);
-  const { addProjeto } = useProjetoData();
-  const { usuarios: listaUsuarios } = useUsuarioData();
-  const [projeto, setProjeto] = useState({
-    nome: "",
-    descricao: "",
-    isPublic: false,
-    inicio: null,
-    termino: null,
-    previsaoConclusao: null,
-    responsavel_uuid: null,
-    imagemBase64: null,
-  });
-
+  const { addProjeto, projetos } = useProjetoData();
+  const { usuarios } = useUsuarioData();
+  const [projeto, setProjeto] = useState(new Projeto());
+  
   useEffect(() => {
-    carregarUsuarios();
     solicitarPermissaoCamera();
   }, []);
-
-  const carregarUsuarios = async () => {
-    try {
-      setUsuarios(listaUsuarios);
-    } catch (error) {
-      console.error("Erro ao carregar usuários:", error);
-    }
-  };
 
   const solicitarPermissaoCamera = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -120,29 +102,17 @@ const NewProject = () => {
         throw new Error("Usuário não identificado");
       }
 
-      const novoProjeto = new Projeto(
-        undefined,
-        projeto.nome.trim(),
-        projeto.descricao?.trim() || "",
-        projeto.inicio ? projeto.inicio.toISOString().split("T")[0] : null,
-        projeto.previsaoConclusao
-          ? projeto.previsaoConclusao.toISOString().split("T")[0]
-          : null,
-        projeto.termino ? projeto.termino.toISOString().split("T")[0] : null,
-        projeto.responsavel_uuid || null,
-        user_id,
-        projeto.imagemBase64 || null,
-        projeto.isPublic,
-        "pendente",
-        new Date().toISOString(),
-        new Date().toISOString(),
-        false
-      );
+      console.log("Usuário ID:", user_id);
+      projeto.usuario_dono_id = user_id;
+      console.log("Dados do projeto:", projeto);
 
-      const response = addProjeto(novoProjeto);
+      const response = addProjeto(projeto);
+      console.log("Resposta da API:", response);
 
       if (response.status === 201) {
         Alert.alert("Sucesso", "Projeto criado com sucesso!");
+        console.log("Projeto criado:", response.data);
+        console.log("Projetos: ", projetos)
         navigation.reset({
           index: 0,
           routes: [{ name: "MyProjects" }],
@@ -279,6 +249,7 @@ const NewProject = () => {
                   ? `Data selecionada: ${projeto.inicio.toLocaleDateString()}`
                   : "Nenhuma data selecionada"}
               </Text>
+             
               <DatePicker
                 value={projeto.inicio}
                 onChange={(date) =>
@@ -318,23 +289,23 @@ const NewProject = () => {
                 <Picker
                   selectedValue={projeto.responsavel_uuid}
                   onValueChange={(value) =>
-                    setProjeto((prev) => ({ ...prev, responsavel_uuid: value }))
+                    setProjeto((prev) => ({ ...prev, responsavel_id: value }))
                   }
                   style={styles.picker}
                 >
                   <Picker.Item label="Selecione um responsável" value={null} />
                   {usuarios.map((usuario) => (
                     <Picker.Item
-                      key={usuario.uuid}
+                      key={usuario.id}
                       label={`${usuario.nome} ${usuario.sobrenome}`}
-                      value={usuario.uuid}
+                      value={usuario.id}
                     />
                   ))}
                 </Picker>
               </View>
             </View>
 
-            <View style={styles.inputGroup}>
+            {/* <View style={styles.inputGroup}>
               <Text style={styles.label}>Projeto Público</Text>
               <View style={styles.switchContainer}>
                 <Switch
@@ -349,7 +320,7 @@ const NewProject = () => {
                   {projeto.isPublic ? "Sim" : "Não"}
                 </Text>
               </View>
-            </View>
+            </View> */}
 
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Imagem do Projeto</Text>

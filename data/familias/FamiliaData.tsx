@@ -4,6 +4,16 @@ import Message from "../../Messages/Message";
 class FamiliaData {
   private familias: Familia[] = [];
 
+  constructor() {
+
+    this.familias.push(
+      new Familia(1, "Fabaceae", "Uma planta leguminosa", "2025-06-20T00:00:00Z", "2025-06-20T00:00:00Z", false),
+      new Familia(2, "Poaceae", "Uma planta gramínea", "2025-06-20T00:00:00Z", "2025-06-20T00:00:00Z", false),
+      new Familia(3, "Asteraceae", "Uma planta herbácea", "2025-06-20T00:00:00Z", "2025-06-20T00:00:00Z", false)
+    );
+
+  }
+
   public getAll(): Message<Familia[]> {
     const familiasAtivas = this.familias.filter((familia) => !familia.deleted);
     if (familiasAtivas.length > 0) {

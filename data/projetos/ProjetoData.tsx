@@ -6,6 +6,9 @@ class ProjetoData {
 
   constructor() {
     // Inicialização com projetos de exemplo se necessário
+    this.projetos.push(
+      new Projeto(1, "Projeto 1", "Descrição do Projeto 1", Date.now().toString(), Date.now().toString(), Date.now().toString(),1,1,null,"Ativo",Date.now().toString(),Date.now().toString(), false),
+    )
   }
 
   getLastId(): number {
@@ -28,10 +31,13 @@ class ProjetoData {
     }
   }
 
-  public getByUsuarioDono(usuario_dono_uuid: string): Message<Projeto[]> {
+  public getByUsuarioDono(usuario_dono_id: number): Message<Projeto[]> {
+    // console.log("Buscando projetos para o usuário:", usuario_dono_id);
+    // console.log("Projetos disponíveis:", this.projetos);
+
     const projetos = this.projetos.filter(
       (projeto) =>
-        projeto.usuario_dono_uuid === usuario_dono_uuid && !projeto.deleted
+        projeto.usuario_dono_id === usuario_dono_id && !projeto.deleted
     );
     if (projetos.length > 0) {
       return new Message(200, "Projetos localizados", projetos);

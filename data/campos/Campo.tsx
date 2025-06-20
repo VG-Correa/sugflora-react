@@ -9,7 +9,7 @@ class Campo {
   estado: string;
   pais: string;
   projeto_id: number;
-  usuario_id: string;
+  usuario_id: number;
   created_at: string;
   updated_at: string;
   deleted: boolean;
@@ -25,7 +25,7 @@ class Campo {
     estado: string,
     pais: string,
     projeto_id: number,
-    usuario_id: string,
+    usuario_id: number,
     created_at: string,
     updated_at: string,
     deleted: boolean = false

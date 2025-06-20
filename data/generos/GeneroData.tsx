@@ -4,6 +4,23 @@ import Message from "../../Messages/Message";
 class GeneroData {
   private generos: Genero[] = [];
 
+  constructor() {
+    this.generos.push(
+      // Gêneros da Fabaceae
+      new Genero(1, "Phaseolus", 1, "Gênero de feijões do Novo Mundo", "2025-06-20T00:00:00Z", "2025-06-20T00:00:00Z", false),
+      new Genero(2, "Mimosa", 1, "Gênero com folhas sensíveis", "2025-06-20T00:00:00Z", "2025-06-20T00:00:00Z", false),
+      new Genero(3, "Acacia", 1, "Gênero de árvores tropicais", "2025-06-20T00:00:00Z", "2025-06-20T00:00:00Z", false),
+
+      // Gêneros da Poaceae
+      new Genero(4, "Poa", 2, "Gênero de gramíneas (bluegrass)", "2025-06-20T00:00:00Z", "2025-06-20T00:00:00Z", false),
+      new Genero(5, "Bromus", 2, "Gênero de gramíneas brome", "2025-06-20T00:00:00Z", "2025-06-20T00:00:00Z", false),
+      new Genero(6, "Festuca", 2, "Gênero de festucas (fescues)", "2025-06-20T00:00:00Z", "2025-06-20T00:00:00Z", false),
+
+      // Gênero da Asteraceae
+      new Genero(7, "Bellis", 3, "Gênero das margaridas", "2025-06-20T00:00:00Z", "2025-06-20T00:00:00Z", false)
+    );
+  }
+
   public getAll(): Message<Genero[]> {
     const generosAtivos = this.generos.filter((genero) => !genero.deleted);
     if (generosAtivos.length > 0) {

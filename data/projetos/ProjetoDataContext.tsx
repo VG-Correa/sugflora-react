@@ -12,7 +12,7 @@ import Message from "../../Messages/Message";
 interface ProjetoContextType {
   projetos: Projeto[];
   getProjetoById: (id: number) => Message<Projeto>;
-  getProjetosByUsuarioDono: (usuario_dono_uuid: string) => Message<Projeto[]>;
+  getProjetosByUsuarioDono: (usuario_dono_id: number) => Message<Projeto[]>;
   addProjeto: (projeto: Projeto) => Message<Projeto>;
   updateProjeto: (projeto: Projeto) => Message<Projeto>;
   deleteProjeto: (id: number) => Message<boolean>;
@@ -48,17 +48,21 @@ export const ProjetoDataProvider = ({
   );
 
   const getProjetosByUsuarioDono = useCallback(
-    (usuario_dono_uuid: string): Message<Projeto[]> => {
-      return projetoService.getByUsuarioDono(usuario_dono_uuid);
+    (usuario_dono_id: number): Message<Projeto[]> => {
+      return projetoService.getByUsuarioDono(usuario_dono_id);
     },
     [projetoService]
   );
 
   const addProjeto = useCallback(
     (projeto: Projeto): Message<Projeto> => {
+      console.log("Adicionando projeto:", projeto);
       const result = projetoService.add(projeto);
+      console.log("##################################")
+      console.log("Resultado da adição:", result);
+      console.log("##################################")
       if (result.status === 201 && result.data) {
-        setProjetos([...projetoService.getAll().data!]);
+        setProjetos(projetoService.getAll().data);
       }
       return result;
     },

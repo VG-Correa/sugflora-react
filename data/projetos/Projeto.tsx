@@ -5,10 +5,10 @@ class Projeto {
   inicio: string;
   previsaoConclusao: string | null;
   termino: string | null;
-  responsavel_uuid: string | null;
-  usuario_dono_uuid: string;
+  responsavel_id: number | null;
+  usuario_dono_id: number;
   imagemBase64: string | null;
-  status: string;
+  status: "Ativo" | "Inativo" | "Concluído" | "Cancelado" = "Ativo";
   created_at: string;
   updated_at: string;
   deleted: boolean;
@@ -20,10 +20,10 @@ class Projeto {
     inicio: string,
     previsaoConclusao: string | null,
     termino: string | null,
-    responsavel_uuid: string | null,
-    usuario_dono_uuid: string,
+    responsavel_id: number | null,
+    usuario_dono_id: number,
     imagemBase64: string | null,
-    status: string,
+    status: "Ativo" | "Inativo" | "Concluído" | "Cancelado" = "Ativo",
     created_at: string,
     updated_at: string,
     deleted: boolean = false
@@ -34,8 +34,8 @@ class Projeto {
     this.inicio = inicio;
     this.previsaoConclusao = previsaoConclusao;
     this.termino = termino;
-    this.responsavel_uuid = responsavel_uuid;
-    this.usuario_dono_uuid = usuario_dono_uuid;
+    this.responsavel_id = responsavel_id;
+    this.usuario_dono_id = usuario_dono_id;
     this.imagemBase64 = imagemBase64;
     this.status = status;
     this.created_at = created_at;

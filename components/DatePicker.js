@@ -40,7 +40,7 @@ const DatePicker = ({
   };
 
   return (
-    <View style={[styles.container, style]}>
+    <View style={[styles.container]}>
       {label && <Text style={styles.label}>{label}</Text>}
 
       <TouchableOpacity
@@ -82,47 +82,60 @@ const DatePicker = ({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 15,
+    marginBottom: 18,
   },
   label: {
     fontSize: 16,
-    fontWeight: "600",
-    color: "#333",
+    fontWeight: "700",
+    color: "#2e7d32",
     marginBottom: 8,
+    letterSpacing: 0.5,
   },
   input: {
-    height: 48,
+    height: 52,
     backgroundColor: "#fff",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: "#ddd",
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    fontSize: 17,
+    borderWidth: 1.5,
+    borderColor: "#e0e0e0",
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.07,
+    shadowRadius: 4,
+    elevation: 2,
+    transitionProperty: "border-color, box-shadow",
+    transitionDuration: "0.2s",
   },
   inputText: {
-    fontSize: 16,
-    color: "#333",
+    fontSize: 17,
+    color: "#222",
     flex: 1,
   },
   placeholderText: {
-    color: "#999",
+    color: "#bdbdbd",
   },
   disabledInput: {
-    backgroundColor: "#f5f5f5",
-    borderColor: "#ccc",
+    backgroundColor: "#f3f3f3",
+    borderColor: "#e0e0e0",
+    opacity: 0.7,
   },
   disabledText: {
-    color: "#999",
+    color: "#bdbdbd",
   },
   hasValue: {
-    borderColor: "#2e7d32",
+    borderColor: "#388e3c",
+    shadowColor: "#388e3c",
+    shadowOpacity: 0.1,
+    elevation: 3,
   },
   calendarIcon: {
-    fontSize: 18,
-    marginLeft: 10,
+    fontSize: 22,
+    marginLeft: 14,
+    color: "#388e3c",
   },
 });
 

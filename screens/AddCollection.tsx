@@ -12,7 +12,7 @@ import {
   Platform,
   Switch,
 } from "react-native";
-import { useNavigation, useRoute } from "@react-navigation/native";
+import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
 import HeaderInterno from "../components/HeaderInterno";
 import CustomPicker from "../components/CustomPicker";
 import ImageSelector from "../components/ImageSelector";
@@ -22,28 +22,37 @@ import { useGeneroData } from "../data/generos/GeneroDataContext";
 import { useEspecieData } from "../data/especies/EspecieDataContext";
 import { useColetaData } from "../data/coletas/ColetaDataContext";
 import Coleta from "../data/coletas/Coleta";
+import Familia from "../data/familias/Familia";
+import Genero from "../data/generos/Genero";
+import Especie from "../data/especies/Especie";
+import { get } from "react-native/Libraries/TurboModule/TurboModuleRegistry";
 
 const { width } = Dimensions.get("window");
 
+type AddCollectionRouteParams = {
+  campo: any; // Substitua 'any' pelo tipo correto de 'campo'
+  projeto: any; // Substitua 'any' pelo tipo correto de 'projeto'
+};
+
 export default function AddCollection() {
   const navigation = useNavigation();
-  const route = useRoute();
-  const { campo, projeto } = route.params || {};
+  const route = useRoute<RouteProp<{ params: AddCollectionRouteParams }, 'params'>>();
+  const { campo, projeto } = route.params;
 
   const [nomeColeta, setNomeColeta] = useState("");
   const [dataColeta, setDataColeta] = useState(null);
-  const [familia, setFamilia] = useState(null);
-  const [genero, setGenero] = useState(null);
-  const [especie, setEspecie] = useState(null);
+  const [familia, setFamilia] = useState<Familia>(null);
+  const [genero, setGenero] = useState<Genero>(null);
+  const [especie, setEspecie] = useState<Especie>(null);
   const [nomeComum, setNomeComum] = useState("");
   const [observacoes, setObservacoes] = useState("");
   const [images, setImages] = useState([]);
   const [solicitaAjuda, setSolicitaAjuda] = useState(false);
 
   // Usando os contextos de dados
-  const { familias } = useFamiliaData();
-  const { generos, getGenerosByFamilia } = useGeneroData();
-  const { especies, getEspeciesByGenero } = useEspecieData();
+  const { familias, getFamiliaById } = useFamiliaData();
+  const { generos, getGenerosByFamilia, getGeneroById} = useGeneroData();
+  const { especies, getEspeciesByGenero, getEspecieById } = useEspecieData();
   const { addColeta } = useColetaData();
 
   const toISODate = (date) => {
@@ -116,20 +125,65 @@ export default function AddCollection() {
 
   // Sincroniza família e gênero quando espécie é alterada
   useEffect(() => {
+    console.log("Verificando sincronização de família e gênero com a espécie:", especie);
     if (!especie) return;
-
-    if (especie.genero?.id !== genero?.id) {
-      setGenero(especie.genero);
+    
+    if (especie && genero && especie.genero_id !== genero?.id) {
+      setGenero(getGeneroById(especie.genero_id).data);
     }
 
-    if (especie.genero?.familia?.id !== familia?.id) {
-      setFamilia(especie.genero.familia);
+    if (genero  && familia && genero.familia_id !== familia?.id) {
+      setFamilia(getFamiliaById(genero.familia_id).data);
     }
-  }, [especie]);
+  }, [especie, genero, familia, getGeneroById, getFamiliaById]);
+
+
+  const handleFamiliaSelect = (item) => {
+    if (!item || item.id === 0) {
+      setFamilia(null);
+      setGenero(null);
+      setEspecie(null);
+      return;
+    }
+
+    setFamilia(getFamiliaById(item.id).data);
+    if (genero && genero.familia_id !== item.id) {
+      setGenero(null); // Reseta gênero se a família selecionada não corresponder ao atual
+      setEspecie(null); // Reseta espécie também
+    }
+  }
+
+  const handleGeneroSelect = (item) => {
+    if (!item || item.id === 0) {
+      setGenero(null);
+      setEspecie(null);
+      return;
+    }
+    const gen = getGeneroById(item.id).data;
+    setGenero(gen);
+    const fam = getFamiliaById(gen.familia_id).data; 
+    setFamilia(fam);
+
+    if (especie && especie.genero_id !== item.id) {
+      setEspecie(null); // Reseta espécie se o gênero selecionado não corresponder ao atual
+    }
+  }
 
   const handleEspecieSelect = (item) => {
-    setEspecie(item);
-  };
+    console.log("Selecionando espécie:", item);
+    const esp = getEspecieById(item.id).data;
+    const gen = getGeneroById(esp.genero_id).data;
+    const fam = getFamiliaById(gen.familia_id).data;
+
+    if (familia?.id !== fam.id) {
+      setFamilia(fam);
+    }
+    if (genero?.id !== gen.id) {
+      setGenero(gen);
+    }
+    setEspecie(esp);
+    console.log("Espécie selecionada:", esp);
+  }; 
 
   const saveCollection = async () => {
     // Valida a data antes de enviar
@@ -173,7 +227,7 @@ export default function AddCollection() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <HeaderInterno />
+      <HeaderInterno onLogout={undefined} />
       <KeyboardAvoidingView
         style={styles.keyboardAvoidingView}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -215,8 +269,7 @@ export default function AddCollection() {
             style={styles.input}
             placeholder="Data da coleta"
             value={dataColeta}
-            onChange={setDataColeta}
-          />
+            onChange={setDataColeta} label={undefined} minimumDate={undefined} maximumDate={undefined}          />
 
           <TextInput
             style={styles.input}
@@ -235,33 +288,60 @@ export default function AddCollection() {
           />
 
           <CustomPicker
-            items={familias.map((f) => ({ id: f.id, label: f.nome }))}
+            items={[{
+              id: 0,
+              label: "Selecione a família primeiro",
+            }].concat(
+              familias.map((f) => {
+                return f.deleted === false ? {
+                  id: f.id,
+                  label: f.nome,
+                } : null;
+              }).filter(Boolean)) // Remove itens nulos
+            }
             placeholder="Selecione a família"
-            searchable
             value={familia?.id}
-            onChange={setFamilia}
-          />
+            onChange={handleFamiliaSelect} style={undefined}/>
 
           <CustomPicker
-            items={generos.map((g) => ({ id: g.id, label: g.nome }))}
+            items={ [{
+              id: 0,
+              label: "Selecione o genero",
+            }].concat(
+              generos.map((g) => {
+                const item = {
+                  id: g.id,
+                  label: g.nome,
+                }
+
+                if (!familia) return item;
+
+                return g.deleted === false && g.familia_id === familia?.id ? 
+                item : null;
+              }).filter(Boolean)) // Remove itens nulos
+            }
             placeholder="Selecione o gênero"
-            searchable
             value={genero?.id}
-            onChange={setGenero}
-          />
+            onChange={handleGeneroSelect} style={undefined}          />
 
           <CustomPicker
-            items={especies.map((e) => ({
-              id: e.id,
-              label: e.nome,
-              genero: e.genero,
-              familia: e.genero.familia,
-            }))}
+            items={[{
+              id: 0,
+              label: "Selecione a espécie",
+            }].concat(
+              especies.map((e) => {
+              const item = {
+                id: e.id,
+                label: e.nome,
+              }
+              if (!genero || !familia) return item;
+              return e.deleted === false && e.genero_id === genero?.id ? 
+              item : null;}).filter(Boolean)) // Remove itens nulos
+            }
             placeholder="Selecione a espécie"
-            searchable
             value={especie?.id}
-            onChange={handleEspecieSelect}
-          />
+            onChange={handleEspecieSelect}  
+            style={undefined}/>
 
           <ImageSelector
             images={images}

@@ -274,6 +274,11 @@ const NewProject = () => {
 
             <View style={styles.inputGroup}>
               <Text style={styles.label}>Data de Início *</Text>
+              <Text style={styles.label}>
+                {projeto.inicio
+                  ? `Data selecionada: ${projeto.inicio.toLocaleDateString()}`
+                  : "Nenhuma data selecionada"}
+              </Text>
               <DatePicker
                 value={projeto.inicio}
                 onChange={(date) =>

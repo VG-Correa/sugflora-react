@@ -150,13 +150,13 @@ const HomePage = () => {
                 />
                 <TouchableOpacity
                   style={styles.actionButton}
-                  onPress={() => navigation.navigate("IdentifyPlant")}
+                  onPress={() => navigation.navigate("AjudemeAIdentificar")}
                 >
                   <Text style={styles.buttonText}>Ajude-me a identificar</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.actionButton}
-                  onPress={() => navigation.navigate("KnownPlants")}
+                  onPress={() => navigation.navigate("EuConhecoEssa")}
                 >
                   <Text style={styles.buttonText}>Eu conheço essa</Text>
                 </TouchableOpacity>

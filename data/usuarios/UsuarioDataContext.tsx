@@ -70,7 +70,7 @@ export const UsuarioDataProvider: React.FC<UsuarioDataProviderProps> = ({
       setError(null);
 
       // Tentar carregar do cache primeiro
-      const cachedUsuarios = cacheService.get("usuarios");
+      const cachedUsuarios = cacheService.get("usuarios") as Usuario[] | null;
       if (cachedUsuarios) {
         setUsuarios(
           cachedUsuarios.map(
@@ -249,9 +249,11 @@ export const UsuarioDataProvider: React.FC<UsuarioDataProviderProps> = ({
   };
 
   const getUsuariosByProjeto = (projetoId: number): Usuario[] => {
+    const usuarios = [new Usuario(0, "Exemplo", "Usuário", "exemplo", "senha", "RG", "CPF", "Endereço","","")]
+    
     // Implementar lógica para buscar usuários por projeto
     // Isso pode requerer uma relação muitos-para-muitos
-    return usuarios.filter((u) => !u.deleted);
+    return usuarios.filter((u) => !u.deleted) as Usuario[];
   };
 
   const refreshUsuarios = async (): Promise<void> => {

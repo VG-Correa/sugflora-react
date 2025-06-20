@@ -11,6 +11,8 @@ class Usuario {
   role: string;
   created_at?: string;
   updated_at?: string;
+  deleted: boolean = false;
+  deleted_at?: string;
 
   constructor(
     id: number | undefined,
@@ -38,6 +40,8 @@ class Usuario {
     this.role = role;
     this.created_at = created_at;
     this.updated_at = updated_at;
+    this.deleted = false;
+    this.deleted_at = undefined;
   }
 }
 

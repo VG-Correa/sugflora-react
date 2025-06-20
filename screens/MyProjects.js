@@ -38,13 +38,19 @@ const MyProjects = () => {
       }
 
       console.log("Buscando projetos para o usuário:", Number(user_id));
+      console.log("Tipo do user_id:", typeof Number(user_id));
       const response = getProjetosByUsuarioDono(Number(user_id));
       console.log("Resposta da API:", response);
+      console.log("Status da resposta:", response.status);
+      console.log("Dados da resposta:", response.data);
+      
       if (response.status === 200 && response.data) {
         console.log("Projetos encontrados:", response.data);
+        console.log("Quantidade de projetos:", response.data.length);
         setProjetos(response.data);
       } else {
-        throw new Error("Erro ao carregar projetos");
+        console.log("Nenhum projeto encontrado ou erro na resposta");
+        setProjetos([]);
       }
     } catch (err) {
       console.error("Erro ao carregar projetos:", err);

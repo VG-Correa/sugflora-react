@@ -36,9 +36,10 @@ export const ProjetoDataProvider = ({
   children: React.ReactNode;
 }) => {
   const projetoService = useMemo(() => new ProjetoData(), []);
-  const [projetos, setProjetos] = useState<Projeto[]>(
-    projetoService.getAll().data || []
-  );
+  const [projetos, setProjetos] = useState<Projeto[]>(() => {
+    const todosProjetos = projetoService.getAll().data;
+    return todosProjetos || [];
+  });
 
   const getProjetoById = useCallback(
     (id: number): Message<Projeto> => {
@@ -62,7 +63,8 @@ export const ProjetoDataProvider = ({
       console.log("Resultado da adição:", result);
       console.log("##################################")
       if (result.status === 201 && result.data) {
-        setProjetos(projetoService.getAll().data);
+        const todosProjetos = projetoService.getAll().data || [];
+        setProjetos(todosProjetos);
       }
       return result;
     },
@@ -73,7 +75,8 @@ export const ProjetoDataProvider = ({
     (projeto: Projeto): Message<Projeto> => {
       const result = projetoService.update(projeto);
       if (result.status === 200 && result.data) {
-        setProjetos([...projetoService.getAll().data!]);
+        const todosProjetos = projetoService.getAll().data || [];
+        setProjetos(todosProjetos);
       }
       return result;
     },
@@ -84,7 +87,8 @@ export const ProjetoDataProvider = ({
     (id: number): Message<boolean> => {
       const result = projetoService.delete(id);
       if (result.status === 200) {
-        setProjetos([...projetoService.getAll().data!]);
+        const todosProjetos = projetoService.getAll().data || [];
+        setProjetos(todosProjetos);
       }
       return result;
     },

@@ -30,7 +30,11 @@ const NewProject = () => {
   const [imagem, setImagem] = useState(null);
   const { addProjeto, projetos } = useProjetoData();
   const { usuarios } = useUsuarioData();
-  const [projeto, setProjeto] = useState(new Projeto());
+  const [projeto, setProjeto] = useState(() => {
+    const novoProjeto = new Projeto();
+    console.log("Novo projeto inicializado:", novoProjeto);
+    return novoProjeto;
+  });
   
   useEffect(() => {
     solicitarPermissaoCamera();
@@ -103,16 +107,20 @@ const NewProject = () => {
       }
 
       console.log("Usuário ID:", user_id);
-      projeto.usuario_dono_id = user_id;
-      console.log("Dados do projeto:", projeto);
+      console.log("Tipo do user_id:", typeof user_id);
+      projeto.usuario_dono_id = Number(user_id);
+      console.log("Dados do projeto antes de salvar:", projeto);
+      console.log("Tipo do usuario_dono_id:", typeof projeto.usuario_dono_id);
 
       const response = addProjeto(projeto);
       console.log("Resposta da API:", response);
+      console.log("Status da resposta:", response.status);
+      console.log("Dados da resposta:", response.data);
 
       if (response.status === 201) {
         Alert.alert("Sucesso", "Projeto criado com sucesso!");
         console.log("Projeto criado:", response.data);
-        console.log("Projetos: ", projetos)
+        console.log("Projetos atuais: ", projetos);
         navigation.reset({
           index: 0,
           routes: [{ name: "MyProjects" }],
@@ -287,7 +295,7 @@ const NewProject = () => {
               <Text style={styles.label}>Responsável</Text>
               <View style={styles.pickerContainer}>
                 <Picker
-                  selectedValue={projeto.responsavel_uuid}
+                  selectedValue={projeto.responsavel_id}
                   onValueChange={(value) =>
                     setProjeto((prev) => ({ ...prev, responsavel_id: value }))
                   }

@@ -5,10 +5,8 @@ class ProjetoData {
   projetos: Projeto[] = [];
 
   constructor() {
-    // Inicialização com projetos de exemplo se necessário
-    this.projetos.push(
-      new Projeto(1, "Projeto 1", "Descrição do Projeto 1", Date.now().toString(), Date.now().toString(), Date.now().toString(),1,1,null,"Ativo",Date.now().toString(),Date.now().toString(), false),
-    )
+    // Inicialização vazia - projetos serão adicionados dinamicamente
+    console.log("ProjetoData inicializado com array vazio");
   }
 
   getLastId(): number {
@@ -32,13 +30,16 @@ class ProjetoData {
   }
 
   public getByUsuarioDono(usuario_dono_id: number): Message<Projeto[]> {
-    // console.log("Buscando projetos para o usuário:", usuario_dono_id);
-    // console.log("Projetos disponíveis:", this.projetos);
+    console.log("Buscando projetos para o usuário:", usuario_dono_id);
+    console.log("Projetos disponíveis:", this.projetos);
+    console.log("Tipos dos IDs:", this.projetos.map(p => ({ id: p.id, usuario_dono_id: p.usuario_dono_id, tipo_usuario: typeof p.usuario_dono_id })));
 
     const projetos = this.projetos.filter(
       (projeto) =>
         projeto.usuario_dono_id === usuario_dono_id && !projeto.deleted
     );
+    console.log("Projetos filtrados:", projetos);
+    
     if (projetos.length > 0) {
       return new Message(200, "Projetos localizados", projetos);
     } else {
@@ -47,11 +48,21 @@ class ProjetoData {
   }
 
   public add(projeto: Projeto): Message<Projeto> {
+    console.log("Adicionando projeto:", projeto);
+    console.log("Projetos antes da adição:", this.projetos.length);
+    
     projeto.id = this.getLastId() + 1;
     projeto.created_at = new Date().toISOString();
     projeto.updated_at = new Date().toISOString();
     projeto.deleted = false;
+    
+    console.log("Projeto após configuração:", projeto);
+    
     this.projetos.push(projeto);
+    
+    console.log("Projetos após adição:", this.projetos.length);
+    console.log("Todos os projetos:", this.projetos);
+    
     return new Message(201, "Projeto criado com sucesso", projeto);
   }
 
@@ -86,7 +97,9 @@ class ProjetoData {
   }
 
   public getAll(): Message<Projeto[]> {
+    console.log("getAll chamado - todos os projetos:", this.projetos);
     const projetosAtivos = this.projetos.filter((p) => !p.deleted);
+    console.log("Projetos ativos (não deletados):", projetosAtivos);
     return new Message(200, undefined, projetosAtivos);
   }
 

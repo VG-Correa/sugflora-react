@@ -8,6 +8,7 @@ import React, {
 import ColetaData from "./ColetaData";
 import Coleta from "./Coleta";
 import Message from "../../Messages/Message";
+import { useColetaNotifications } from "../hooks/useColetaNotifications";
 
 interface ColetaContextType {
   coletas: Coleta[];
@@ -15,7 +16,7 @@ interface ColetaContextType {
   getColetasByCampoId: (campo_id: number) => Message<Coleta[]>;
   getColetasIdentificadas: () => Message<Coleta[]>;
   getColetasNaoIdentificadas: () => Message<Coleta[]>;
-  addColeta: (coleta: Coleta) => Message<Coleta>;
+  addColeta: (coleta: Coleta) => Promise<Message<Coleta>>;
   updateColeta: (coleta: Coleta) => Message<Coleta>;
   deleteColeta: (id: number) => Message<boolean>;
   identificarColeta: (id: number, especie_id: number) => Message<Coleta>;
@@ -42,6 +43,8 @@ export const ColetaDataProvider = ({
   const [coletas, setColetas] = useState<Coleta[]>(
     coletaService.getAll().data || []
   );
+  const { adicionarNotificacaoColetaAjuda, adicionarNotificacaoColetaNova } =
+    useColetaNotifications();
 
   const getColetaById = useCallback(
     (id: number): Message<Coleta> => {
@@ -66,14 +69,31 @@ export const ColetaDataProvider = ({
   }, [coletaService]);
 
   const addColeta = useCallback(
-    (coleta: Coleta): Message<Coleta> => {
+    async (coleta: Coleta): Promise<Message<Coleta>> => {
       const result = coletaService.add(coleta);
       if (result.status === 201 && result.data) {
         setColetas([...coletaService.getAll().data!]);
+
+        // Verifica se a coleta solicita ajuda para identificação
+        if (coleta.solicita_ajuda_identificacao) {
+          // Adiciona notificação de ajuda
+          await adicionarNotificacaoColetaAjuda(result.data);
+          console.log(
+            "Notificação de ajuda adicionada para coleta:",
+            result.data.nome
+          );
+        } else {
+          // Adiciona notificação de nova coleta
+          await adicionarNotificacaoColetaNova(result.data);
+        }
       }
       return result;
     },
-    [coletaService]
+    [
+      coletaService,
+      adicionarNotificacaoColetaAjuda,
+      adicionarNotificacaoColetaNova,
+    ]
   );
 
   const updateColeta = useCallback(

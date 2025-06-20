@@ -288,7 +288,7 @@ const Home = () => {
 
             <TouchableOpacity
               style={styles.quickActionButton}
-              onPress={() => navigation.navigate("AddCollection")}
+              onPress={() => navigation.navigate("SelectProjectAndField")}
             >
               <Text style={styles.quickActionText}>+ Nova Coleta</Text>
             </TouchableOpacity>

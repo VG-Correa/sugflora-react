@@ -191,13 +191,20 @@ const MyProjects = () => {
 
         {projetos.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>Você ainda não tem projetos</Text>
+            <View style={styles.emptyIconContainer}>
+              <Text style={styles.emptyIcon}>📁</Text>
+            </View>
+            <Text style={styles.emptyTitle}>Nenhum projeto encontrado</Text>
+            <Text style={styles.emptyText}>
+              Você ainda não criou nenhum projeto. Comece criando seu primeiro
+              projeto para organizar suas coletas!
+            </Text>
             <TouchableOpacity
               style={styles.createFirstButton}
               onPress={() => navigation.navigate("NewProject")}
             >
               <Text style={styles.createFirstButtonText}>
-                Criar primeiro projeto
+                ✨ Criar primeiro projeto
               </Text>
             </TouchableOpacity>
           </View>
@@ -217,7 +224,7 @@ const MyProjects = () => {
                     {projeto.imagem && (
                       <Image
                         source={{
-                          uri: `${projetoApi.baseUrl}/${projeto.id}/imagem`,
+                          uri: projeto.imagem,
                         }}
                         style={styles.projectImage}
                       />
@@ -421,18 +428,44 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
+    minHeight: 400,
+  },
+  emptyIconContainer: {
+    backgroundColor: "#f4f4f4",
+    borderRadius: 50,
+    width: 80,
+    height: 80,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  emptyIcon: {
+    fontSize: 40,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#2e7d32",
+    marginBottom: 10,
+    textAlign: "center",
   },
   emptyText: {
-    fontSize: 18,
+    fontSize: 16,
     color: "#666",
-    marginBottom: 20,
     textAlign: "center",
+    marginBottom: 30,
+    lineHeight: 22,
   },
   createFirstButton: {
     backgroundColor: "#2e7d32",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 5,
+    paddingHorizontal: 25,
+    paddingVertical: 15,
+    borderRadius: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   createFirstButtonText: {
     color: "#fff",

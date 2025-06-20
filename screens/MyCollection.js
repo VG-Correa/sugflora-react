@@ -13,24 +13,22 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import HeaderInterno from "../components/HeaderInterno";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useCampoData } from "../data/campos/CampoDataContext";
 import { useColetaData } from "../data/coletas/ColetaDataContext";
 
 const MyCollectionsScreen = () => {
   const navigation = useNavigation();
   const screenWidth = Dimensions.get("window").width;
   const isMobile = screenWidth < 768;
-  const [campos, setCampos] = useState([]);
+  const [coletas, setColetas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Usando os contextos de dados
-  const { getCamposByUsuarioId } = useCampoData();
-  const { getByCampoId } = useColetaData();
+  // Usando o contexto de coletas
+  const { coletas: todasColetas } = useColetaData();
 
   const tableColumnSizes = isMobile
-    ? { id: 210, family: 270, genus: 230, species: 270, date: 250, field: 250 }
-    : { id: 230, family: 300, genus: 270, species: 330, date: 270, field: 300 };
+    ? { id: 80, nome: 200, campo: 150, data: 120, status: 100, acoes: 100 }
+    : { id: 100, nome: 250, campo: 200, data: 150, status: 120, acoes: 120 };
 
   const formatDate = (dateString) => {
     try {
@@ -55,7 +53,7 @@ const MyCollectionsScreen = () => {
     }
   };
 
-  async function fetchCampos() {
+  async function fetchColetas() {
     try {
       setLoading(true);
       setError(null);
@@ -72,87 +70,32 @@ const MyCollectionsScreen = () => {
         throw new Error("Usuário não identificado");
       }
 
-      // Buscar todos os campos do usuário usando o contexto
-      const camposResponse = getCamposByUsuarioId(user_id);
-      console.log(
-        "Resposta dos campos do contexto:",
-        JSON.stringify(camposResponse, null, 2)
-      );
+      // Usar as coletas do contexto
+      if (todasColetas && todasColetas.length > 0) {
+        console.log("Coletas encontradas:", todasColetas.length);
 
-      if (camposResponse.status === 200 && camposResponse.data) {
-        console.log(
-          "Dados dos campos:",
-          JSON.stringify(camposResponse.data, null, 2)
-        );
+        // Filtrar apenas coletas ativas (não deletadas)
+        const coletasAtivas = todasColetas.filter((coleta) => !coleta.deleted);
 
-        // Buscar informações de coletas para cada campo
-        const camposComColetas = await Promise.all(
-          camposResponse.data.map(async (campo) => {
-            try {
-              const coletasResponse = getByCampoId(campo.id);
-              console.log(
-                `Coletas do campo ${campo.id}:`,
-                coletasResponse.data
-              );
+        // Formatar as coletas para exibição
+        const coletasFormatadas = coletasAtivas.map((coleta) => ({
+          ...coleta,
+          dataFormatada: formatDate(coleta.data_coleta),
+          status: coleta.identificada ? "Identificada" : "Não identificada",
+          statusColor: coleta.identificada ? "#4caf50" : "#ff9800",
+        }));
 
-              const coletas = coletasResponse.data || [];
-
-              // Contar coletas identificadas e não identificadas
-              const identificadas = coletas.filter(
-                (coleta) => coleta && coleta.identificada
-              ).length;
-              const naoIdentificadas = coletas.filter(
-                (coleta) => coleta && !coleta.identificada
-              ).length;
-
-              return {
-                ...campo,
-                totalColetas: coletas.length,
-                identificadas,
-                naoIdentificadas,
-                projetoNome: campo.projeto?.nome || "Sem projeto",
-                dataInicio: formatDate(campo.data_inicio),
-                dataTermino: campo.data_termino
-                  ? formatDate(campo.data_termino)
-                  : "Não definida",
-                endereco: `${campo.endereco}, ${campo.cidade} - ${campo.estado}, ${campo.pais}`,
-              };
-            } catch (error) {
-              console.error(
-                `Erro ao buscar coletas do campo ${campo.id}:`,
-                error
-              );
-              return {
-                ...campo,
-                totalColetas: 0,
-                identificadas: 0,
-                naoIdentificadas: 0,
-                projetoNome: campo.projeto?.nome || "Sem projeto",
-                dataInicio: formatDate(campo.data_inicio),
-                dataTermino: campo.data_termino
-                  ? formatDate(campo.data_termino)
-                  : "Não definida",
-                endereco: `${campo.endereco}, ${campo.cidade} - ${campo.estado}, ${campo.pais}`,
-              };
-            }
-          })
-        );
-
-        console.log(
-          "Campos com coletas:",
-          JSON.stringify(camposComColetas, null, 2)
-        );
-        setCampos(camposComColetas);
+        setColetas(coletasFormatadas);
       } else {
-        console.error("Resposta inválida do contexto:", camposResponse);
-        throw new Error("Erro ao carregar campos");
+        console.log("Nenhuma coleta encontrada");
+        setColetas([]);
       }
     } catch (error) {
-      console.error("Erro ao buscar campos:", error);
-      setError(error.message || "Erro ao carregar campos");
+      console.error("Erro ao buscar coletas:", error);
+      setError(error.message || "Erro ao carregar coletas");
       Alert.alert(
         "Erro",
-        "Não foi possível carregar os campos. Por favor, tente novamente."
+        "Não foi possível carregar as coletas. Por favor, tente novamente."
       );
     } finally {
       setLoading(false);
@@ -160,15 +103,15 @@ const MyCollectionsScreen = () => {
   }
 
   useEffect(() => {
-    fetchCampos();
-  }, []);
+    fetchColetas();
+  }, [todasColetas]);
 
   const handleAddCollection = () => {
-    navigation.navigate("AddCollection");
+    navigation.navigate("SelectProjectAndField");
   };
 
   const handleGenerateReport = () => {
-    console.log("Gerar relatório");
+    navigation.navigate("ReportConfiguration");
   };
 
   const handleBack = () => {
@@ -181,7 +124,7 @@ const MyCollectionsScreen = () => {
         <HeaderInterno />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#2e7d32" />
-          <Text style={styles.loadingText}>Carregando campos...</Text>
+          <Text style={styles.loadingText}>Carregando coletas...</Text>
         </View>
       </View>
     );
@@ -193,7 +136,7 @@ const MyCollectionsScreen = () => {
         <HeaderInterno />
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={fetchCampos}>
+          <TouchableOpacity style={styles.retryButton} onPress={fetchColetas}>
             <Text style={styles.buttonText}>Tentar novamente</Text>
           </TouchableOpacity>
         </View>
@@ -210,9 +153,9 @@ const MyCollectionsScreen = () => {
         style={styles.content}
         contentContainerStyle={styles.scrollContent}
       >
-        <Text style={styles.pageTitle}>MEUS CAMPOS</Text>
+        <Text style={styles.pageTitle}>MINHAS COLETAS</Text>
 
-        {/* Tabela de Campos */}
+        {/* Tabela de Coletas */}
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -228,7 +171,7 @@ const MyCollectionsScreen = () => {
               <Text
                 style={[
                   styles.tableHeaderText,
-                  { width: tableColumnSizes.family },
+                  { width: tableColumnSizes.nome },
                 ]}
               >
                 NOME
@@ -236,23 +179,23 @@ const MyCollectionsScreen = () => {
               <Text
                 style={[
                   styles.tableHeaderText,
-                  { width: tableColumnSizes.genus },
+                  { width: tableColumnSizes.campo },
                 ]}
               >
-                PROJETO
+                CAMPO
               </Text>
               <Text
                 style={[
                   styles.tableHeaderText,
-                  { width: tableColumnSizes.species },
+                  { width: tableColumnSizes.data },
                 ]}
               >
-                DATA INÍCIO
+                DATA
               </Text>
               <Text
                 style={[
                   styles.tableHeaderText,
-                  { width: tableColumnSizes.date },
+                  { width: tableColumnSizes.status },
                 ]}
               >
                 STATUS
@@ -260,83 +203,72 @@ const MyCollectionsScreen = () => {
               <Text
                 style={[
                   styles.tableHeaderText,
-                  { width: tableColumnSizes.field },
+                  { width: tableColumnSizes.acoes },
                 ]}
               >
                 AÇÕES
               </Text>
             </View>
 
-            {campos.length === 0 ? (
+            {coletas.length === 0 ? (
               <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>Nenhum campo encontrado</Text>
+                <Text style={styles.emptyText}>Nenhuma coleta encontrada</Text>
               </View>
             ) : (
-              campos.map((campo) => (
-                <View key={campo.id} style={styles.tableRow}>
+              coletas.map((coleta) => (
+                <View key={coleta.id} style={styles.tableRow}>
                   <Text
                     style={[styles.tableCell, { width: tableColumnSizes.id }]}
                   >
-                    {campo.id}
+                    {coleta.id}
+                  </Text>
+                  <Text
+                    style={[styles.tableCell, { width: tableColumnSizes.nome }]}
+                  >
+                    {coleta.nome}
                   </Text>
                   <Text
                     style={[
                       styles.tableCell,
-                      { width: tableColumnSizes.family },
+                      { width: tableColumnSizes.campo },
                     ]}
                   >
-                    {campo.nome}
+                    {coleta.campo_id || "Não definido"}
+                  </Text>
+                  <Text
+                    style={[styles.tableCell, { width: tableColumnSizes.data }]}
+                  >
+                    {coleta.dataFormatada}
                   </Text>
                   <Text
                     style={[
                       styles.tableCell,
-                      { width: tableColumnSizes.genus },
+                      {
+                        width: tableColumnSizes.status,
+                        color: coleta.statusColor,
+                        fontWeight: "bold",
+                      },
                     ]}
                   >
-                    {campo.projeto?.nome || "Não definido"}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.tableCell,
-                      { width: tableColumnSizes.species },
-                    ]}
-                  >
-                    {campo.data_inicio
-                      ? (() => {
-                          try {
-                            if (campo.data_inicio.includes("T")) {
-                              const data = new Date(campo.data_inicio);
-                              return data.toLocaleDateString("pt-BR");
-                            } else if (campo.data_inicio.includes("-")) {
-                              const [ano, mes, dia] =
-                                campo.data_inicio.split("-");
-                              return `${dia}/${mes}/${ano}`;
-                            }
-                            return "Data inválida";
-                          } catch (error) {
-                            return "Data inválida";
-                          }
-                        })()
-                      : "Não definida"}
-                  </Text>
-                  <Text
-                    style={[styles.tableCell, { width: tableColumnSizes.date }]}
-                  >
-                    {campo.deleted ? "Inativo" : "Ativo"}
+                    {coleta.status}
                   </Text>
                   <View
                     style={[
                       styles.tableCell,
-                      { width: tableColumnSizes.field },
+                      { width: tableColumnSizes.acoes },
                     ]}
                   >
                     <TouchableOpacity
                       style={styles.actionButton}
                       onPress={() =>
-                        navigation.navigate("FieldScreen", { campo })
+                        navigation.navigate("ColetaScreen", {
+                          coleta: coleta,
+                          campo: { id: coleta.campo_id },
+                          projeto: null,
+                        })
                       }
                     >
-                      <Text style={styles.actionButtonText}>Abrir</Text>
+                      <Text style={styles.actionButtonText}>Ver</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -496,13 +428,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   emptyText: {
-    fontSize: 16,
     color: "#666",
+    fontSize: 16,
+    fontStyle: "italic",
   },
   actionButton: {
     backgroundColor: "#2e7d32",
-    paddingVertical: 6,
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
     borderRadius: 4,
   },
   actionButtonText: {

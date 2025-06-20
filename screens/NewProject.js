@@ -11,6 +11,7 @@ import {
   Switch,
   Platform,
   Image,
+  KeyboardAvoidingView,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import HeaderInterno from "../components/HeaderInterno";
@@ -20,6 +21,7 @@ import * as ImagePicker from "expo-image-picker";
 import { useProjetoData } from "../data/projetos/ProjetoDataContext";
 import { useUsuarioData } from "../data/usuarios/UsuarioDataContext";
 import Projeto from "../data/projetos/Projeto";
+import DatePicker from "../components/DatePicker";
 
 const NewProject = () => {
   const navigation = useNavigation();
@@ -32,9 +34,9 @@ const NewProject = () => {
     nome: "",
     descricao: "",
     isPublic: false,
-    inicio: "",
-    termino: "",
-    previsaoConclusao: "",
+    inicio: null,
+    termino: null,
+    previsaoConclusao: null,
     responsavel_uuid: null,
     imagemBase64: null,
   });
@@ -122,9 +124,11 @@ const NewProject = () => {
         undefined,
         projeto.nome.trim(),
         projeto.descricao?.trim() || "",
-        projeto.inicio,
-        projeto.previsaoConclusao || null,
-        projeto.termino || null,
+        projeto.inicio ? projeto.inicio.toISOString().split("T")[0] : null,
+        projeto.previsaoConclusao
+          ? projeto.previsaoConclusao.toISOString().split("T")[0]
+          : null,
+        projeto.termino ? projeto.termino.toISOString().split("T")[0] : null,
         projeto.responsavel_uuid || null,
         user_id,
         projeto.imagemBase64 || null,
@@ -228,140 +232,149 @@ const NewProject = () => {
   return (
     <View style={styles.container}>
       <HeaderInterno />
-      <ScrollView style={styles.content}>
-        <Text style={styles.pageTitle}>CRIAR PROJETO</Text>
-        <View style={styles.formContainer}>
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Nome do Projeto *</Text>
-            <TextInput
-              style={styles.input}
-              value={projeto.nome}
-              onChangeText={(text) =>
-                setProjeto((prev) => ({ ...prev, nome: text }))
-              }
-              placeholder="Digite o nome do projeto"
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Descrição</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              value={projeto.descricao}
-              onChangeText={(text) =>
-                setProjeto((prev) => ({ ...prev, descricao: text }))
-              }
-              placeholder="Digite a descrição do projeto"
-              multiline
-              numberOfLines={4}
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Data de Início *</Text>
-            <TextInput
-              style={styles.input}
-              value={projeto.inicio}
-              onChangeText={(text) => handleDataChange(text, "inicio")}
-              placeholder="DD/MM/AAAA"
-              keyboardType="numeric"
-              maxLength={10}
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Data de Término</Text>
-            <TextInput
-              style={styles.input}
-              value={projeto.termino}
-              onChangeText={(text) => handleDataChange(text, "termino")}
-              placeholder="DD/MM/AAAA"
-              keyboardType="numeric"
-              maxLength={10}
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Previsão de Conclusão</Text>
-            <TextInput
-              style={styles.input}
-              value={projeto.previsaoConclusao}
-              onChangeText={(text) =>
-                handleDataChange(text, "previsaoConclusao")
-              }
-              placeholder="DD/MM/AAAA"
-              keyboardType="numeric"
-              maxLength={10}
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Responsável</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={projeto.responsavel_uuid}
-                onValueChange={(value) =>
-                  setProjeto((prev) => ({ ...prev, responsavel_uuid: value }))
+      <KeyboardAvoidingView
+        style={styles.content}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+      >
+        <ScrollView
+          style={styles.scrollContent}
+          contentContainerStyle={styles.scrollContentContainer}
+          showsVerticalScrollIndicator={true}
+          keyboardShouldPersistTaps="handled"
+          nestedScrollEnabled={true}
+        >
+          <Text style={styles.pageTitle}>CRIAR PROJETO</Text>
+          <View style={styles.formContainer}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Nome do Projeto *</Text>
+              <TextInput
+                style={styles.input}
+                value={projeto.nome}
+                onChangeText={(text) =>
+                  setProjeto((prev) => ({ ...prev, nome: text }))
                 }
-                style={styles.picker}
-              >
-                <Picker.Item label="Selecione um responsável" value={null} />
-                {usuarios.map((usuario) => (
-                  <Picker.Item
-                    key={usuario.uuid}
-                    label={`${usuario.nome} ${usuario.sobrenome}`}
-                    value={usuario.uuid}
-                  />
-                ))}
-              </Picker>
-            </View>
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Projeto Público</Text>
-            <View style={styles.switchContainer}>
-              <Switch
-                value={projeto.isPublic}
-                onValueChange={(value) =>
-                  setProjeto((prev) => ({ ...prev, isPublic: value }))
-                }
-                trackColor={{ false: "#767577", true: "#81b0ff" }}
-                thumbColor={projeto.isPublic ? "#2e7d32" : "#f4f3f4"}
+                placeholder="Digite o nome do projeto"
               />
-              <Text style={styles.switchLabel}>
-                {projeto.isPublic ? "Sim" : "Não"}
-              </Text>
             </View>
-          </View>
 
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Imagem do Projeto</Text>
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Descrição</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={projeto.descricao}
+                onChangeText={(text) =>
+                  setProjeto((prev) => ({ ...prev, descricao: text }))
+                }
+                placeholder="Digite a descrição do projeto"
+                multiline
+                numberOfLines={4}
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Data de Início *</Text>
+              <DatePicker
+                value={projeto.inicio}
+                onChange={(date) =>
+                  setProjeto((prev) => ({ ...prev, inicio: date }))
+                }
+                placeholder="Selecione a data de início"
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Data de Término</Text>
+              <DatePicker
+                value={projeto.termino}
+                onChange={(date) =>
+                  setProjeto((prev) => ({ ...prev, termino: date }))
+                }
+                placeholder="Selecione a data de término"
+                minimumDate={projeto.inicio}
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Previsão de Conclusão</Text>
+              <DatePicker
+                value={projeto.previsaoConclusao}
+                onChange={(date) =>
+                  setProjeto((prev) => ({ ...prev, previsaoConclusao: date }))
+                }
+                placeholder="Selecione a previsão de conclusão"
+                minimumDate={projeto.inicio}
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Responsável</Text>
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={projeto.responsavel_uuid}
+                  onValueChange={(value) =>
+                    setProjeto((prev) => ({ ...prev, responsavel_uuid: value }))
+                  }
+                  style={styles.picker}
+                >
+                  <Picker.Item label="Selecione um responsável" value={null} />
+                  {usuarios.map((usuario) => (
+                    <Picker.Item
+                      key={usuario.uuid}
+                      label={`${usuario.nome} ${usuario.sobrenome}`}
+                      value={usuario.uuid}
+                    />
+                  ))}
+                </Picker>
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Projeto Público</Text>
+              <View style={styles.switchContainer}>
+                <Switch
+                  value={projeto.isPublic}
+                  onValueChange={(value) =>
+                    setProjeto((prev) => ({ ...prev, isPublic: value }))
+                  }
+                  trackColor={{ false: "#767577", true: "#81b0ff" }}
+                  thumbColor={projeto.isPublic ? "#2e7d32" : "#f4f3f4"}
+                />
+                <Text style={styles.switchLabel}>
+                  {projeto.isPublic ? "Sim" : "Não"}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Imagem do Projeto</Text>
+              <TouchableOpacity
+                style={styles.imageButton}
+                onPress={selecionarImagem}
+              >
+                <Text style={styles.imageButtonText}>
+                  {imagem ? "Alterar Imagem" : "Selecionar Imagem"}
+                </Text>
+              </TouchableOpacity>
+              {imagem && (
+                <Image source={{ uri: imagem }} style={styles.imagePreview} />
+              )}
+            </View>
+
             <TouchableOpacity
-              style={styles.imageButton}
-              onPress={selecionarImagem}
+              style={[styles.saveButton, loading && styles.disabledButton]}
+              onPress={handleSave}
+              disabled={loading}
             >
-              <Text style={styles.imageButtonText}>
-                {imagem ? "Alterar Imagem" : "Selecionar Imagem"}
-              </Text>
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.saveButtonText}>CRIAR PROJETO</Text>
+              )}
             </TouchableOpacity>
-            {imagem && (
-              <Image source={{ uri: imagem }} style={styles.imagePreview} />
-            )}
           </View>
-
-          <TouchableOpacity
-            style={[styles.saveButton, loading && styles.disabledButton]}
-            onPress={handleSave}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.saveButtonText}>CRIAR PROJETO</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 };
@@ -374,6 +387,13 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
+  scrollContent: {
+    flex: 1,
+  },
+  scrollContentContainer: {
+    flexGrow: 1,
+    paddingBottom: 120,
+  },
   pageTitle: {
     fontSize: 24,
     fontWeight: "bold",
@@ -383,6 +403,7 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     padding: 20,
+    paddingBottom: 40,
   },
   inputGroup: {
     marginBottom: 20,
@@ -419,7 +440,8 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 8,
     alignItems: "center",
-    marginTop: 20,
+    marginTop: 30,
+    marginBottom: 20,
   },
   saveButtonText: {
     color: "#fff",
@@ -448,15 +470,16 @@ const styles = StyleSheet.create({
     borderColor: "#ddd",
   },
   imageButtonText: {
-    color: "#2e7d32",
+    color: "#333",
     fontSize: 16,
     fontWeight: "500",
   },
   imagePreview: {
     width: "100%",
-    height: 200,
-    marginTop: 10,
+    height: 150,
     borderRadius: 8,
+    marginTop: 10,
+    resizeMode: "cover",
   },
 });
 

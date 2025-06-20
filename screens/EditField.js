@@ -13,6 +13,7 @@ import {
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import HeaderInterno from "../components/HeaderInterno";
+import DatePicker from "../components/DatePicker";
 import { useCampoData } from "../data/campos/CampoDataContext";
 import { useProjetoData } from "../data/projetos/ProjetoDataContext";
 import Campo from "../data/campos/Campo";
@@ -29,8 +30,8 @@ const EditField = () => {
     id: campo?.id || 0,
     nome: campo?.nome || "",
     descricao: campo?.descricao || "",
-    data_inicio: campo?.data_inicio || "",
-    data_termino: campo?.data_termino || "",
+    data_inicio: campo?.data_inicio ? new Date(campo.data_inicio) : null,
+    data_termino: campo?.data_termino ? new Date(campo.data_termino) : null,
     endereco: campo?.endereco || "",
     cidade: campo?.cidade || "",
     estado: campo?.estado || "",
@@ -56,6 +57,11 @@ const EditField = () => {
     }));
   };
 
+  const toISODate = (date) => {
+    if (!date) return "";
+    return date.toISOString().split("T")[0];
+  };
+
   const handleSubmit = async () => {
     try {
       setLoading(true);
@@ -67,7 +73,7 @@ const EditField = () => {
         throw new Error("O nome do campo é obrigatório");
       }
 
-      if (!formData.data_inicio.trim()) {
+      if (!formData.data_inicio) {
         throw new Error("A data de início é obrigatória");
       }
 
@@ -92,8 +98,8 @@ const EditField = () => {
         formData.id,
         formData.nome.trim(),
         formData.descricao?.trim() || null,
-        formData.data_inicio,
-        formData.data_termino || null,
+        toISODate(formData.data_inicio),
+        formData.data_termino ? toISODate(formData.data_termino) : null,
         formData.endereco.trim(),
         formData.cidade.trim(),
         formData.estado.trim(),
@@ -176,19 +182,18 @@ const EditField = () => {
           />
 
           <Text style={styles.label}>Data de Início *</Text>
-          <TextInput
-            style={styles.input}
+          <DatePicker
             value={formData.data_inicio}
-            onChangeText={(text) => handleInputChange("data_inicio", text)}
-            placeholder="DD/MM/AAAA"
+            onChange={(date) => handleInputChange("data_inicio", date)}
+            placeholder="Selecione a data de início"
           />
 
           <Text style={styles.label}>Data de Término</Text>
-          <TextInput
-            style={styles.input}
+          <DatePicker
             value={formData.data_termino}
-            onChangeText={(text) => handleInputChange("data_termino", text)}
-            placeholder="DD/MM/AAAA"
+            onChange={(date) => handleInputChange("data_termino", date)}
+            placeholder="Selecione a data de término (opcional)"
+            minimumDate={formData.data_inicio}
           />
 
           <Text style={styles.label}>Endereço *</Text>

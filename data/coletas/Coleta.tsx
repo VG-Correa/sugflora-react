@@ -10,6 +10,7 @@ class Coleta {
   identificada: boolean;
   imagens: string[] | null;
   observacoes: string | null;
+  solicita_ajuda_identificacao: boolean;
   created_at: string;
   updated_at: string;
   deleted: boolean;
@@ -26,6 +27,7 @@ class Coleta {
     identificada: boolean,
     imagens: string[] | null,
     observacoes: string | null,
+    solicita_ajuda_identificacao: boolean = false,
     created_at: string,
     updated_at: string,
     deleted: boolean = false
@@ -41,6 +43,7 @@ class Coleta {
     this.identificada = identificada;
     this.imagens = imagens;
     this.observacoes = observacoes;
+    this.solicita_ajuda_identificacao = solicita_ajuda_identificacao;
     this.created_at = created_at;
     this.updated_at = updated_at;
     this.deleted = deleted;

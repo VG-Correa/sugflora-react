@@ -107,7 +107,11 @@ const ProjectScreen = () => {
   return (
     <View style={styles.container}>
       <HeaderInterno />
-      <ScrollView style={styles.content}>
+      <ScrollView
+        style={styles.content}
+        contentContainerStyle={styles.scrollContentContainer}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.header}>
           <Text style={styles.title}>{projetoAtual.nome}</Text>
           <TouchableOpacity
@@ -200,7 +204,11 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+  },
+  scrollContentContainer: {
+    flexGrow: 1,
     padding: 20,
+    paddingBottom: 100,
   },
   header: {
     flexDirection: "row",
@@ -251,7 +259,8 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 8,
     alignItems: "center",
-    marginTop: 20,
+    marginTop: 30,
+    marginBottom: 20,
   },
   newFieldButtonText: {
     color: "#fff",

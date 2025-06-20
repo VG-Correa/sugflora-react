@@ -9,9 +9,11 @@ import {
   Alert,
   Platform,
   ActivityIndicator,
+  KeyboardAvoidingView,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import HeaderInterno from "../components/HeaderInterno";
+import DatePicker from "../components/DatePicker";
 import { useCampoData } from "../data/campos/CampoDataContext";
 import { useProjetoData } from "../data/projetos/ProjetoDataContext";
 import Campo from "../data/campos/Campo";
@@ -33,8 +35,8 @@ const NewField = () => {
   const [formData, setFormData] = useState({
     nome: "",
     descricao: "",
-    data_inicio: "",
-    data_termino: "",
+    data_inicio: null,
+    data_termino: null,
     endereco: "",
     cidade: "",
     estado: "",
@@ -49,6 +51,11 @@ const NewField = () => {
     }));
   };
 
+  const toISODate = (date) => {
+    if (!date) return "";
+    return date.toISOString().split("T")[0];
+  };
+
   const handleSubmit = async () => {
     try {
       setLoading(true);
@@ -58,7 +65,7 @@ const NewField = () => {
         throw new Error("O nome do campo é obrigatório");
       }
 
-      if (!formData.data_inicio.trim()) {
+      if (!formData.data_inicio) {
         throw new Error("A data de início é obrigatória");
       }
 
@@ -89,8 +96,8 @@ const NewField = () => {
         undefined,
         formData.nome.trim(),
         formData.descricao?.trim() || null,
-        formData.data_inicio,
-        formData.data_termino || null,
+        toISODate(formData.data_inicio),
+        formData.data_termino ? toISODate(formData.data_termino) : null,
         formData.endereco.trim(),
         formData.cidade.trim(),
         formData.estado.trim(),
@@ -219,94 +226,104 @@ const NewField = () => {
   return (
     <View style={styles.container}>
       <HeaderInterno />
-      <ScrollView style={styles.content}>
-        <Text style={styles.title}>Novo Campo</Text>
-        <Text style={styles.subtitle}>Projeto: {projeto.nome}</Text>
+      <KeyboardAvoidingView
+        style={styles.content}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+      >
+        <ScrollView
+          style={styles.scrollContent}
+          contentContainerStyle={styles.scrollContentContainer}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Text style={styles.title}>Novo Campo</Text>
+          <Text style={styles.subtitle}>Projeto: {projeto.nome}</Text>
 
-        <View style={styles.formContainer}>
-          <Text style={styles.label}>Nome do Campo *</Text>
-          <TextInput
-            style={styles.input}
-            value={formData.nome}
-            onChangeText={(text) => handleInputChange("nome", text)}
-            placeholder="Digite o nome do campo"
-          />
+          <View style={styles.formContainer}>
+            <Text style={styles.label}>Nome do Campo *</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.nome}
+              onChangeText={(text) => handleInputChange("nome", text)}
+              placeholder="Digite o nome do campo"
+            />
 
-          <Text style={styles.label}>Descrição</Text>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            value={formData.descricao}
-            onChangeText={(text) => handleInputChange("descricao", text)}
-            placeholder="Digite a descrição do campo"
-            multiline
-            numberOfLines={4}
-          />
+            <Text style={styles.label}>Descrição</Text>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              value={formData.descricao}
+              onChangeText={(text) => handleInputChange("descricao", text)}
+              placeholder="Digite a descrição do campo"
+              multiline
+              numberOfLines={4}
+            />
 
-          <Text style={styles.label}>Data de Início *</Text>
-          <TextInput
-            style={styles.input}
-            value={formData.data_inicio}
-            onChangeText={(text) => handleInputChange("data_inicio", text)}
-            placeholder="DD/MM/AAAA"
-          />
+            <Text style={styles.label}>Data de Início *</Text>
+            <DatePicker
+              value={formData.data_inicio}
+              onChange={(date) => handleInputChange("data_inicio", date)}
+              placeholder="Selecione a data de início"
+            />
 
-          <Text style={styles.label}>Data de Término</Text>
-          <TextInput
-            style={styles.input}
-            value={formData.data_termino}
-            onChangeText={(text) => handleInputChange("data_termino", text)}
-            placeholder="DD/MM/AAAA"
-          />
+            <Text style={styles.label}>Data de Término</Text>
+            <DatePicker
+              value={formData.data_termino}
+              onChange={(date) => handleInputChange("data_termino", date)}
+              placeholder="Selecione a data de término (opcional)"
+              minimumDate={formData.data_inicio}
+            />
 
-          <Text style={styles.label}>Endereço *</Text>
-          <TextInput
-            style={styles.input}
-            value={formData.endereco}
-            onChangeText={(text) => handleInputChange("endereco", text)}
-            placeholder="Digite o endereço"
-          />
+            <Text style={styles.label}>Endereço *</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.endereco}
+              onChangeText={(text) => handleInputChange("endereco", text)}
+              placeholder="Digite o endereço"
+            />
 
-          <Text style={styles.label}>Cidade *</Text>
-          <TextInput
-            style={styles.input}
-            value={formData.cidade}
-            onChangeText={(text) => handleInputChange("cidade", text)}
-            placeholder="Digite a cidade"
-          />
+            <Text style={styles.label}>Cidade *</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.cidade}
+              onChangeText={(text) => handleInputChange("cidade", text)}
+              placeholder="Digite a cidade"
+            />
 
-          <Text style={styles.label}>Estado *</Text>
-          <TextInput
-            style={styles.input}
-            value={formData.estado}
-            onChangeText={(text) => handleInputChange("estado", text)}
-            placeholder="Digite o estado"
-          />
+            <Text style={styles.label}>Estado *</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.estado}
+              onChangeText={(text) => handleInputChange("estado", text)}
+              placeholder="Digite o estado"
+            />
 
-          <Text style={styles.label}>País *</Text>
-          <TextInput
-            style={styles.input}
-            value={formData.pais}
-            onChangeText={(text) => handleInputChange("pais", text)}
-            placeholder="Digite o país"
-          />
-        </View>
+            <Text style={styles.label}>País *</Text>
+            <TextInput
+              style={styles.input}
+              value={formData.pais}
+              onChangeText={(text) => handleInputChange("pais", text)}
+              placeholder="Digite o país"
+            />
+          </View>
 
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={[styles.button, styles.cancelButton]}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.buttonText}>Cancelar</Text>
-          </TouchableOpacity>
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity
+              style={[styles.button, styles.cancelButton]}
+              onPress={() => navigation.goBack()}
+            >
+              <Text style={styles.buttonText}>Cancelar</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.button, styles.submitButton]}
-            onPress={handleSubmit}
-          >
-            <Text style={styles.buttonText}>Criar Campo</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+            <TouchableOpacity
+              style={[styles.button, styles.submitButton]}
+              onPress={handleSubmit}
+            >
+              <Text style={styles.buttonText}>Criar Campo</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 };
@@ -318,7 +335,6 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 20,
   },
   title: {
     fontSize: 24,
@@ -358,7 +374,8 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginTop: 20,
+    marginTop: 30,
+    marginBottom: 20,
   },
   button: {
     flex: 1,
@@ -409,6 +426,13 @@ const styles = StyleSheet.create({
   dateButtonText: {
     fontSize: 14,
     color: "#333",
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  scrollContentContainer: {
+    padding: 20,
+    paddingBottom: 120,
   },
 });
 

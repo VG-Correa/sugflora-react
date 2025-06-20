@@ -25,8 +25,10 @@ import ProjectScreen from "./screens/ProjectScreen";
 import NewField from "./screens/NewField";
 import FieldScreen from "./screens/FieldScreen";
 import EditField from "./screens/EditField";
+import ColetaScreen from "./screens/ColetaScreen";
 import MyCollection from "./screens/MyCollection";
 import AddCollection from "./screens/AddCollection";
+import SelectProjectAndField from "./screens/SelectProjectAndField";
 import ReportScreenQuantitativo from "./screens/ReportScreenQuantitativo";
 import SearchSpecies from "./screens/SearchSpecies";
 import MyReports from "./screens/MyReports";
@@ -35,13 +37,15 @@ import AjudemeAIdentificar from "./screens/AjudemeAIdentificar";
 import EuConhecoEssa from "./screens/EuConhecoEssa";
 import BuscarAjudaAjudeaIdentificar from "./screens/BuscarAjuda-AjudeaIdentificar";
 import ChatEuConhecoEssa from "./screens/Chat-EuConhecoEssa";
+import ReportConfiguration from "./screens/ReportConfiguration";
+import ReportView from "./screens/ReportView";
 
 const Stack = createNativeStackNavigator();
 
 const App = () => {
   return (
-    <AppDataProvider>
-      <NotificationProvider>
+    <NotificationProvider>
+      <AppDataProvider>
         <NavigationContainer>
           <Stack.Navigator initialRouteName="Home">
             {/* Telas principais */}
@@ -144,6 +148,11 @@ const App = () => {
               options={{ headerShown: false, gestureEnabled: true }}
             />
             <Stack.Screen
+              name="ColetaScreen"
+              component={ColetaScreen}
+              options={{ headerShown: false, gestureEnabled: true }}
+            />
+            <Stack.Screen
               name="EditField"
               component={EditField}
               options={{ headerShown: false, gestureEnabled: true }}
@@ -192,10 +201,29 @@ const App = () => {
                 gestureEnabled: true,
               }}
             />
+
+            {/* Tela Selecionar Projeto e Campo */}
+            <Stack.Screen
+              name="SelectProjectAndField"
+              component={SelectProjectAndField}
+              options={{ headerShown: false, gestureEnabled: true }}
+            />
+
+            {/* Novas telas de relatório */}
+            <Stack.Screen
+              name="ReportConfiguration"
+              component={ReportConfiguration}
+              options={{ headerShown: false, gestureEnabled: true }}
+            />
+            <Stack.Screen
+              name="ReportView"
+              component={ReportView}
+              options={{ headerShown: false, gestureEnabled: true }}
+            />
           </Stack.Navigator>
         </NavigationContainer>
-      </NotificationProvider>
-    </AppDataProvider>
+      </AppDataProvider>
+    </NotificationProvider>
   );
 };
 

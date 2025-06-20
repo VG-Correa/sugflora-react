@@ -188,7 +188,7 @@ const HeaderInterno = ({ onLogout }) => {
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => {
-                navigation.navigate("AddCollection");
+                navigation.navigate("SelectProjectAndField");
                 closeAllMenus();
               }}
             >

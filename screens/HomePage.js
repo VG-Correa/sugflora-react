@@ -129,6 +129,12 @@ const HomePage = () => {
                 >
                   <Text style={styles.buttonText}>Minhas coletas</Text>
                 </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.actionButton}
+                  onPress={() => navigation.navigate("SelectProjectAndField")}
+                >
+                  <Text style={styles.buttonText}>Adicionar coleta</Text>
+                </TouchableOpacity>
               </View>
 
               <View

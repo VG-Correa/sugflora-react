@@ -12,12 +12,14 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import UsuarioApi from "../functions/api/UsuarioApi";
+import { useUsuarioData } from "../data/usuarios/UsuarioDataContext";
 
 const EditUser = ({ navigation }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  const { getUsuarioById, updateUsuario } = useUsuarioData();
 
   // Referências para os campos
   const nomeRef = useRef(null);
@@ -58,7 +60,7 @@ const EditUser = ({ navigation }) => {
         return;
       }
 
-      const userData = await UsuarioApi.getById(user_id);
+      const userData = getUsuarioById(parseInt(user_id));
       setUser(userData);
     } catch (error) {
       console.error("Erro ao carregar usuário:", error);
@@ -112,9 +114,13 @@ const EditUser = ({ navigation }) => {
         return;
       }
 
-      await UsuarioApi.update(userJson);
-      Alert.alert("Sucesso", "Dados atualizados com sucesso!");
-      navigation.goBack();
+      const response = await updateUsuario(userJson);
+      if (response.status === 200) {
+        Alert.alert("Sucesso", "Dados atualizados com sucesso!");
+        navigation.goBack();
+      } else {
+        throw new Error(response.message || "Erro ao atualizar dados");
+      }
     } catch (error) {
       console.error("Erro ao salvar alterações:", error);
       Alert.alert(

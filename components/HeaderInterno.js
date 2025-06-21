@@ -15,18 +15,21 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Notificacoes from "./Notificacoes";
-import { useUsuarioData } from "../data/usuarios/UsuarioDataContext";
 
-const HeaderInterno = ({ handleLogout }) => {
+const HeaderInterno = ({ onLogout }) => {
   const navigation = useNavigation();
   const [activeSubmenu, setActiveSubmenu] = useState(null);
   const [menuAberto, setMenuAberto] = useState(false);
   const [notificacaoAberta, setNotificacaoAberta] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const { currentUser } = useUsuarioData();
 
   const windowWidth = Dimensions.get("window").width;
   const isMobile = windowWidth < 768;
+
+  const [nome, setNome] = useState("");
+  const [sobrenome, setSobrenome] = useState("");
+  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
 
   const toggleSubmenu = (menuName) => {
     setActiveSubmenu(activeSubmenu === menuName ? null : menuName);
@@ -59,20 +62,54 @@ const HeaderInterno = ({ handleLogout }) => {
     }).start();
   };
 
-  const checkAuthentication = () => {
-    if (currentUser && currentUser.username) {
-      // Usuário já está autenticado, não faz nada
-    } else {
-      // Usuário não está autenticado, redireciona para a tela de login
-      navigation.navigate("Login");
-    }
-  } 
-
   useEffect(() => {
-    checkAuthentication();
+    const fetchUserData = async () => {
+      try {
+        const token = await AsyncStorage.getItem("token");
+        const nomeStored = await AsyncStorage.getItem("nome");
+        const sobrenomeStored = await AsyncStorage.getItem("sobrenome");
+        const emailStored = await AsyncStorage.getItem("email");
+        const usernameStored = await AsyncStorage.getItem("username");
 
-  }, [])
+        if (!token) {
+          console.log("Token não encontrado");
+          return;
+        }
 
+        setNome(nomeStored || "");
+        setSobrenome(sobrenomeStored || "");
+        setEmail(emailStored || "");
+        setUsername(usernameStored || "");
+      } catch (error) {
+        console.error("Erro ao carregar dados:", error);
+      }
+    };
+
+    fetchUserData();
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.multiRemove([
+        "token",
+        "nome",
+        "sobrenome",
+        "email",
+        "username",
+        "user_id",
+      ]);
+
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "Login" }],
+      });
+
+      closeAllMenus();
+    } catch (error) {
+      console.error("Erro ao fazer logout:", error);
+      Alert.alert("Erro", "Não foi possível fazer logout. Tente novamente.");
+    }
+  };
 
   const renderMenuItems = (isMobileView) => (
     <>
@@ -151,7 +188,7 @@ const HeaderInterno = ({ handleLogout }) => {
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => {
-                navigation.navigate("AddCollection");
+                navigation.navigate("SelectProjectAndField");
                 closeAllMenus();
               }}
             >
@@ -291,18 +328,18 @@ const HeaderInterno = ({ handleLogout }) => {
         )}
       </View>
 
-      {/* NOTIFICAÇÕES
+      {/* NOTIFICAÇÕES */}
       <View style={styles.menuItem}>
         <Notificacoes />
-      </View> */}
+      </View>
 
       {/* PERFIL */}
       <View style={styles.menuItem}>
         <TouchableOpacity
           onPress={async () => {
             try {
-              
-              if (currentUser && currentUser.username) {
+              const token = await AsyncStorage.getItem("token");
+              if (token) {
                 navigation.navigate("Profile");
                 closeAllMenus();
               } else {
@@ -320,7 +357,6 @@ const HeaderInterno = ({ handleLogout }) => {
             } catch (error) {
               console.error("Erro ao verificar autenticação:", error);
               Alert.alert("Erro", "Não foi possível acessar seu perfil");
-              navigation.navigate("Login");
             }
           }}
           style={styles.iconButton}
@@ -424,7 +460,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     width: "100%",
     alignItems: "center",
-    paddingTop: Platform.OS === "ios" ? 40 : 20,
+    paddingTop: Platform.OS === "ios" ? 50 : 30,
   },
   logoImage: {
     width: 80,
@@ -488,9 +524,15 @@ const styles = StyleSheet.create({
   },
   menuHamburguer: {
     position: "absolute",
-    top: 10,
+    top: Platform.OS === "ios" ? 50 : 30,
     right: 20,
     zIndex: 1001,
+    backgroundColor: "rgba(46, 125, 50, 0.9)",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.3)",
   },
   menuBackdrop: {
     position: "absolute",
@@ -503,7 +545,7 @@ const styles = StyleSheet.create({
   },
   menuMobileContainer: {
     position: "absolute",
-    top: 120,
+    top: Platform.OS === "ios" ? 90 : 70,
     right: 20,
     backgroundColor: "rgba(46, 125, 50, 0.95)",
     borderRadius: 10,

@@ -14,7 +14,7 @@ import {
 } from "react-native";
 import Header from "../components/Header";
 import MaskInput, { Masks } from "react-native-mask-input";
-import UsuarioApi from "../functions/api/usuarioApi";
+import { useUsuarioData } from "../data/usuarios/UsuarioDataContext";
 
 const Password = ({ navigation }) => {
   const [step, setStep] = useState(1); // 1: email, 2: CPF, 3: nova senha
@@ -25,6 +25,8 @@ const Password = ({ navigation }) => {
     novaSenha: "",
     confirmarSenha: "",
   });
+
+  const { usuarios, getUsuarioByEmail, updateUsuario } = useUsuarioData();
 
   const handleInputChange = (field, value) => {
     setFormData((prev) => ({
@@ -46,8 +48,8 @@ const Password = ({ navigation }) => {
 
     setLoading(true);
     try {
-      const user = await UsuarioApi.getUserByUsername(formData.email);
-      if (user && user.data) {
+      const user = getUsuarioByEmail(formData.email);
+      if (user) {
         setStep(2);
       } else {
         Alert.alert("Erro", "E-mail não encontrado");
@@ -68,8 +70,8 @@ const Password = ({ navigation }) => {
 
     setLoading(true);
     try {
-      const user = await UsuarioApi.getUserByUsername(formData.email);
-      if (user && user.data && user.data.cpf === cpfLimpo) {
+      const user = getUsuarioByEmail(formData.email);
+      if (user && user.cpf === cpfLimpo) {
         setStep(3);
       } else {
         Alert.alert("Erro", "CPF não corresponde ao e-mail informado");
@@ -94,14 +96,14 @@ const Password = ({ navigation }) => {
 
     setLoading(true);
     try {
-      const user = await UsuarioApi.getUserByUsername(formData.email);
-      if (user && user.data) {
+      const user = getUsuarioByEmail(formData.email);
+      if (user) {
         const updatedUser = {
-          ...user.data,
+          ...user,
           senha: formData.novaSenha,
         };
 
-        const response = await UsuarioApi.update(updatedUser);
+        const response = await updateUsuario(updatedUser);
         if (response && response.status === 200) {
           Alert.alert("Sucesso", "Senha atualizada com sucesso!", [
             {

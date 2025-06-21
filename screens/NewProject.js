@@ -6,305 +6,359 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
-  Alert, // Usamos o Alert nativo do React Native para feedback simples
+  Alert,
   ActivityIndicator,
+  Switch,
+  Platform,
   Image,
+  KeyboardAvoidingView,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import HeaderInterno from "../components/HeaderInterno";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Picker } from "@react-native-picker/picker";
 import * as ImagePicker from "expo-image-picker";
-import { useProjetoData } from "../data/projetos/ProjetoDataContext"; // Importa o hook do seu contexto
-import Projeto from "../data/projetos/Projeto"; // Importa a classe Projeto
-import {useUsuarioData} from '../data/usuarios/UsuarioDataContext'
+import { useProjetoData } from "../data/projetos/ProjetoDataContext";
+import { useUsuarioData } from "../data/usuarios/UsuarioDataContext";
+import Projeto from "../data/projetos/Projeto";
+import DatePicker from "../components/DatePicker";
 
 const NewProject = () => {
-  const [loading, setLoading] = useState(false);
-  const [imagemPreviewUri, setImagemPreviewUri] = useState(null); // Estado para a URI da imagem para preview
-  const [projeto, setProjeto] = useState({
-    nome: "",
-    descricao: "",
-    isPublic: false, // Mantido caso você queira reintroduzir o Switch
-    inicio: "",
-    termino: "",
-    // previsaoConclusao: "", // Não usado no construtor de Projeto atualmente, considere remover ou mapear
-    responsavel: null, // Mantido caso você queira reintroduzir o Picker de responsável
-    imagemBase64: null,
-  });
-  const { addProjeto } = useProjetoData(); // Obtém a função addProjeto do seu contexto
-  const { currentUser } = useUsuarioData();
-  const navigation = useNavigation();
 
+  const navigation = useNavigation();
+  const [loading, setLoading] = useState(false);
+  const [imagem, setImagem] = useState(null);
+  const { addProjeto, projetos } = useProjetoData();
+  const { usuarios } = useUsuarioData();
+  const [projeto, setProjeto] = useState(() => {
+    const novoProjeto = new Projeto();
+    console.log("Novo projeto inicializado:", novoProjeto);
+    return novoProjeto;
+  });
+  
   useEffect(() => {
-    // Solicita permissão da galeria de mídia ao carregar o componente
-    requestMediaLibraryPermission();
+    solicitarPermissaoCamera();
   }, []);
 
-  const requestMediaLibraryPermission = async () => {
+  const solicitarPermissaoCamera = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== "granted") {
       Alert.alert(
         "Permissão necessária",
-        "Precisamos de permissão para acessar suas fotos para que você possa selecionar uma imagem para o projeto."
+        "Precisamos de permissão para acessar suas fotos."
       );
     }
   };
 
-  const selectImage = async () => {
+  const selecionarImagem = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [16, 9],
         quality: 0.5,
-        base64: true, // Solicita a imagem em base64
+        base64: true,
       });
 
       if (!result.canceled) {
-        // Formata a imagem base64 para uso em tags <img> ou envio para API
         const base64Image = `data:image/jpeg;base64,${result.assets[0].base64}`;
-        setImagemPreviewUri(result.assets[0].uri); // Define a URI para mostrar no preview
-        setProjeto((prev) => ({ ...prev, imagemBase64: base64Image })); // Armazena o base64 no estado do projeto
+        setImagem(result.assets[0].uri);
+        setProjeto((prev) => ({ ...prev, imagemBase64: base64Image }));
       }
     } catch (error) {
-      console.error("Erro ao selecionar imagem:", error);
-      Alert.alert("Erro", "Não foi possível selecionar a imagem.");
+      Alert.alert("Erro", "Não foi possível selecionar a imagem");
     }
   };
 
-  // Função para formatar a entrada de data (DD/MM/AAAA)
-  const formatarDataInput = (data) => {
+  const formatarData = (data) => {
     if (!data) return "";
-    const numeros = data.replace(/\D/g, ""); // Remove caracteres não numéricos
-    let formatted = "";
-    if (numeros.length > 0) {
-      formatted += numeros.substring(0, 2);
-    }
-    if (numeros.length > 2) {
-      formatted += `/${numeros.substring(2, 4)}`;
-    }
-    if (numeros.length > 4) {
-      formatted += `/${numeros.substring(4, 8)}`;
-    }
-    return formatted;
+    const numeros = data.replace(/\D/g, "");
+    if (numeros.length <= 2) return numeros;
+    if (numeros.length <= 4)
+      return `${numeros.slice(0, 2)}/${numeros.slice(2)}`;
+    return `${numeros.slice(0, 2)}/${numeros.slice(2, 4)}/${numeros.slice(
+      4,
+      8
+    )}`;
   };
 
-  // Lida com a mudança no campo de input de data
-  const handleDateChange = (valor, campo) => {
-    const dataFormatada = formatarDataInput(valor);
+  const handleDataChange = (valor, campo) => {
+    const dataFormatada = formatarData(valor);
     setProjeto((prev) => ({ ...prev, [campo]: dataFormatada }));
-  };
-
-  // Função auxiliar para converter "DD/MM/AAAA" para um objeto Date
-  const parseDateString = (dateString) => {
-    if (!dateString) return null;
-    const parts = dateString.split("/");
-    // Verifica se temos 3 partes (dia, mês, ano) e se são números
-    if (parts.length === 3 && parts.every(part => !isNaN(parseInt(part)))) {
-        const [day, month, year] = parts.map(Number);
-        const date = new Date(year, month - 1, day); // Mês é baseado em 0 (janeiro = 0)
-        // Valida se a data criada é válida
-        return isNaN(date.getTime()) ? null : date;
-    }
-    return null; // Retorna null se o formato for inválido
   };
 
   const handleSave = async () => {
     try {
-      if (!projeto.nome.trim()) {
-        Alert.alert("Erro", "Por favor, preencha o nome do projeto.");
+      if (!projeto.nome) {
+        Alert.alert("Erro", "Por favor, preencha o nome do projeto");
         return;
       }
 
-      if (!projeto.inicio.trim()) {
-        Alert.alert("Erro", "Por favor, preencha a data de início.");
+      if (!projeto.inicio) {
+        Alert.alert("Erro", "Por favor, preencha a data de início");
         return;
       }
 
-      const parsedInicio = parseDateString(projeto.inicio);
-      if (!parsedInicio) {
-        Alert.alert("Erro", "Formato de Data de Início inválido. Use DD/MM/AAAA.");
-        return;
+      setLoading(true);
+      const user_id = await AsyncStorage.getItem("user_id");
+
+      if (!user_id) {
+        throw new Error("Usuário não identificado");
       }
 
-      const parsedTermino = parseDateString(projeto.termino);
-      if (projeto.termino && !parsedTermino) {
-        Alert.alert("Erro", "Formato de Data de Término inválido. Use DD/MM/AAAA.");
-        return;
-      }
+      console.log("Usuário ID:", user_id);
+      console.log("Tipo do user_id:", typeof user_id);
+      projeto.usuario_dono_id = Number(user_id);
+      console.log("Dados do projeto antes de salvar:", projeto);
+      console.log("Tipo do usuario_dono_id:", typeof projeto.usuario_dono_id);
 
-      setLoading(true); // Ativa o indicador de carregamento
+      const response = addProjeto(projeto);
+      console.log("Resposta da API:", response);
+      console.log("Status da resposta:", response.status);
+      console.log("Dados da resposta:", response.data);
 
-      // Cria uma nova instância da classe Projeto com os dados formatados
-      const newProjectInstance = new Projeto(
-        null, // ID 0 para novos projetos, assumindo que o ID é gerado no serviço ou backend
-        projeto.nome.trim(),
-        projeto.descricao?.trim() || "",
-        parsedInicio, // Data de início como objeto Date
-        parsedTermino, // Data de término como objeto Date ou null
-        "pendente", // Status inicial do projeto
-        currentUser,
-        // projeto.responsavel_uuid || null, // Descomente se você reintroduzir o responsável
-         // Placeholder se responsavel_uuid não for usado
-        projeto.imagemBase64 || null
-      );
-
-      // Chama a função addProjeto do contexto
-      const response = addProjeto(newProjectInstance);
-
-      // Verifica o status da resposta do contexto (201 para sucesso de criação)
-      if (response && response.status === 201) { // <-- AQUI É A MUDANÇA PRINCIPAL (200 para 201)
+      if (response.status === 201) {
         Alert.alert("Sucesso", "Projeto criado com sucesso!");
-        navigation.navigate("MyProjects"); // Navega de volta para a lista de projetos
+        console.log("Projeto criado:", response.data);
+        console.log("Projetos atuais: ", projetos);
+        navigation.reset({
+          index: 0,
+          routes: [{ name: "MyProjects" }],
+        });
       } else {
-        // Exibe mensagem de erro se a adição falhar
-        Alert.alert(
-          "Erro",
-          response?.message || "Não foi possível adicionar o projeto. Tente novamente."
-        );
+        throw new Error(response.message || "Erro ao criar projeto");
       }
     } catch (error) {
-      console.error("Erro ao salvar projeto:", error);
+      console.error("Erro ao criar projeto:", error);
       Alert.alert(
         "Erro",
-        `Não foi possível salvar o projeto. Erro: ${error.message || "Erro desconhecido"}`
+        `Não foi possível criar o projeto. Erro: ${error.message}`
       );
     } finally {
-      setLoading(false); // Desativa o indicador de carregamento
+      setLoading(false);
     }
   };
+
+  // Função para sincronizar projetos pendentes
+  const sincronizarProjetosPendentes = async () => {
+    try {
+      const token = await AsyncStorage.getItem("token");
+      if (!token) return;
+
+      const projetosExistentes = await AsyncStorage.getItem("projetos");
+      if (!projetosExistentes) return;
+
+      const projetos = JSON.parse(projetosExistentes);
+      const projetosPendentes = projetos.filter((p) => p.status === "pendente");
+
+      for (const projeto of projetosPendentes) {
+        try {
+          const response = await axios.post(
+            "http://localhost:8080/api/projeto",
+            projeto,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+                "Content-Type": "application/json",
+              },
+            }
+          );
+
+          if (response.status === 200) {
+            // Atualizar status do projeto
+            const projetoAtualizado = {
+              ...projeto,
+              id: response.data.id,
+              status: "sincronizado",
+            };
+
+            // Atualizar na lista local
+            const projetosAtualizados = projetos.map((p) =>
+              p.nome === projeto.nome ? projetoAtualizado : p
+            );
+
+            await AsyncStorage.setItem(
+              "projetos",
+              JSON.stringify(projetosAtualizados)
+            );
+            console.log(`Projeto ${projeto.nome} sincronizado com sucesso!`);
+          }
+        } catch (error) {
+          console.error(`Erro ao sincronizar projeto ${projeto.nome}:`, error);
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao sincronizar projetos:", error);
+    }
+  };
+
+  // Adicionar useEffect para sincronização periódica
+  useEffect(() => {
+    const sincronizarPeriodicamente = async () => {
+      await sincronizarProjetosPendentes();
+    };
+
+    // Sincronizar a cada 5 minutos
+    const intervalo = setInterval(sincronizarPeriodicamente, 5 * 60 * 1000);
+
+    // Sincronizar também quando o componente montar
+    sincronizarPeriodicamente();
+
+    return () => clearInterval(intervalo);
+  }, []);
 
   return (
     <View style={styles.container}>
       <HeaderInterno />
-      <ScrollView style={styles.content}>
-        <Text style={styles.pageTitle}>CRIAR PROJETO</Text>
-        <View style={styles.formContainer}>
-          {/* Campo Nome do Projeto */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Nome do Projeto *</Text>
-            <TextInput
-              style={styles.input}
-              value={projeto.nome}
-              onChangeText={(text) =>
-                setProjeto((prev) => ({ ...prev, nome: text }))
-              }
-              placeholder="Digite o nome do projeto"
-            />
-          </View>
-
-          {/* Campo Descrição */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Descrição</Text>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              value={projeto.descricao}
-              onChangeText={(text) =>
-                setProjeto((prev) => ({ ...prev, descricao: text }))
-              }
-              placeholder="Digite a descrição do projeto"
-              multiline
-              numberOfLines={4}
-            />
-          </View>
-
-          {/* Campo Data de Início */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Data de Início *</Text>
-            <TextInput
-              style={styles.input}
-              value={projeto.inicio}
-              onChangeText={(text) => handleDateChange(text, "inicio")}
-              placeholder="DD/MM/AAAA"
-              keyboardType="numeric"
-              maxLength={10}
-            />
-          </View>
-
-          {/* Campo Data de Término */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Data de Término</Text>
-            <TextInput
-              style={styles.input}
-              value={projeto.termino}
-              onChangeText={(text) => handleDateChange(text, "termino")}
-              placeholder="DD/MM/AAAA"
-              keyboardType="numeric"
-              maxLength={10}
-            />
-          </View>
-
-          {/* Seções comentadas para "Responsável" e "Projeto Público" - descomente se for usar */}
-          {/*
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Responsável</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={projeto.responsavel_uuid}
-                onValueChange={(value) =>
-                  setProjeto((prev) => ({ ...prev, responsavel_uuid: value }))
+      <KeyboardAvoidingView
+        style={styles.content}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
+      >
+        <ScrollView
+          style={styles.scrollContent}
+          contentContainerStyle={styles.scrollContentContainer}
+          showsVerticalScrollIndicator={true}
+          keyboardShouldPersistTaps="handled"
+          nestedScrollEnabled={true}
+        >
+          <Text style={styles.pageTitle}>CRIAR PROJETO</Text>
+          <View style={styles.formContainer}>
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Nome do Projeto *</Text>
+              <TextInput
+                style={styles.input}
+                value={projeto.nome}
+                onChangeText={(text) =>
+                  setProjeto((prev) => ({ ...prev, nome: text }))
                 }
-                style={styles.picker}
-              >
-                <Picker.Item label="Selecione um responsável" value={null} />
-                {usuarios.map((usuario) => ( // 'usuarios' array precisa ser definido e populado
-                  <Picker.Item
-                    key={usuario.uuid}
-                    label={`${usuario.nome} ${usuario.sobrenome}`}
-                    value={usuario.uuid}
-                  />
-                ))}
-              </Picker>
-            </View>
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Projeto Público</Text>
-            <View style={styles.switchContainer}>
-              <Switch
-                value={projeto.isPublic}
-                onValueChange={(value) =>
-                  setProjeto((prev) => ({ ...prev, isPublic: value }))
-                }
-                trackColor={{ false: "#767577", true: "#81b0ff" }}
-                thumbColor={projeto.isPublic ? "#2e7d32" : "#f4f3f4"}
+                placeholder="Digite o nome do projeto"
               />
-              <Text style={styles.switchLabel}>
-                {projeto.isPublic ? "Sim" : "Não"}
-              </Text>
             </View>
-          </View>
-          */}
 
-          {/* Seleção e Preview de Imagem */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Imagem do Projeto</Text>
-            <TouchableOpacity
-              style={styles.imageButton}
-              onPress={selectImage}
-            >
-              <Text style={styles.imageButtonText}>
-                {imagemPreviewUri ? "Alterar Imagem" : "Selecionar Imagem"}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Descrição</Text>
+              <TextInput
+                style={[styles.input, styles.textArea]}
+                value={projeto.descricao}
+                onChangeText={(text) =>
+                  setProjeto((prev) => ({ ...prev, descricao: text }))
+                }
+                placeholder="Digite a descrição do projeto"
+                multiline
+                numberOfLines={4}
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Data de Início *</Text>
+              <Text style={styles.label}>
+                {projeto.inicio
+                  ? `Data selecionada: ${projeto.inicio.toLocaleDateString()}`
+                  : "Nenhuma data selecionada"}
               </Text>
-            </TouchableOpacity>
-            {imagemPreviewUri && (
-              <Image source={{ uri: imagemPreviewUri }} style={styles.imagePreview} />
-            )}
-          </View>
+             
+              <DatePicker
+                value={projeto.inicio}
+                onChange={(date) =>
+                  setProjeto((prev) => ({ ...prev, inicio: date }))
+                }
+                placeholder="Selecione a data de início"
+              />
+            </View>
 
-          {/* Botão Salvar/Criar Projeto */}
-          <TouchableOpacity
-            style={[styles.saveButton, loading && styles.disabledButton]}
-            onPress={handleSave}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text style={styles.saveButtonText}>CRIAR PROJETO</Text>
-            )}
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Data de Término</Text>
+              <DatePicker
+                value={projeto.termino}
+                onChange={(date) =>
+                  setProjeto((prev) => ({ ...prev, termino: date }))
+                }
+                placeholder="Selecione a data de término"
+                minimumDate={projeto.inicio}
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Previsão de Conclusão</Text>
+              <DatePicker
+                value={projeto.previsaoConclusao}
+                onChange={(date) =>
+                  setProjeto((prev) => ({ ...prev, previsaoConclusao: date }))
+                }
+                placeholder="Selecione a previsão de conclusão"
+                minimumDate={projeto.inicio}
+              />
+            </View>
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Responsável</Text>
+              <View style={styles.pickerContainer}>
+                <Picker
+                  selectedValue={projeto.responsavel_id}
+                  onValueChange={(value) =>
+                    setProjeto((prev) => ({ ...prev, responsavel_id: value }))
+                  }
+                  style={styles.picker}
+                >
+                  <Picker.Item label="Selecione um responsável" value={null} />
+                  {usuarios.map((usuario) => (
+                    <Picker.Item
+                      key={usuario.id}
+                      label={`${usuario.nome} ${usuario.sobrenome}`}
+                      value={usuario.id}
+                    />
+                  ))}
+                </Picker>
+              </View>
+            </View>
+
+            {/* <View style={styles.inputGroup}>
+              <Text style={styles.label}>Projeto Público</Text>
+              <View style={styles.switchContainer}>
+                <Switch
+                  value={projeto.isPublic}
+                  onValueChange={(value) =>
+                    setProjeto((prev) => ({ ...prev, isPublic: value }))
+                  }
+                  trackColor={{ false: "#767577", true: "#81b0ff" }}
+                  thumbColor={projeto.isPublic ? "#2e7d32" : "#f4f3f4"}
+                />
+                <Text style={styles.switchLabel}>
+                  {projeto.isPublic ? "Sim" : "Não"}
+                </Text>
+              </View>
+            </View> */}
+
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Imagem do Projeto</Text>
+              <TouchableOpacity
+                style={styles.imageButton}
+                onPress={selecionarImagem}
+              >
+                <Text style={styles.imageButtonText}>
+                  {imagem ? "Alterar Imagem" : "Selecionar Imagem"}
+                </Text>
+              </TouchableOpacity>
+              {imagem && (
+                <Image source={{ uri: imagem }} style={styles.imagePreview} />
+              )}
+            </View>
+
+            <TouchableOpacity
+              style={[styles.saveButton, loading && styles.disabledButton]}
+              onPress={handleSave}
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.saveButtonText}>CRIAR PROJETO</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 };
@@ -317,6 +371,13 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
   },
+  scrollContent: {
+    flex: 1,
+  },
+  scrollContentContainer: {
+    flexGrow: 1,
+    paddingBottom: 120,
+  },
   pageTitle: {
     fontSize: 24,
     fontWeight: "bold",
@@ -326,6 +387,7 @@ const styles = StyleSheet.create({
   },
   formContainer: {
     padding: 20,
+    paddingBottom: 40,
   },
   inputGroup: {
     marginBottom: 20,
@@ -362,7 +424,8 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 8,
     alignItems: "center",
-    marginTop: 20,
+    marginTop: 30,
+    marginBottom: 20,
   },
   saveButtonText: {
     color: "#fff",
@@ -391,15 +454,16 @@ const styles = StyleSheet.create({
     borderColor: "#ddd",
   },
   imageButtonText: {
-    color: "#2e7d32",
+    color: "#333",
     fontSize: 16,
     fontWeight: "500",
   },
   imagePreview: {
     width: "100%",
-    height: 200,
-    marginTop: 10,
+    height: 150,
     borderRadius: 8,
+    marginTop: 10,
+    resizeMode: "cover",
   },
 });
 

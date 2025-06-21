@@ -1,135 +1,140 @@
-import Message from "../../Messages/Message";
-import Usuario from "../usuarios/Usuario";
-import UsuarioData from "../usuarios/UsuarioData";
-import { useUsuarioData } from "../usuarios/UsuarioDataContext";
 import Projeto from "./Projeto";
+import Message from "../../Messages/Message";
 
 class ProjetoData {
+  projetos: Projeto[] = [];
 
-    constructor(
-        public projetos: Projeto[] = []
-    ) {
+  constructor() {
+    // Adicionar dados de exemplo para testar a funcionalidade
+    this.projetos.push(
+      new Projeto(
+        1,
+        "Projeto Flora Amazônica",
+        "Estudo da biodiversidade da flora amazônica",
+        "2024-01-01",
+        "2024-06-30",
+        "2024-12-31",
+        1, // responsavel_id
+        1, // usuario_dono_id
+        "data:image/jpeg;base64,exemplo", // imagemBase64
+        "Ativo", // status
+        "2024-01-01T00:00:00Z", // created_at
+        "2024-01-01T00:00:00Z", // updated_at
+        false // deleted
+      ),
+      new Projeto(
+        2,
+        "Projeto Mata Atlântica",
+        "Pesquisa sobre espécies endêmicas da Mata Atlântica",
+        "2024-02-01",
+        "2024-07-15",
+        "2024-11-30",
+        1, // responsavel_id
+        1, // usuario_dono_id
+        "data:image/jpeg;base64,exemplo", // imagemBase64
+        "Ativo", // status
+        "2024-02-01T00:00:00Z", // created_at
+        "2024-02-01T00:00:00Z", // updated_at
+        false // deleted
+      )
+    );
+    console.log("ProjetoData inicializado com projetos de exemplo");
+  }
 
-        const usuarioADM: Usuario = useUsuarioData().getUsuarioById(1).data;
-
-        const projeto1 = new Projeto(
-            1,
-            'Projeto Alpha',
-            'Descrição do Projeto Alpha',
-            new Date('2023-01-01'),
-            null,
-            'ativo',
-            usuarioADM, // Responsável pode ser definido posteriormente
-            undefined
-        );
-
-        const projeto2 = new Projeto(
-            2,
-            'Projeto Beta',
-            'Descrição do Projeto Beta',
-            new Date('2023-02-01'),
-            null,
-            'ativo',
-            usuarioADM, // Responsável pode ser definido posteriormente
-            undefined
-        );
-
-        this.add(projeto1);
-        this.add(projeto2);
-
-        console.log('Todos os projetos: ', this.getAll());
-
+  getLastId(): number {
+    if (this.projetos.length === 0) {
+      return 0;
+    } else {
+      const id: number | undefined = this.projetos[this.projetos.length - 1].id;
+      return id ? id : 0;
     }
+  }
 
-    getById(id: number): Message<Projeto> | undefined {
-        const projeto = this.projetos.find(projeto => projeto.id === id);
-        
-        if (projeto !== undefined) {
-            return new Message(200, 'Projeto localizado', projeto);
-        } else {
-            return new Message(404, 'Projeto não localizado');        
-        }
+  public getById(id: number): Message<Projeto> {
+    const projeto = this.projetos.find(
+      (projeto) => projeto.id === id && !projeto.deleted
+    );
+    if (projeto != undefined) {
+      return new Message(200, "Projeto localizado", projeto);
+    } else {
+      return new Message(404, "Projeto não localizado");
     }
+  }
 
-    getAll(): Message<Projeto[]> {
-        return new Message(200,undefined, this.projetos);
+  public getByUsuarioDono(usuario_dono_id: number): Message<Projeto[]> {
+    console.log("Buscando projetos para o usuário:", usuario_dono_id);
+    console.log("Projetos disponíveis:", this.projetos);
+    console.log("Tipos dos IDs:", this.projetos.map(p => ({ id: p.id, usuario_dono_id: p.usuario_dono_id, tipo_usuario: typeof p.usuario_dono_id })));
+
+    const projetos = this.projetos.filter(
+      (projeto) =>
+        projeto.usuario_dono_id === usuario_dono_id && !projeto.deleted
+    );
+    console.log("Projetos filtrados:", projetos);
+    
+    if (projetos.length > 0) {
+      return new Message(200, "Projetos localizados", projetos);
+    } else {
+      return new Message(404, "Nenhum projeto encontrado para este usuário");
     }
+  }
 
-    exists(projeto: Projeto): boolean {
-        const projetoExistente = this.projetos.find(p => p.id === projeto.id || p.nome === projeto.nome);
-        return projetoExistente !== undefined;
+  public add(projeto: Projeto): Message<Projeto> {
+    console.log("Adicionando projeto:", projeto);
+    console.log("Projetos antes da adição:", this.projetos.length);
+    
+    projeto.id = this.getLastId() + 1;
+    projeto.created_at = new Date().toISOString();
+    projeto.updated_at = new Date().toISOString();
+    projeto.deleted = false;
+    
+    console.log("Projeto após configuração:", projeto);
+    
+    this.projetos.push(projeto);
+    
+    console.log("Projetos após adição:", this.projetos.length);
+    console.log("Todos os projetos:", this.projetos);
+    
+    return new Message(201, "Projeto criado com sucesso", projeto);
+  }
+
+  public update(projeto: Projeto): Message<Projeto> {
+    const index = this.projetos.findIndex(
+      (p) => p.id === projeto.id && !p.deleted
+    );
+
+    if (index !== -1) {
+      projeto.updated_at = new Date().toISOString();
+      this.projetos[index] = { ...this.projetos[index], ...projeto };
+      return new Message(
+        200,
+        "Projeto atualizado com sucesso",
+        this.projetos[index]
+      );
+    } else {
+      return new Message(404, "Projeto não encontrado para atualização");
     }
+  }
 
-    getLastId(): number {
-        if (this.projetos.length === 0) {
-            return 0; // Retorna 0 se não houver projetos
-        }
-        const lastProjeto = this.projetos[this.projetos.length - 1];
-        return lastProjeto.id, 10; // Retorna o ID do último projeto
+  public delete(id: number): Message<boolean> {
+    const index = this.projetos.findIndex((p) => p.id === id && !p.deleted);
+
+    if (index !== -1) {
+      this.projetos[index].deleted = true;
+      this.projetos[index].updated_at = new Date().toISOString();
+      return new Message(200, "Projeto deletado com sucesso", true);
+    } else {
+      return new Message(404, "Projeto não encontrado para exclusão", false);
     }
+  }
 
-    add(projeto: Projeto): Message<Projeto> {
+  public getAll(): Message<Projeto[]> {
+    console.log("getAll chamado - todos os projetos:", this.projetos);
+    const projetosAtivos = this.projetos.filter((p) => !p.deleted);
+    console.log("Projetos ativos (não deletados):", projetosAtivos);
+    return new Message(200, undefined, projetosAtivos);
+  }
 
-        // Verifica se o projeto já existe pelo ID
-        const projetoExistente = this.projetos.find(p => p.id === projeto.id);
-        if (this.exists(projeto)) {
-            console.error(`Projeto com ID ${projeto.id} já existe.`);
-            
-            return new Message(409, "Projeto já existe", projetoExistente); // Retorna o projeto existente
-        }
-
-        // Se o ID não for fornecido, gera um novo ID
-        if (!projeto.id) {
-            projeto.id = (this.getLastId() + 1); // Gera um novo ID sequencial
-        }
-
-        // Verifica se o nome do projeto já existe
-        const nomeExistente = this.projetos.find(p => p.nome === projeto.nome);
-        if (nomeExistente) {
-            console.error(`Já existe um projeto com o nome ${projeto.nome}.`);
-            return new Message(409, "Já existe um projeto com esse nome", nomeExistente); // Retorna o projeto existente
-        }
-
-        // Adiciona o novo projeto
-        this.projetos.push(projeto);
-        console.log(`Projeto ${projeto.nome} adicionado com sucesso.`);
-        // Retorna o projeto adicionado
-
-        return new Message(201, 'Projeto adicionado com sucesso', projeto); // Retorna o projeto adicionado
-    }
-
-    delete(projeto: Projeto): Message<boolean> {
-        const projetoExistente = this.getById(projeto.id);
-        if (projetoExistente) {
-            this.projetos = this.projetos.filter(p => p.id !== projeto.id);
-            console.log(`Projeto ${projeto.nome} removido com sucesso.`);
-            return new Message(200, 'Projeto removido com sucesso', true);
-        }
-        console.error(`Projeto com ID ${projeto.id} não encontrado.`);
-        return new Message(404, 'Projeto não encontrado', false);
-    }
-
-    update(projeto: Projeto): Message<Projeto> {
-        const index = this.projetos.findIndex(p => p.id === projeto.id);
-        if (index !== -1) {
-            this.projetos[index] = projeto; // Atualiza o projeto existente
-            console.log(`Projeto ${projeto.nome} atualizado com sucesso.`);
-            return new Message(200, 'Projeto atualizado com sucesso', projeto);
-        } else {
-            console.error(`Projeto com ID ${projeto.id} não encontrado para atualização.`);
-            return new Message(404, 'Projeto não encontrado para atualização');
-        }
-    }
-
-    getByUsuario(usuario: Usuario): Message<Projeto[]> {
-        const projetosDoUsuario = this.projetos.filter(p => p.responsavel.id === usuario.id);
-        
-        if (projetosDoUsuario.length > 0) {
-            return new Message(200, 'Projetos encontrados para o usuário', projetosDoUsuario);
-        } else {
-            return new Message(404, 'Nenhum projeto encontrado para o usuário');
-        }
-    }
 }
 
 export default ProjetoData;

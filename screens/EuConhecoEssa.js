@@ -1,241 +1,519 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  Image,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
+  Image,
+  Alert,
+  RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import { useColetaData } from '../data/coletas/ColetaDataContext';
+import { useFamiliaData } from '../data/familias/FamiliaDataContext';
+import { useGeneroData } from '../data/generos/GeneroDataContext';
+import { useEspecieData } from '../data/especies/EspecieDataContext';
+import { useUsuarioData } from '../data/usuarios/UsuarioDataContext';
 import HeaderInterno from '../components/HeaderInterno';
 
-const dadosSolicitacoes = [
-  { especie: 'DESCONHECIDA 4', data: '22/03/2025', mensagem: 'BOA TARDE, ANALISANDO S...', status: 'ATIVO' },
-  { especie: 'DESCONHECIDA 5', data: '23/03/2025', mensagem: 'DE ACORDO COM AS INFOR...', status: 'INATIVO' },
-];
-
-const muralDeAjudas = [
-  {
-    nome: 'Desconhecido 1',
-    projeto: 'EcoBotânica',
-    ajudas: '2',
-    status: 'Aberta',
-    cor: '#f2caff',
-    foto: require('../assets/images/flor1.png'),
-  },
-  {
-    nome: 'Desconhecido 2',
-    projeto: 'EcoBotânica',
-    ajudas: '1',
-    status: 'Resolvido',
-    cor: '#ffd47f',
-    foto: require('../assets/images/flor2.png'),
-  },
-  {
-    nome: 'Desconhecido 3',
-    projeto: 'Amazônia',
-    ajudas: '3',
-    status: 'Resolvido',
-    cor: '#cfe9c4',
-    foto: require('../assets/images/flor3.png'),
-  },
-];
-
-export default function TelaSolicitacaoParaAjudar() {
+const EuConhecoEssa = () => {
   const navigation = useNavigation();
+  const { getColetasParaIdentificacao } = useColetaData();
+  const { familias } = useFamiliaData();
+  const { generos } = useGeneroData();
+  const { especies } = useEspecieData();
+  const { usuarios } = useUsuarioData();
+
+  const [coletas, setColetas] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [filter, setFilter] = useState('todas'); // todas, com_imagens, sem_identificacao
+
+  useEffect(() => {
+    carregarColetas();
+  }, []);
+
+  const carregarColetas = async () => {
+    try {
+      setLoading(true);
+      const response = getColetasParaIdentificacao();
+      
+      if (response.status === 200 && response.data) {
+        setColetas(response.data);
+      } else {
+        console.log('Nenhuma coleta encontrada:', response.message);
+        setColetas([]);
+      }
+    } catch (error) {
+      console.error('Erro ao carregar coletas:', error);
+      Alert.alert('Erro', 'Não foi possível carregar as coletas');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await carregarColetas();
+    setRefreshing(false);
+  };
+
+  const filtrarColetas = (coletas) => {
+    switch (filter) {
+      case 'com_imagens':
+        return coletas.filter(coleta => coleta.imagens && coleta.imagens.length > 0);
+      case 'sem_identificacao':
+        return coletas.filter(coleta => !coleta.identificada);
+      default:
+        return coletas;
+    }
+  };
+
+  const formatarData = (dataString) => {
+    if (!dataString) return 'Data não informada';
+    const data = new Date(dataString);
+    return data.toLocaleDateString('pt-BR');
+  };
+
+  const getFamiliaNome = (familiaId) => {
+    if (!familiaId) return 'Não definida';
+    const familia = familias.find(f => f.id === familiaId);
+    return familia ? familia.nome : 'Não encontrada';
+  };
+
+  const getGeneroNome = (generoId) => {
+    if (!generoId) return 'Não definido';
+    const genero = generos.find(g => g.id === generoId);
+    return genero ? genero.nome : 'Não encontrado';
+  };
+
+  const getEspecieNome = (especieId) => {
+    if (!especieId) return 'Não definida';
+    const especie = especies.find(e => e.id === especieId);
+    return especie ? especie.nome : 'Não encontrada';
+  };
+
+  const handleVerColeta = (coleta) => {
+    navigation.navigate('TelaPedidodeAjuda-AjudemeaIdentificar', { coleta });
+  };
+
+  const handleSugerirIdentificacao = (coleta) => {
+    navigation.navigate('Chat-AjudemeaIdentificar', { coleta });
+  };
+
+  const coletasFiltradas = filtrarColetas(coletas);
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#2e7d32" />
+        <Text style={styles.loadingText}>Carregando coletas...</Text>
+      </View>
+    );
+  }
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Cabeçalho visual */}
-      <HeaderInterno />
-
-      <ScrollView style={styles.content} contentContainerStyle={{ padding: 15, paddingBottom: 80 }}>
-        <Text style={styles.titulo}>EU CONHEÇO ESSA!</Text>
-
-        <TouchableOpacity style={styles.buttonAceitas}>
-          <Text style={styles.buttonAceitasText}>Solicitações aceitas</Text>
-        </TouchableOpacity>
-
-        <Text style={styles.subTitle}>SUAS AJUDAS</Text>
-
-        <View style={styles.tableHeader}>
-          <Text style={styles.tableCell}>NOME DO PESQUISADOR</Text>
-          <Text style={styles.tableCell}>DATA</Text>
-          <Text style={styles.tableCell}>MENSAGEM</Text>
-          <Text style={styles.tableCell}>STATUS</Text>
-        </View>
-
-        {dadosSolicitacoes.map((item, index) => (
-          <View key={index} style={styles.tableRow}>
-            <Text style={styles.tableCell}>{item.especie}</Text>
-            <Text style={styles.tableCell}>{item.data}</Text>
-            <Text style={styles.tableCell}>{item.mensagem}</Text>
-            <Text style={[styles.tableCell, { fontWeight: 'bold' }]}>{item.status}</Text>
-            <TouchableOpacity style={styles.chatButton}>
-              <Text style={styles.chatButtonText}>Abrir chat</Text>
+    <View style={styles.container}>
+      <HeaderInterno title="Eu Conheço Essa!" />
+      
+      <ScrollView
+        style={styles.scrollView}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        {/* Filtros */}
+        <View style={styles.filterContainer}>
+          <Text style={styles.filterTitle}>Filtrar por:</Text>
+          <View style={styles.filterButtons}>
+            <TouchableOpacity
+              style={[styles.filterButton, filter === 'todas' && styles.filterButtonActive]}
+              onPress={() => setFilter('todas')}
+            >
+              <Text style={[styles.filterButtonText, filter === 'todas' && styles.filterButtonTextActive]}>
+                Todas
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.filterButton, filter === 'com_imagens' && styles.filterButtonActive]}
+              onPress={() => setFilter('com_imagens')}
+            >
+              <Text style={[styles.filterButtonText, filter === 'com_imagens' && styles.filterButtonTextActive]}>
+                Com Imagens
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.filterButton, filter === 'sem_identificacao' && styles.filterButtonActive]}
+              onPress={() => setFilter('sem_identificacao')}
+            >
+              <Text style={[styles.filterButtonText, filter === 'sem_identificacao' && styles.filterButtonTextActive]}>
+                Não Identificadas
+              </Text>
             </TouchableOpacity>
           </View>
-        ))}
-
-        {/* Mural de Ajudas */}
-        <Text style={styles.muralTitle}>MURAL DE AJUDAS</Text>
-        <View style={styles.cardsRow}>
-          {muralDeAjudas.map((item, index) => (
-            <View key={index} style={[styles.card, { backgroundColor: item.cor }]}>
-              <View style={styles.cardHeader}>
-                <Text style={styles.cardTitle}>{item.nome}</Text>
-                <Image source={item.foto} style={styles.cardImage} />
-              </View>
-              <Text style={styles.cardText}>PROJETO: {item.projeto}</Text>
-              <Text style={styles.cardText}>AJUDAS: {item.ajudas}</Text>
-              <Text style={styles.cardText}>STATUS DO PEDIDO: {item.status}</Text>
-              <TouchableOpacity style={styles.verMaisButton}>
-                <Text style={styles.verMaisText}>Ver mais</Text>
-              </TouchableOpacity>
-            </View>
-          ))}
         </View>
 
-        {/* Botão voltar */}
-        <View style={styles.buttonRow}>
-          <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
-            <Text style={styles.backText}>← VOLTAR</Text>
-          </TouchableOpacity>
+        {/* Estatísticas */}
+        <View style={styles.statsContainer}>
+          <Text style={styles.statsTitle}>📊 Estatísticas</Text>
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{coletasFiltradas.length}</Text>
+              <Text style={styles.statLabel}>Coletas Disponíveis</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>
+                {coletasFiltradas.filter(c => c.imagens && c.imagens.length > 0).length}
+              </Text>
+              <Text style={styles.statLabel}>Com Imagens</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>
+                {coletasFiltradas.filter(c => !c.identificada).length}
+              </Text>
+              <Text style={styles.statLabel}>Não Identificadas</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Lista de Coletas */}
+        <View style={styles.coletasContainer}>
+          <Text style={styles.sectionTitle}>🌿 Coletas que Precisam de Ajuda</Text>
+          
+          {coletasFiltradas.length === 0 ? (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>Nenhuma coleta encontrada</Text>
+              <Text style={styles.emptySubtext}>
+                Não há coletas que solicitem ajuda para identificação no momento.
+              </Text>
+            </View>
+          ) : (
+            coletasFiltradas.map((coleta) => (
+              <View key={coleta.id} style={styles.coletaCard}>
+                {/* Header da Coleta */}
+                <View style={styles.coletaHeader}>
+                  <View style={styles.coletaInfo}>
+                    <Text style={styles.coletaNome}>{coleta.nome}</Text>
+                    <Text style={styles.coletaData}>
+                      📅 {formatarData(coleta.data_coleta)}
+                    </Text>
+                  </View>
+                  <View style={[
+                    styles.statusBadge,
+                    { backgroundColor: coleta.identificada ? '#4caf50' : '#ff9800' }
+                  ]}>
+                    <Text style={styles.statusText}>
+                      {coleta.identificada ? 'Identificada' : 'Aguardando Ajuda'}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Imagens */}
+                {coleta.imagens && coleta.imagens.length > 0 && (
+                  <View style={styles.imagesContainer}>
+                    <Text style={styles.imagesTitle}>📸 Imagens ({coleta.imagens.length})</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                      {coleta.imagens.map((imagem, index) => (
+                        <Image
+                          key={index}
+                          source={{ uri: imagem }}
+                          style={styles.coletaImage}
+                          resizeMode="cover"
+                        />
+                      ))}
+                    </ScrollView>
+                  </View>
+                )}
+
+                {/* Classificação Atual */}
+                <View style={styles.classificacaoContainer}>
+                  <Text style={styles.classificacaoTitle}>🔬 Classificação Atual</Text>
+                  <View style={styles.classificacaoRow}>
+                    <Text style={styles.classificacaoLabel}>Família:</Text>
+                    <Text style={styles.classificacaoValue}>
+                      {getFamiliaNome(coleta.familia_id)}
+                    </Text>
+                  </View>
+                  <View style={styles.classificacaoRow}>
+                    <Text style={styles.classificacaoLabel}>Gênero:</Text>
+                    <Text style={styles.classificacaoValue}>
+                      {getGeneroNome(coleta.genero_id)}
+                    </Text>
+                  </View>
+                  <View style={styles.classificacaoRow}>
+                    <Text style={styles.classificacaoLabel}>Espécie:</Text>
+                    <Text style={styles.classificacaoValue}>
+                      {getEspecieNome(coleta.especie_id)}
+                    </Text>
+                  </View>
+                  {coleta.nome_comum && (
+                    <View style={styles.classificacaoRow}>
+                      <Text style={styles.classificacaoLabel}>Nome Comum:</Text>
+                      <Text style={styles.classificacaoValue}>{coleta.nome_comum}</Text>
+                    </View>
+                  )}
+                </View>
+
+                {/* Observações */}
+                {coleta.observacoes && (
+                  <View style={styles.observacoesContainer}>
+                    <Text style={styles.observacoesTitle}>📝 Observações</Text>
+                    <Text style={styles.observacoesText}>{coleta.observacoes}</Text>
+                  </View>
+                )}
+
+                {/* Botões de Ação */}
+                <View style={styles.actionButtons}>
+                  <TouchableOpacity
+                    style={styles.actionButton}
+                    onPress={() => handleVerColeta(coleta)}
+                  >
+                    <Text style={styles.actionButtonText}>👁️ Ver Detalhes</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.actionButton, styles.sugerirButton]}
+                    onPress={() => handleSugerirIdentificacao(coleta)}
+                  >
+                    <Text style={styles.sugerirButtonText}>💡 Sugerir Identificação</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))
+          )}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  headerContainer: { height: 160 },
-  headerBackgroundImage: { width: '100%', height: '100%', position: 'absolute' },
-  headerContent: { flex: 1, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 15 },
-  logoImage: { width: 50, height: 50 },
-  logoText: { color: '#fff', fontSize: 18, fontWeight: 'bold', marginLeft: 10 },
-  menuTop: { flexDirection: 'row', marginLeft: 'auto' },
-  menuItem: { marginHorizontal: 8 },
-  menuText: { color: '#fff', fontSize: 14 },
-
-  content: { flex: 1 },
-  titulo: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#2e5d45',
-    marginBottom: 15,
-    textAlign: 'center',
+  container: {
+    flex: 1,
+    backgroundColor: '#f5f5f5',
   },
-  buttonAceitas: {
-    backgroundColor: '#365c4f',
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 5,
-    alignSelf: 'center',
-    marginBottom: 20,
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
   },
-  buttonAceitasText: {
-    color: '#fff',
-    fontWeight: 'bold',
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#666',
   },
-  subTitle: {
+  scrollView: {
+    flex: 1,
+  },
+  filterContainer: {
+    backgroundColor: '#fff',
+    padding: 15,
+    margin: 10,
+    borderRadius: 10,
+    elevation: 2,
+  },
+  filterTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#000',
     marginBottom: 10,
+    color: '#333',
   },
-  tableHeader: {
+  filterButtons: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-    paddingBottom: 5,
-    marginBottom: 10,
+    justifyContent: 'space-around',
   },
-  tableRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  filterButton: {
+    paddingHorizontal: 15,
     paddingVertical: 8,
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#ddd',
+    borderRadius: 20,
+    backgroundColor: '#f0f0f0',
+    borderWidth: 1,
+    borderColor: '#ddd',
   },
-  tableCell: {
-    flex: 1,
-    fontSize: 12,
-    textAlign: 'center',
+  filterButtonActive: {
+    backgroundColor: '#2e7d32',
+    borderColor: '#2e7d32',
   },
-  chatButton: {
-    backgroundColor: '#2e5d45',
-    paddingVertical: 5,
-    paddingHorizontal: 10,
-    borderRadius: 5,
-    marginLeft: 5,
+  filterButtonText: {
+    fontSize: 14,
+    color: '#666',
   },
-  chatButtonText: {
+  filterButtonTextActive: {
     color: '#fff',
-    fontSize: 12,
+    fontWeight: 'bold',
   },
-
-  muralTitle: {
+  statsContainer: {
+    backgroundColor: '#fff',
+    padding: 15,
+    margin: 10,
+    borderRadius: 10,
+    elevation: 2,
+  },
+  statsTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 15,
+    color: '#333',
+  },
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  statItem: {
+    alignItems: 'center',
+  },
+  statNumber: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#2e7d32',
+  },
+  statLabel: {
+    fontSize: 12,
+    color: '#666',
+    textAlign: 'center',
+    marginTop: 5,
+  },
+  coletasContainer: {
+    padding: 10,
+  },
+  sectionTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#2e5d45',
-    marginTop: 30,
     marginBottom: 15,
+    color: '#333',
     textAlign: 'center',
   },
-  cardsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  card: {
-    width: '48%',
-    borderRadius: 10,
-    padding: 10,
-    marginBottom: 20,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  emptyContainer: {
     alignItems: 'center',
+    padding: 40,
   },
-  cardTitle: {
+  emptyText: {
+    fontSize: 18,
     fontWeight: 'bold',
-    fontSize: 16,
+    color: '#666',
+    marginBottom: 10,
   },
-  cardImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-  },
-  cardText: {
-    fontSize: 12,
-    marginTop: 6,
-  },
-  verMaisButton: {
-    backgroundColor: '#333',
-    paddingVertical: 6,
-    marginTop: 10,
-    alignItems: 'center',
-    borderRadius: 5,
-  },
-  verMaisText: { color: '#fff', fontSize: 12 },
-
-  buttonRow: { alignItems: 'center', marginTop: 20 },
-  backButton: {
-    backgroundColor: '#2e5d45',
-    paddingVertical: 10,
-    paddingHorizontal: 30,
-    borderRadius: 5,
-  },
-  backText: {
-    color: '#fff',
+  emptySubtext: {
     fontSize: 14,
+    color: '#999',
+    textAlign: 'center',
+  },
+  coletaCard: {
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 15,
+    elevation: 3,
+  },
+  coletaHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 10,
+  },
+  coletaInfo: {
+    flex: 1,
+  },
+  coletaNome: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 5,
+  },
+  coletaData: {
+    fontSize: 12,
+    color: '#666',
+  },
+  statusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 15,
+  },
+  statusText: {
+    fontSize: 12,
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  imagesContainer: {
+    marginBottom: 15,
+  },
+  imagesTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#333',
+  },
+  coletaImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    marginRight: 10,
+  },
+  classificacaoContainer: {
+    marginBottom: 15,
+  },
+  classificacaoTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#333',
+  },
+  classificacaoRow: {
+    flexDirection: 'row',
+    marginBottom: 5,
+  },
+  classificacaoLabel: {
+    fontSize: 12,
+    color: '#666',
+    width: 80,
+  },
+  classificacaoValue: {
+    fontSize: 12,
+    color: '#333',
+    flex: 1,
+  },
+  observacoesContainer: {
+    marginBottom: 15,
+  },
+  observacoesTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#333',
+  },
+  observacoesText: {
+    fontSize: 12,
+    color: '#666',
+    lineHeight: 18,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  actionButton: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+    backgroundColor: '#f0f0f0',
+    marginHorizontal: 5,
+    alignItems: 'center',
+  },
+  actionButtonText: {
+    fontSize: 14,
+    color: '#333',
+    fontWeight: 'bold',
+  },
+  sugerirButton: {
+    backgroundColor: '#2e7d32',
+  },
+  sugerirButtonText: {
+    fontSize: 14,
+    color: '#fff',
     fontWeight: 'bold',
   },
 });
+
+export default EuConhecoEssa;

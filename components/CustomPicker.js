@@ -22,7 +22,7 @@ import { Ionicons } from '@expo/vector-icons';
 export default function CustomPicker({
   items = [],
   value = null,
-  onChange = () => {},
+  onChange = (item) => {},
   placeholder = 'Selecione',
   style
 }) {

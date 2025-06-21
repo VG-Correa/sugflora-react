@@ -96,11 +96,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   menuButton: {
-    padding: 8,
+    padding: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ddd',
   },
   menuText: {
-    fontSize: 28,
+    fontSize: 24,
     color: '#333',
+    fontWeight: 'bold',
   },
   modalOverlay: {
     flex: 1,

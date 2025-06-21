@@ -11,37 +11,91 @@ import {
   Alert,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
-import projetoApi from "../functions/api/projetoApi";
 import HeaderInterno from "../components/HeaderInterno";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useProjetoData } from "../data/projetos/ProjetoDataContext";
+
 const coresAbas = ["#b2d8b2", "#ccc", "#f8a5a5"];
 
 const MyProjects = () => {
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigation = useNavigation();
   const { width } = useWindowDimensions();
-  const {projetos, deleteProjeto, setCurrentProjeto} = useProjetoData();
+  const { getProjetosByUsuarioDono, deleteProjeto } = useProjetoData();
+  const [projetos, setProjetos] = useState([]);
 
-  console.log("Projetos carregados:", projetos);
-  
   const cardWidth = width > 768 ? "30%" : width > 480 ? "45%" : "90%";
+
+  const fetchProjetos = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const user_id = await AsyncStorage.getItem("user_id");
+
+      if (!user_id) {
+        throw new Error("Usuário não autenticado");
+      }
+
+      console.log("Buscando projetos para o usuário:", Number(user_id));
+      console.log("Tipo do user_id:", typeof Number(user_id));
+      const response = getProjetosByUsuarioDono(Number(user_id));
+      console.log("Resposta da API:", response);
+      console.log("Status da resposta:", response.status);
+      console.log("Dados da resposta:", response.data);
+      
+      if (response.status === 200 && response.data) {
+        console.log("Projetos encontrados:", response.data);
+        console.log("Quantidade de projetos:", response.data.length);
+        setProjetos(response.data);
+      } else {
+        console.log("Nenhum projeto encontrado ou erro na resposta");
+        setProjetos([]);
+      }
+    } catch (err) {
+      console.error("Erro ao carregar projetos:", err);
+      setError(err.message || "Erro ao carregar projetos");
+      Alert.alert(
+        "Erro",
+        "Não foi possível carregar seus projetos. Por favor, tente novamente."
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const unsubscribe = navigation.addListener("focus", () => {
+      fetchProjetos();
+    });
+
+    return unsubscribe;
+  }, [navigation]);
 
   const formatDate = (dateString) => {
     try {
-      if (!dateString) return "Não definida";
+      if (!dateString || dateString === undefined || dateString === null) {
+        return "Não definida";
+      }
+
+      // Se já é uma string formatada (dd/mm/yyyy), retorna como está
+      if (typeof dateString === "string" && dateString.includes("/")) {
+        return dateString;
+      }
 
       const date = new Date(dateString);
-      if (isNaN(date.getTime())) return "Data inválida";
+      if (isNaN(date.getTime())) {
+        return "Data inválida";
+      }
 
       return date.toLocaleDateString("pt-BR");
     } catch (e) {
-      console.error("Erro ao formatar data:", e);
+      console.error("Erro ao formatar data:", e, "Valor recebido:", dateString);
       return "Data inválida";
     }
   };
 
-  const handleDeleteProject = (projetoId) => {
+  const handleDeleteProject = async (projetoId) => {
     console.log("Botão de exclusão clicado para o projeto:", projetoId);
 
     try {
@@ -62,29 +116,21 @@ const MyProjects = () => {
                 console.log("Iniciando exclusão do projeto ID:", projetoId);
 
                 const response = deleteProjeto(projetoId);
+
                 if (response.status === 200) {
                   console.log("Projeto excluído com sucesso!");
-                  // Atualizar a lista de projetos
                   await fetchProjetos();
                   Alert.alert("Sucesso", "Projeto excluído com sucesso!");
                 } else {
                   throw new Error(
-                    response.data?.message ||
-                      response.data?.error ||
-                      "Erro ao excluir projeto"
+                    response.message || "Erro ao excluir projeto"
                   );
                 }
               } catch (error) {
-                console.error("Erro ao excluir projeto:", {
-                  message: error.message,
-                  response: error.response?.data,
-                  status: error.response?.status,
-                });
-
+                console.error("Erro ao excluir projeto:", error);
                 Alert.alert(
                   "Erro",
-                  error.response?.data?.message ||
-                    error.message ||
+                  error.message ||
                     "Não foi possível excluir o projeto. Tente novamente."
                 );
               } finally {
@@ -101,8 +147,12 @@ const MyProjects = () => {
   };
 
   const handleViewProject = (projeto) => {
-    setCurrentProjeto(projeto);
-    navigation.navigate("ProjectScreen");
+    navigation.navigate("ProjectScreen", {
+      projeto: {
+        ...projeto,
+        imagemUrl: projeto.imagemBase64 ? projeto.imagemBase64 : null,
+      },
+    });
   };
 
   if (loading) {
@@ -144,36 +194,43 @@ const MyProjects = () => {
             <Text style={styles.newProjectButtonText}>+ Novo Projeto</Text>
           </TouchableOpacity>
         </View>
+
         {projetos.length === 0 ? (
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>Você ainda não tem projetos</Text>
+            <View style={styles.emptyIconContainer}>
+              <Text style={styles.emptyIcon}>📁</Text>
+            </View>
+            <Text style={styles.emptyTitle}>Nenhum projeto encontrado</Text>
+            <Text style={styles.emptyText}>
+              Você ainda não criou nenhum projeto. Comece criando seu primeiro
+              projeto para organizar suas coletas!
+            </Text>
             <TouchableOpacity
               style={styles.createFirstButton}
               onPress={() => navigation.navigate("NewProject")}
             >
               <Text style={styles.createFirstButtonText}>
-                Criar primeiro projeto
+                ✨ Criar primeiro projeto
               </Text>
             </TouchableOpacity>
           </View>
         ) : (
           <View style={[styles.projectsGrid, { width: "100%" }]}>
-            {projetos.map((projeto) => {
-              console.log("Renderizando projeto:", projeto);
-              // const corAba = coresAbas[index % coresAbas.length];
+            {projetos.map((projeto, index) => {
+              const corAba = coresAbas[index % coresAbas.length];
               return (
                 <View
                   key={projeto.id}
-                  style={[styles.projectCard, { width: cardWidth }]} 
+                  style={[styles.projectCard, { width: cardWidth }]}
                 >
-                  <View style={[styles.folderTab, { backgroundColor: 'white' }]}>
+                  <View style={[styles.folderTab, { backgroundColor: corAba }]}>
                     <Text style={styles.projectTitle} numberOfLines={1}>
                       {projeto.nome}
                     </Text>
-                    {projeto.image && (
+                    {projeto.imagem && (
                       <Image
                         source={{
-                          uri: `${projetoApi.baseUrl}/${projeto.id}/imagem`,
+                          uri: projeto.imagem,
                         }}
                         style={styles.projectImage}
                       />
@@ -203,15 +260,15 @@ const MyProjects = () => {
                     {projeto.responsavel && (
                       <>
                         <Text style={styles.label}>Responsável:</Text>
-                        <Text style={styles.value}>{projeto.responsavel.nome}</Text>
+                        <Text style={styles.value}>{projeto.responsavel}</Text>
                       </>
-                    )} 
+                    )}
 
                     <View style={styles.buttonContainer}>
                       <TouchableOpacity
                         style={[
                           styles.actionButton,
-                          { backgroundColor: "green" },
+                          { backgroundColor: corAba },
                         ]}
                         onPress={() => handleViewProject(projeto)}
                       >
@@ -377,18 +434,44 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 20,
+    minHeight: 400,
+  },
+  emptyIconContainer: {
+    backgroundColor: "#f4f4f4",
+    borderRadius: 50,
+    width: 80,
+    height: 80,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  emptyIcon: {
+    fontSize: 40,
+  },
+  emptyTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#2e7d32",
+    marginBottom: 10,
+    textAlign: "center",
   },
   emptyText: {
-    fontSize: 18,
+    fontSize: 16,
     color: "#666",
-    marginBottom: 20,
     textAlign: "center",
+    marginBottom: 30,
+    lineHeight: 22,
   },
   createFirstButton: {
     backgroundColor: "#2e7d32",
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 5,
+    paddingHorizontal: 25,
+    paddingVertical: 15,
+    borderRadius: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
   },
   createFirstButtonText: {
     color: "#fff",

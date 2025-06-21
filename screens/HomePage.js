@@ -12,23 +12,55 @@ import {
 import { useNavigation } from "@react-navigation/native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import HeaderInterno from "../components/HeaderInterno";
-import { useUsuarioData } from "../data/usuarios/UsuarioDataContext";
 
 const HomePage = () => {
   const navigation = useNavigation();
   const windowWidth = Dimensions.get("window").width;
   const isMobile = windowWidth < 768;
-  const { currentUser, logout } = useUsuarioData();
+  const [nome, setNome] = useState("");
+  const [sobrenome, setSobrenome] = useState("");
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const uuid = await AsyncStorage.getItem("user_id");
+        const nomeStored = await AsyncStorage.getItem("nome");
+        const sobrenomeStored = await AsyncStorage.getItem("sobrenome");
+
+        if (!uuid) {
+          Alert.alert("Erro", "ID do usuário não encontrado");
+          navigation.reset({
+            index: 0,
+            routes: [{ name: "Login" }],
+          });
+          return;
+        }
+
+        if (nomeStored && sobrenomeStored) {
+          setNome(nomeStored);
+          setSobrenome(sobrenomeStored);
+        }
+      } catch (error) {
+        console.error("Erro ao carregar dados:", error);
+        Alert.alert("Erro", "Erro ao carregar dados do usuário");
+      }
+    };
+
+    fetchUserData();
+  }, []);
 
   const handleLogout = async () => {
     try {
-      await logout();
-      navigation.navigate("login");
+      await AsyncStorage.clear();
+      navigation.reset({
+        index: 0,
+        routes: [{ name: "Login" }],
+      });
     } catch (error) {
       console.error("Erro ao fazer logout:", error);
-      Alert.alert("Erro", "Não foi possível fazer logout. Tente novamente.");
+      Alert.alert("Erro", "Não foi possível fazer logout");
     }
-  }  
+  };
 
   return (
     <View style={styles.container}>
@@ -38,7 +70,7 @@ const HomePage = () => {
           {/* Seção de boas-vindas */}
           <View style={styles.welcomeSection}>
             <Text style={styles.welcomeText}>
-              Bem-vindo(a), {currentUser.nome} {currentUser.username}!
+              Bem-vindo(a), {nome} {sobrenome}!
             </Text>
           </View>
 
@@ -97,6 +129,12 @@ const HomePage = () => {
                 >
                   <Text style={styles.buttonText}>Minhas coletas</Text>
                 </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.actionButton}
+                  onPress={() => navigation.navigate("SelectProjectAndField")}
+                >
+                  <Text style={styles.buttonText}>Adicionar coleta</Text>
+                </TouchableOpacity>
               </View>
 
               <View
@@ -112,13 +150,13 @@ const HomePage = () => {
                 />
                 <TouchableOpacity
                   style={styles.actionButton}
-                  onPress={() => navigation.navigate("IdentifyPlant")}
+                  onPress={() => navigation.navigate("AjudemeAIdentificar")}
                 >
                   <Text style={styles.buttonText}>Ajude-me a identificar</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.actionButton}
-                  onPress={() => navigation.navigate("KnownPlants")}
+                  onPress={() => navigation.navigate("EuConhecoEssa")}
                 >
                   <Text style={styles.buttonText}>Eu conheço essa</Text>
                 </TouchableOpacity>

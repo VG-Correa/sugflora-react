@@ -24,6 +24,7 @@ interface ColetaContextType {
   updateColeta: (coleta: Coleta) => Message<Coleta>;
   deleteColeta: (id: number) => Message<boolean>;
   identificarColeta: (id: number, especie_id: number) => Message<Coleta>;
+  atualizarComSugestaoAceita: (coleta_id: number, familia_id: number | null, genero_id: number | null, especie_id: number | null, nome_comum: string | null) => Message<Coleta>;
 }
 
 const ColetaContext = createContext<ColetaContextType | undefined>(undefined);
@@ -152,6 +153,17 @@ export const ColetaDataProvider = ({
     [coletaService]
   );
 
+  const atualizarComSugestaoAceita = useCallback(
+    (coleta_id: number, familia_id: number | null, genero_id: number | null, especie_id: number | null, nome_comum: string | null): Message<Coleta> => {
+      const result = coletaService.atualizarComSugestaoAceita(coleta_id, familia_id, genero_id, especie_id, nome_comum);
+      if (result.status === 200 && result.data) {
+        setColetas([...coletaService.getAll().data!]);
+      }
+      return result;
+    },
+    [coletaService]
+  );
+
   const value = {
     coletas,
     getColetaById,
@@ -166,6 +178,7 @@ export const ColetaDataProvider = ({
     updateColeta,
     deleteColeta,
     identificarColeta,
+    atualizarComSugestaoAceita,
   };
 
   return (

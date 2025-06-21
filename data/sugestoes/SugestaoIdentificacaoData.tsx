@@ -141,6 +141,29 @@ class SugestaoIdentificacaoData {
       if (index !== -1) {
         this.sugestoes[index].status = status;
         this.sugestoes[index].updated_at = new Date().toISOString();
+        
+        // Se a sugestão foi aceita, atualizar a coleta correspondente
+        if (status === 'aceita') {
+          const sugestao = this.sugestoes[index];
+          
+          // Importar o serviço de coletas para atualizar a coleta
+          const ColetaData = require('../coletas/ColetaData').default;
+          const coletaService = new ColetaData();
+          
+          // Atualizar a coleta com os dados da sugestão aceita
+          const resultadoColeta = coletaService.atualizarComSugestaoAceita(
+            sugestao.coleta_id,
+            sugestao.familia_sugerida_id,
+            sugestao.genero_sugerido_id,
+            sugestao.especie_sugerida_id,
+            sugestao.nome_comum_sugerido
+          );
+          
+          if (resultadoColeta.status !== 200) {
+            console.error('Erro ao atualizar coleta:', resultadoColeta.message);
+          }
+        }
+        
         return new Message(200, "Status da sugestão atualizado com sucesso", this.sugestoes[index]);
       } else {
         return new Message(404, "Sugestão não encontrada");

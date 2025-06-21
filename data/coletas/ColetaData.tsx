@@ -328,6 +328,39 @@ class ColetaData {
       return new Message(404, "Nenhuma coleta para identificação encontrada");
     }
   }
+
+  // Método para atualizar a coleta com base em uma sugestão aceita
+  public atualizarComSugestaoAceita(
+    coleta_id: number, 
+    familia_id: number | null, 
+    genero_id: number | null, 
+    especie_id: number | null, 
+    nome_comum: string | null
+  ): Message<Coleta> {
+    try {
+      const index = this.coletas.findIndex((c) => c.id === coleta_id);
+      if (index !== -1) {
+        // Atualizar os dados da coleta com base na sugestão aceita
+        this.coletas[index].familia_id = familia_id;
+        this.coletas[index].genero_id = genero_id;
+        this.coletas[index].especie_id = especie_id;
+        this.coletas[index].nome_comum = nome_comum;
+        this.coletas[index].identificada = true;
+        this.coletas[index].solicita_ajuda_identificacao = false; // Remove a solicitação de ajuda
+        this.coletas[index].updated_at = new Date().toISOString();
+        
+        return new Message(
+          200,
+          "Coleta atualizada com sucesso com base na sugestão aceita",
+          this.coletas[index]
+        );
+      } else {
+        return new Message(404, "Coleta não encontrada");
+      }
+    } catch (error) {
+      return new Message(500, "Erro ao atualizar coleta com sugestão aceita");
+    }
+  }
 }
 
 export default ColetaData;

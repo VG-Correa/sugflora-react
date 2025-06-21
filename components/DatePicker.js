@@ -1,14 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
   Platform,
+  Modal,
 } from "react-native";
 import DateTimePicker from "@react-native-community/datetimepicker";
+import DatePicker from "@dietime/react-native-date-picker";
 
-const DatePicker = ({
+const CustomDatePicker = ({
   value,
   onChange,
   placeholder = "Selecione uma data",
@@ -19,6 +21,7 @@ const DatePicker = ({
   maximumDate,
 }) => {
   const [showPicker, setShowPicker] = useState(false);
+  const [tempDate, setTempDate] = useState(value || new Date());
 
   const formatDate = (date) => {
     if (!date) return "";
@@ -33,11 +36,33 @@ const DatePicker = ({
     }
   };
 
+  const handleWebDateChange = (selectedDate) => {
+    setTempDate(selectedDate);
+  };
+
+  const handleWebConfirm = () => {
+    setShowPicker(false);
+    onChange(tempDate);
+  };
+
+  const handleWebCancel = () => {
+    setShowPicker(false);
+    setTempDate(value || new Date());
+  };
+
   const showDatePicker = () => {
     if (!disabled) {
+      setTempDate(value || new Date());
       setShowPicker(true);
     }
   };
+
+  // Reset temp date when value changes
+  useEffect(() => {
+    if (value) {
+      setTempDate(value);
+    }
+  }, [value]);
 
   return (
     <View style={[styles.container]}>
@@ -66,15 +91,57 @@ const DatePicker = ({
       </TouchableOpacity>
 
       {showPicker && (
-        <DateTimePicker
-          value={value || new Date()}
-          mode="date"
-          display={Platform.OS === "ios" ? "spinner" : "default"}
-          onChange={handleDateChange}
-          minimumDate={minimumDate}
-          maximumDate={maximumDate}
-          locale="pt-BR"
-        />
+        Platform.OS === 'web' ? (
+          <Modal
+            visible={showPicker}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={handleWebCancel}
+          >
+            <View style={styles.modalOverlay}>
+              <View style={styles.modalContent}>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>Selecionar Data</Text>
+                </View>
+                <View style={styles.datePickerContainer}>
+                  <DatePicker
+                    value={tempDate}
+                    onChange={handleWebDateChange}
+                    minimumDate={minimumDate}
+                    maximumDate={maximumDate}
+                    locale="pt-BR"
+                    format="dd/MM/yyyy"
+                    style={styles.webDatePicker}
+                  />
+                </View>
+                <View style={styles.modalFooter}>
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.cancelButton]}
+                    onPress={handleWebCancel}
+                  >
+                    <Text style={styles.cancelButtonText}>Cancelar</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.modalButton, styles.confirmButton]}
+                    onPress={handleWebConfirm}
+                  >
+                    <Text style={styles.confirmButtonText}>Confirmar</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </View>
+          </Modal>
+        ) : (
+          <DateTimePicker
+            value={value || new Date()}
+            mode="date"
+            display={Platform.OS === "ios" ? "spinner" : "default"}
+            onChange={handleDateChange}
+            minimumDate={minimumDate}
+            maximumDate={maximumDate}
+            locale="pt-BR"
+          />
+        )
       )}
     </View>
   );
@@ -137,6 +204,67 @@ const styles = StyleSheet.create({
     marginLeft: 14,
     color: "#388e3c",
   },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 20,
+    width: Platform.OS === 'web' ? 400 : '90%',
+    maxWidth: 400,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  modalHeader: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#2e7d32',
+  },
+  datePickerContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  webDatePicker: {
+    width: '100%',
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  cancelButton: {
+    backgroundColor: '#f5f5f5',
+    borderWidth: 1,
+    borderColor: '#ddd',
+  },
+  confirmButton: {
+    backgroundColor: '#2e7d32',
+  },
+  cancelButtonText: {
+    color: '#666',
+    fontWeight: '600',
+  },
+  confirmButtonText: {
+    color: '#fff',
+    fontWeight: '600',
+  },
 });
 
-export default DatePicker;
+export default CustomDatePicker;

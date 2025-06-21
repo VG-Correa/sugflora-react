@@ -131,7 +131,9 @@ const AjudemeAIdentificar = () => {
               if (response.status === 200) {
                 Alert.alert(
                   'Sucesso',
-                  `Sugestão ${acao === 'aceita' ? 'aceita' : 'rejeitada'} com sucesso!`,
+                  acao === 'aceita' 
+                    ? 'Sugestão aceita com sucesso! A coleta foi atualizada com a identificação sugerida.' 
+                    : 'Sugestão rejeitada com sucesso!',
                   [
                     {
                       text: 'OK',

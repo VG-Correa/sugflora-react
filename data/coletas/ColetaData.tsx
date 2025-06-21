@@ -245,6 +245,55 @@ class ColetaData {
       return new Message(404, "Nenhuma coleta para identificação encontrada");
     }
   }
+
+  // Método para buscar coletas de outros usuários (não do usuário logado) que solicitam ajuda
+  public getColetasOutrosUsuarios(usuarioLogadoId: number, campos: any[], projetos: any[]): Message<any[]> {
+    const coletas = this.coletas.filter(
+      (coleta) => coleta.solicita_ajuda_identificacao && !coleta.deleted
+    );
+    
+    if (coletas.length > 0) {
+      // Filtrar coletas que NÃO pertencem ao usuário logado
+      const coletasOutrosUsuarios = coletas.filter(coleta => {
+        // Buscar o campo da coleta
+        const campo = campos.find(c => c.id === coleta.campo_id);
+        if (!campo) return false;
+        
+        // Buscar o projeto do campo
+        const projeto = projetos.find(p => p.id === campo.projeto_id);
+        if (!projeto) return false;
+        
+        // Retorna true se o projeto NÃO pertence ao usuário logado
+        return projeto.usuario_dono_id !== usuarioLogadoId;
+      });
+      
+      if (coletasOutrosUsuarios.length > 0) {
+        // Retorna apenas informações necessárias para identificação
+        const coletasLimitadas = coletasOutrosUsuarios.map(coleta => ({
+          id: coleta.id,
+          nome: coleta.nome,
+          data_coleta: coleta.data_coleta,
+          familia_id: coleta.familia_id,
+          genero_id: coleta.genero_id,
+          especie_id: coleta.especie_id,
+          nome_comum: coleta.nome_comum,
+          identificada: coleta.identificada,
+          imagens: coleta.imagens,
+          observacoes: coleta.observacoes,
+          solicita_ajuda_identificacao: coleta.solicita_ajuda_identificacao,
+          created_at: coleta.created_at,
+          updated_at: coleta.updated_at,
+          // Não inclui campo_id para manter sigilo do projeto/campo
+        }));
+        
+        return new Message(200, "Coletas de outros usuários localizadas", coletasLimitadas);
+      } else {
+        return new Message(404, "Nenhuma coleta de outros usuários encontrada");
+      }
+    } else {
+      return new Message(404, "Nenhuma coleta para identificação encontrada");
+    }
+  }
 }
 
 export default ColetaData;

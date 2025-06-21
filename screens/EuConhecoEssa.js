@@ -16,20 +16,27 @@ import { useFamiliaData } from '../data/familias/FamiliaDataContext';
 import { useGeneroData } from '../data/generos/GeneroDataContext';
 import { useEspecieData } from '../data/especies/EspecieDataContext';
 import { useUsuarioData } from '../data/usuarios/UsuarioDataContext';
+import { useCampoData } from '../data/campos/CampoDataContext';
+import { useProjetoData } from '../data/projetos/ProjetoDataContext';
 import HeaderInterno from '../components/HeaderInterno';
 
 const EuConhecoEssa = () => {
   const navigation = useNavigation();
-  const { getColetasParaIdentificacao } = useColetaData();
+  const { getColetasOutrosUsuarios } = useColetaData();
   const { familias } = useFamiliaData();
   const { generos } = useGeneroData();
   const { especies } = useEspecieData();
   const { usuarios } = useUsuarioData();
+  const { campos } = useCampoData();
+  const { projetos } = useProjetoData();
 
   const [coletas, setColetas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState('todas'); // todas, com_imagens, sem_identificacao
+
+  // Simular usuário logado (em produção, viria do contexto de autenticação)
+  const usuarioLogado = usuarios[0]; // Usuário 1 como exemplo
 
   useEffect(() => {
     carregarColetas();
@@ -38,7 +45,7 @@ const EuConhecoEssa = () => {
   const carregarColetas = async () => {
     try {
       setLoading(true);
-      const response = getColetasParaIdentificacao();
+      const response = getColetasOutrosUsuarios(usuarioLogado.id, campos, projetos);
       
       if (response.status === 200 && response.data) {
         setColetas(response.data);
@@ -180,13 +187,13 @@ const EuConhecoEssa = () => {
 
         {/* Lista de Coletas */}
         <View style={styles.coletasContainer}>
-          <Text style={styles.sectionTitle}>🌿 Coletas que Precisam de Ajuda</Text>
+          <Text style={styles.sectionTitle}>🌿 Coletas de Outros Usuários que Precisam de Ajuda</Text>
           
           {coletasFiltradas.length === 0 ? (
             <View style={styles.emptyContainer}>
               <Text style={styles.emptyText}>Nenhuma coleta encontrada</Text>
               <Text style={styles.emptySubtext}>
-                Não há coletas que solicitem ajuda para identificação no momento.
+                Não há coletas de outros usuários que solicitem ajuda para identificação no momento.
               </Text>
             </View>
           ) : (
@@ -200,66 +207,61 @@ const EuConhecoEssa = () => {
                       📅 {formatarData(coleta.data_coleta)}
                     </Text>
                   </View>
-                  <View style={[
-                    styles.statusBadge,
-                    { backgroundColor: coleta.identificada ? '#4caf50' : '#ff9800' }
-                  ]}>
-                    <Text style={styles.statusText}>
-                      {coleta.identificada ? 'Identificada' : 'Aguardando Ajuda'}
+                  <View style={styles.coletaStatus}>
+                    <View style={[
+                      styles.statusBadge,
+                      { backgroundColor: coleta.identificada ? '#4CAF50' : '#FFA500' }
+                    ]}>
+                      <Text style={styles.statusText}>
+                        {coleta.identificada ? 'Identificada' : 'Não Identificada'}
+                      </Text>
+                    </View>
+                  </View>
+                </View>
+
+                {/* Classificação Taxonômica */}
+                <View style={styles.taxonomiaContainer}>
+                  <Text style={styles.taxonomiaTitle}>Classificação Atual:</Text>
+                  <View style={styles.taxonomiaItems}>
+                    <Text style={styles.taxonomiaItem}>
+                      Família: {getFamiliaNome(coleta.familia_id)}
                     </Text>
+                    <Text style={styles.taxonomiaItem}>
+                      Gênero: {getGeneroNome(coleta.genero_id)}
+                    </Text>
+                    <Text style={styles.taxonomiaItem}>
+                      Espécie: {getEspecieNome(coleta.especie_id)}
+                    </Text>
+                    {coleta.nome_comum && (
+                      <Text style={styles.taxonomiaItem}>
+                        Nome Comum: {coleta.nome_comum}
+                      </Text>
+                    )}
                   </View>
                 </View>
 
                 {/* Imagens */}
                 {coleta.imagens && coleta.imagens.length > 0 && (
-                  <View style={styles.imagesContainer}>
-                    <Text style={styles.imagesTitle}>📸 Imagens ({coleta.imagens.length})</Text>
+                  <View style={styles.imagensContainer}>
+                    <Text style={styles.imagensTitle}>📸 Imagens ({coleta.imagens.length})</Text>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                       {coleta.imagens.map((imagem, index) => (
-                        <Image
-                          key={index}
-                          source={{ uri: imagem }}
-                          style={styles.coletaImage}
-                          resizeMode="cover"
-                        />
+                        <View key={index} style={styles.imagemContainer}>
+                          <Image
+                            source={{ uri: imagem }}
+                            style={styles.imagem}
+                            resizeMode="cover"
+                          />
+                        </View>
                       ))}
                     </ScrollView>
                   </View>
                 )}
 
-                {/* Classificação Atual */}
-                <View style={styles.classificacaoContainer}>
-                  <Text style={styles.classificacaoTitle}>🔬 Classificação Atual</Text>
-                  <View style={styles.classificacaoRow}>
-                    <Text style={styles.classificacaoLabel}>Família:</Text>
-                    <Text style={styles.classificacaoValue}>
-                      {getFamiliaNome(coleta.familia_id)}
-                    </Text>
-                  </View>
-                  <View style={styles.classificacaoRow}>
-                    <Text style={styles.classificacaoLabel}>Gênero:</Text>
-                    <Text style={styles.classificacaoValue}>
-                      {getGeneroNome(coleta.genero_id)}
-                    </Text>
-                  </View>
-                  <View style={styles.classificacaoRow}>
-                    <Text style={styles.classificacaoLabel}>Espécie:</Text>
-                    <Text style={styles.classificacaoValue}>
-                      {getEspecieNome(coleta.especie_id)}
-                    </Text>
-                  </View>
-                  {coleta.nome_comum && (
-                    <View style={styles.classificacaoRow}>
-                      <Text style={styles.classificacaoLabel}>Nome Comum:</Text>
-                      <Text style={styles.classificacaoValue}>{coleta.nome_comum}</Text>
-                    </View>
-                  )}
-                </View>
-
                 {/* Observações */}
                 {coleta.observacoes && (
                   <View style={styles.observacoesContainer}>
-                    <Text style={styles.observacoesTitle}>📝 Observações</Text>
+                    <Text style={styles.observacoesTitle}>📝 Observações:</Text>
                     <Text style={styles.observacoesText}>{coleta.observacoes}</Text>
                   </View>
                 )}
@@ -267,16 +269,16 @@ const EuConhecoEssa = () => {
                 {/* Botões de Ação */}
                 <View style={styles.actionButtons}>
                   <TouchableOpacity
-                    style={styles.actionButton}
+                    style={styles.verDetalhesButton}
                     onPress={() => handleVerColeta(coleta)}
                   >
-                    <Text style={styles.actionButtonText}>👁️ Ver Detalhes</Text>
+                    <Text style={styles.verDetalhesText}>Ver Detalhes</Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={[styles.actionButton, styles.sugerirButton]}
+                    style={styles.sugerirButton}
                     onPress={() => handleSugerirIdentificacao(coleta)}
                   >
-                    <Text style={styles.sugerirButtonText}>💡 Sugerir Identificação</Text>
+                    <Text style={styles.sugerirText}>Sugerir Identificação</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -426,6 +428,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#666',
   },
+  coletaStatus: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   statusBadge: {
     paddingHorizontal: 10,
     paddingVertical: 5,
@@ -436,43 +442,44 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
   },
-  imagesContainer: {
+  taxonomiaContainer: {
     marginBottom: 15,
   },
-  imagesTitle: {
+  taxonomiaTitle: {
     fontSize: 14,
     fontWeight: 'bold',
     marginBottom: 10,
     color: '#333',
   },
-  coletaImage: {
+  taxonomiaItems: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+  },
+  taxonomiaItem: {
+    fontSize: 12,
+    color: '#666',
+    marginRight: 10,
+    marginBottom: 5,
+  },
+  imagensContainer: {
+    marginBottom: 15,
+  },
+  imagensTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    color: '#333',
+  },
+  imagemContainer: {
     width: 80,
     height: 80,
     borderRadius: 8,
     marginRight: 10,
   },
-  classificacaoContainer: {
-    marginBottom: 15,
-  },
-  classificacaoTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#333',
-  },
-  classificacaoRow: {
-    flexDirection: 'row',
-    marginBottom: 5,
-  },
-  classificacaoLabel: {
-    fontSize: 12,
-    color: '#666',
-    width: 80,
-  },
-  classificacaoValue: {
-    fontSize: 12,
-    color: '#333',
-    flex: 1,
+  imagem: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 8,
   },
   observacoesContainer: {
     marginBottom: 15,
@@ -492,7 +499,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
-  actionButton: {
+  verDetalhesButton: {
     flex: 1,
     paddingVertical: 10,
     paddingHorizontal: 15,
@@ -501,7 +508,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 5,
     alignItems: 'center',
   },
-  actionButtonText: {
+  verDetalhesText: {
     fontSize: 14,
     color: '#333',
     fontWeight: 'bold',
@@ -509,7 +516,7 @@ const styles = StyleSheet.create({
   sugerirButton: {
     backgroundColor: '#2e7d32',
   },
-  sugerirButtonText: {
+  sugerirText: {
     fontSize: 14,
     color: '#fff',
     fontWeight: 'bold',

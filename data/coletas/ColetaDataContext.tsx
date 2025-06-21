@@ -19,6 +19,7 @@ interface ColetaContextType {
   getColetasSolicitamAjuda: () => Message<Coleta[]>;
   getColetasPublicas: () => Message<Coleta[]>;
   getColetasParaIdentificacao: () => Message<any[]>;
+  getColetasOutrosUsuarios: (usuarioLogadoId: number, campos: any[], projetos: any[]) => Message<any[]>;
   addColeta: (coleta: Coleta) => Promise<Message<Coleta>>;
   updateColeta: (coleta: Coleta) => Message<Coleta>;
   deleteColeta: (id: number) => Message<boolean>;
@@ -82,6 +83,13 @@ export const ColetaDataProvider = ({
   const getColetasParaIdentificacao = useCallback((): Message<any[]> => {
     return coletaService.getColetasParaIdentificacao();
   }, [coletaService]);
+
+  const getColetasOutrosUsuarios = useCallback(
+    (usuarioLogadoId: number, campos: any[], projetos: any[]): Message<any[]> => {
+      return coletaService.getColetasOutrosUsuarios(usuarioLogadoId, campos, projetos);
+    },
+    [coletaService]
+  );
 
   const addColeta = useCallback(
     async (coleta: Coleta): Promise<Message<Coleta>> => {
@@ -153,6 +161,7 @@ export const ColetaDataProvider = ({
     getColetasSolicitamAjuda,
     getColetasPublicas,
     getColetasParaIdentificacao,
+    getColetasOutrosUsuarios,
     addColeta,
     updateColeta,
     deleteColeta,

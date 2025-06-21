@@ -4,6 +4,80 @@ import Message from "../../Messages/Message";
 class ColetaData {
   private coletas: Coleta[] = [];
 
+  constructor() {
+    // Adicionar dados de exemplo para testar a funcionalidade
+    this.coletas.push(
+      new Coleta(
+        1,
+        "Coleta 1 - Espécie A",
+        1, // campo_id
+        "2024-01-15T10:00:00Z",
+        null, // familia_id
+        null, // genero_id
+        null, // especie_id
+        "Espécie A", // nome_comum
+        false, // identificada
+        ["imagem1.jpg"], // imagens
+        "Observações da coleta 1", // observacoes
+        false, // solicita_ajuda_identificacao
+        "2024-01-15T10:00:00Z", // created_at
+        "2024-01-15T10:00:00Z", // updated_at
+        false // deleted
+      ),
+      new Coleta(
+        2,
+        "Coleta 2 - Espécie B",
+        1, // campo_id
+        "2024-01-16T14:30:00Z",
+        null, // familia_id
+        null, // genero_id
+        1, // especie_id
+        "Espécie B", // nome_comum
+        true, // identificada
+        ["imagem2.jpg"], // imagens
+        "Observações da coleta 2", // observacoes
+        false, // solicita_ajuda_identificacao
+        "2024-01-16T14:30:00Z", // created_at
+        "2024-01-16T14:30:00Z", // updated_at
+        false // deleted
+      ),
+      new Coleta(
+        3,
+        "Coleta 3 - Espécie C",
+        2, // campo_id
+        "2024-01-17T09:15:00Z",
+        null, // familia_id
+        null, // genero_id
+        null, // especie_id
+        "Espécie C", // nome_comum
+        false, // identificada
+        ["imagem3.jpg"], // imagens
+        "Observações da coleta 3", // observacoes
+        true, // solicita_ajuda_identificacao
+        "2024-01-17T09:15:00Z", // created_at
+        "2024-01-17T09:15:00Z", // updated_at
+        false // deleted
+      ),
+      new Coleta(
+        4,
+        "Coleta 4 - Espécie D",
+        3, // campo_id
+        "2024-01-18T16:45:00Z",
+        null, // familia_id
+        null, // genero_id
+        2, // especie_id
+        "Espécie D", // nome_comum
+        true, // identificada
+        ["imagem4.jpg"], // imagens
+        "Observações da coleta 4", // observacoes
+        false, // solicita_ajuda_identificacao
+        "2024-01-18T16:45:00Z", // created_at
+        "2024-01-18T16:45:00Z", // updated_at
+        false // deleted
+      )
+    );
+  }
+
   public getAll(): Message<Coleta[]> {
     const coletasAtivas = this.coletas.filter((coleta) => !coleta.deleted);
     if (coletasAtivas.length > 0) {

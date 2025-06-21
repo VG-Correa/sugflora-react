@@ -14,6 +14,8 @@ import { useNavigation } from "@react-navigation/native";
 import HeaderInterno from "../components/HeaderInterno";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useColetaData } from "../data/coletas/ColetaDataContext";
+import { useProjetoData } from "../data/projetos/ProjetoDataContext";
+import { useCampoData } from "../data/campos/CampoDataContext";
 
 const MyCollectionsScreen = () => {
   const navigation = useNavigation();
@@ -22,9 +24,13 @@ const MyCollectionsScreen = () => {
   const [coletas, setColetas] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [expandedProjects, setExpandedProjects] = useState({});
+  const [expandedFields, setExpandedFields] = useState({});
 
-  // Usando o contexto de coletas
+  // Usando os contextos
   const { coletas: todasColetas } = useColetaData();
+  const { projetos } = useProjetoData();
+  const { campos } = useCampoData();
 
   const tableColumnSizes = isMobile
     ? { id: 80, nome: 200, campo: 150, data: 120, status: 100, acoes: 100 }
@@ -53,6 +59,63 @@ const MyCollectionsScreen = () => {
     }
   };
 
+  const toggleProject = (projectId) => {
+    setExpandedProjects(prev => ({
+      ...prev,
+      [projectId]: !prev[projectId]
+    }));
+  };
+
+  const toggleField = (fieldId) => {
+    setExpandedFields(prev => ({
+      ...prev,
+      [fieldId]: !prev[fieldId]
+    }));
+  };
+
+  const organizeColetasByProjectAndField = (coletas) => {
+    const organized = {};
+
+    coletas.forEach(coleta => {
+      // Buscar campo primeiro
+      const campo = campos.find(c => c.id === coleta.campo_id);
+      
+      // Buscar projeto através do campo
+      const projeto = campo ? projetos.find(p => p.id === campo.projeto_id) : null;
+
+      const projetoId = projeto?.id || 'sem_projeto';
+      const projetoNome = projeto?.nome || 'Sem Projeto';
+      const campoId = campo?.id || 'sem_campo';
+      const campoNome = campo?.nome || 'Sem Campo';
+
+      if (!organized[projetoId]) {
+        organized[projetoId] = {
+          id: projetoId,
+          nome: projetoNome,
+          campos: {}
+        };
+      }
+
+      if (!organized[projetoId].campos[campoId]) {
+        organized[projetoId].campos[campoId] = {
+          id: campoId,
+          nome: campoNome,
+          coletas: []
+        };
+      }
+
+      organized[projetoId].campos[campoId].coletas.push({
+        ...coleta,
+        projeto_id: projeto?.id, // Adicionar projeto_id para navegação
+        dataFormatada: formatDate(coleta.data_coleta),
+        status: coleta.identificada ? "Identificada" : "Não identificada",
+        statusColor: coleta.identificada ? "#4caf50" : "#ff9800",
+      });
+    });
+
+    return organized;
+  };
+
   async function fetchColetas() {
     try {
       setLoading(true);
@@ -70,25 +133,26 @@ const MyCollectionsScreen = () => {
         throw new Error("Usuário não identificado");
       }
 
+      console.log("=== DEBUG DADOS ===");
+      console.log("Projetos disponíveis:", projetos);
+      console.log("Campos disponíveis:", campos);
+      console.log("Coletas disponíveis:", todasColetas);
+
       // Usar as coletas do contexto
       if (todasColetas && todasColetas.length > 0) {
         console.log("Coletas encontradas:", todasColetas.length);
 
         // Filtrar apenas coletas ativas (não deletadas)
         const coletasAtivas = todasColetas.filter((coleta) => !coleta.deleted);
+        console.log("Coletas ativas:", coletasAtivas.length);
 
-        // Formatar as coletas para exibição
-        const coletasFormatadas = coletasAtivas.map((coleta) => ({
-          ...coleta,
-          dataFormatada: formatDate(coleta.data_coleta),
-          status: coleta.identificada ? "Identificada" : "Não identificada",
-          statusColor: coleta.identificada ? "#4caf50" : "#ff9800",
-        }));
-
-        setColetas(coletasFormatadas);
+        // Organizar coletas por projeto e campo
+        const coletasOrganizadas = organizeColetasByProjectAndField(coletasAtivas);
+        console.log("Coletas organizadas:", coletasOrganizadas);
+        setColetas(coletasOrganizadas);
       } else {
         console.log("Nenhuma coleta encontrada");
-        setColetas([]);
+        setColetas({});
       }
     } catch (error) {
       console.error("Erro ao buscar coletas:", error);
@@ -104,7 +168,7 @@ const MyCollectionsScreen = () => {
 
   useEffect(() => {
     fetchColetas();
-  }, [todasColetas]);
+  }, [todasColetas, projetos, campos]);
 
   const handleAddCollection = () => {
     navigation.navigate("SelectProjectAndField");
@@ -116,6 +180,86 @@ const MyCollectionsScreen = () => {
 
   const handleBack = () => {
     navigation.goBack();
+  };
+
+  const handleColetaPress = (coleta) => {
+    navigation.navigate("ColetaScreen", {
+      coleta: coleta,
+      campo: { id: coleta.campo_id },
+      projeto: { id: coleta.projeto_id },
+    });
+  };
+
+  const renderColetaItem = (coleta) => (
+    <TouchableOpacity
+      key={coleta.id}
+      style={styles.coletaItem}
+      onPress={() => handleColetaPress(coleta)}
+      activeOpacity={0.7}
+    >
+      <View style={styles.coletaInfo}>
+        <Text style={styles.coletaNome}>{coleta.nome}</Text>
+        <Text style={styles.coletaData}>{coleta.dataFormatada}</Text>
+      </View>
+      <View style={styles.coletaStatus}>
+        <View style={[styles.statusBadge, { backgroundColor: coleta.statusColor }]}>
+          <Text style={styles.statusText}>{coleta.status}</Text>
+        </View>
+      </View>
+    </TouchableOpacity>
+  );
+
+  const renderFieldSection = (projetoId, campo) => {
+    const isExpanded = expandedFields[campo.id];
+    
+    return (
+      <View key={campo.id} style={styles.fieldSection}>
+        <TouchableOpacity
+          style={styles.fieldHeader}
+          onPress={() => toggleField(campo.id)}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.expandIcon}>{isExpanded ? '▼' : '▶'}</Text>
+          <Text style={styles.fieldName}>{campo.nome}</Text>
+          <Text style={styles.coletaCount}>({campo.coletas.length} coletas)</Text>
+        </TouchableOpacity>
+        
+        {isExpanded && (
+          <View style={styles.coletasList}>
+            {campo.coletas.map(renderColetaItem)}
+          </View>
+        )}
+      </View>
+    );
+  };
+
+  const renderProjectSection = (projeto) => {
+    const isExpanded = expandedProjects[projeto.id];
+    const totalColetas = Object.values(projeto.campos).reduce(
+      (total, campo) => total + campo.coletas.length, 0
+    );
+    
+    return (
+      <View key={projeto.id} style={styles.projectSection}>
+        <TouchableOpacity
+          style={styles.projectHeader}
+          onPress={() => toggleProject(projeto.id)}
+          activeOpacity={0.7}
+        >
+          <Text style={styles.expandIcon}>{isExpanded ? '▼' : '▶'}</Text>
+          <Text style={styles.projectName}>{projeto.nome}</Text>
+          <Text style={styles.coletaCount}>({totalColetas} coletas)</Text>
+        </TouchableOpacity>
+        
+        {isExpanded && (
+          <View style={styles.fieldsList}>
+            {Object.values(projeto.campos).map(campo => 
+              renderFieldSection(projeto.id, campo)
+            )}
+          </View>
+        )}
+      </View>
+    );
   };
 
   if (loading) {
@@ -144,9 +288,10 @@ const MyCollectionsScreen = () => {
     );
   }
 
+  const projetosArray = Object.values(coletas);
+
   return (
     <View style={styles.container}>
-      {/* Header */}
       <HeaderInterno />
 
       <ScrollView
@@ -155,127 +300,18 @@ const MyCollectionsScreen = () => {
       >
         <Text style={styles.pageTitle}>MINHAS COLETAS</Text>
 
-        {/* Tabela de Coletas */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tableScrollContainer}
-        >
-          <View>
-            <View style={styles.tableHeader}>
-              <Text
-                style={[styles.tableHeaderText, { width: tableColumnSizes.id }]}
-              >
-                ID
-              </Text>
-              <Text
-                style={[
-                  styles.tableHeaderText,
-                  { width: tableColumnSizes.nome },
-                ]}
-              >
-                NOME
-              </Text>
-              <Text
-                style={[
-                  styles.tableHeaderText,
-                  { width: tableColumnSizes.campo },
-                ]}
-              >
-                CAMPO
-              </Text>
-              <Text
-                style={[
-                  styles.tableHeaderText,
-                  { width: tableColumnSizes.data },
-                ]}
-              >
-                DATA
-              </Text>
-              <Text
-                style={[
-                  styles.tableHeaderText,
-                  { width: tableColumnSizes.status },
-                ]}
-              >
-                STATUS
-              </Text>
-              <Text
-                style={[
-                  styles.tableHeaderText,
-                  { width: tableColumnSizes.acoes },
-                ]}
-              >
-                AÇÕES
-              </Text>
-            </View>
-
-            {coletas.length === 0 ? (
-              <View style={styles.emptyContainer}>
-                <Text style={styles.emptyText}>Nenhuma coleta encontrada</Text>
-              </View>
-            ) : (
-              coletas.map((coleta) => (
-                <View key={coleta.id} style={styles.tableRow}>
-                  <Text
-                    style={[styles.tableCell, { width: tableColumnSizes.id }]}
-                  >
-                    {coleta.id}
-                  </Text>
-                  <Text
-                    style={[styles.tableCell, { width: tableColumnSizes.nome }]}
-                  >
-                    {coleta.nome}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.tableCell,
-                      { width: tableColumnSizes.campo },
-                    ]}
-                  >
-                    {coleta.campo_id || "Não definido"}
-                  </Text>
-                  <Text
-                    style={[styles.tableCell, { width: tableColumnSizes.data }]}
-                  >
-                    {coleta.dataFormatada}
-                  </Text>
-                  <Text
-                    style={[
-                      styles.tableCell,
-                      {
-                        width: tableColumnSizes.status,
-                        color: coleta.statusColor,
-                        fontWeight: "bold",
-                      },
-                    ]}
-                  >
-                    {coleta.status}
-                  </Text>
-                  <View
-                    style={[
-                      styles.tableCell,
-                      { width: tableColumnSizes.acoes },
-                    ]}
-                  >
-                    <TouchableOpacity
-                      style={styles.actionButton}
-                      onPress={() =>
-                        navigation.navigate("ColetaScreen", {
-                          coleta: coleta,
-                          campo: { id: coleta.campo_id },
-                          projeto: null,
-                        })
-                      }
-                    >
-                      <Text style={styles.actionButtonText}>Ver</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              ))
-            )}
+        {projetosArray.length === 0 ? (
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>Nenhuma coleta encontrada</Text>
+            <Text style={styles.emptySubtext}>
+              Clique em "ADICIONAR COLETA" para começar
+            </Text>
           </View>
-        </ScrollView>
+        ) : (
+          <View style={styles.hierarchicalList}>
+            {projetosArray.map(renderProjectSection)}
+          </View>
+        )}
       </ScrollView>
 
       {/* Action buttons */}
@@ -309,66 +345,125 @@ const MyCollectionsScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
-  headerContainer: { height: 220, width: "100%", position: "relative" },
-  headerBackgroundImage: {
-    width: "100%",
-    height: "100%",
-    position: "absolute",
+  container: { 
+    flex: 1, 
+    backgroundColor: "#fff" 
   },
-  headerContent: {
-    position: "absolute",
-    width: "100%",
-    alignItems: "center",
-    paddingTop: 40,
+  content: { 
+    flex: 1 
   },
-  logoImage: { width: 80, height: 80 },
-  logoText: { fontSize: 24, fontWeight: "bold", color: "#fff", marginTop: 10 },
-  menuTop: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    width: "100%",
-    marginTop: 20,
+  scrollContent: { 
+    padding: 15, 
+    paddingBottom: 100 
   },
-  menuText: { color: "#fff", fontWeight: "bold", fontSize: 12 },
-
-  content: { flex: 1 },
-  scrollContent: { padding: 15, paddingBottom: 100 },
-
   pageTitle: {
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#2e7d32",
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  hierarchicalList: {
+    marginBottom: 20,
+  },
+  projectSection: {
+    marginBottom: 15,
+    backgroundColor: "#f8f9fa",
+    borderRadius: 10,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#e9ecef",
+  },
+  projectHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 15,
+    backgroundColor: "#2e7d32",
+  },
+  projectName: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#2e7d32",
-    marginBottom: 15,
-    textAlign: "left",
+    color: "#fff",
+    flex: 1,
+    marginLeft: 10,
   },
-
-  tableScrollContainer: { minWidth: "100%" },
-  tableHeader: {
-    flexDirection: "row",
-    backgroundColor: "#e8f5e9",
-    paddingVertical: 14,
-    paddingHorizontal: 35,
-  },
-  tableHeaderText: {
+  expandIcon: {
+    fontSize: 16,
+    color: "#fff",
     fontWeight: "bold",
-    textAlign: "left",
-    fontSize: 14,
-    color: "#2e7d32",
   },
-  tableRow: {
+  coletaCount: {
+    fontSize: 14,
+    color: "#fff",
+    opacity: 0.8,
+  },
+  fieldsList: {
+    padding: 10,
+  },
+  fieldSection: {
+    marginBottom: 10,
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#dee2e6",
+  },
+  fieldHeader: {
     flexDirection: "row",
-    paddingVertical: 14,
-    paddingHorizontal: 35,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    alignItems: "center",
+    padding: 12,
+    backgroundColor: "#e8f5e9",
   },
-  tableCell: {
-    textAlign: "left",
-    fontSize: 14,
+  fieldName: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#2e7d32",
+    flex: 1,
+    marginLeft: 10,
+  },
+  coletasList: {
+    padding: 10,
+  },
+  coletaItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 12,
+    backgroundColor: "#fff",
+    borderRadius: 6,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: "#f0f0f0",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  coletaInfo: {
+    flex: 1,
+  },
+  coletaNome: {
+    fontSize: 16,
+    fontWeight: "600",
     color: "#333",
+    marginBottom: 4,
   },
-
+  coletaData: {
+    fontSize: 14,
+    color: "#666",
+  },
+  coletaStatus: {
+    marginLeft: 10,
+  },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusText: {
+    fontSize: 12,
+    fontWeight: "bold",
+    color: "#fff",
+  },
   buttonContainer: {
     flexDirection: "row",
     justifyContent: "space-around",
@@ -393,9 +488,15 @@ const styles = StyleSheet.create({
     flexBasis: "30%",
     marginVertical: 5,
   },
-  addButton: { backgroundColor: "#2e7d32" },
-  reportButton: { backgroundColor: "#1565c0" },
-  backButton: { backgroundColor: "#999" },
+  addButton: { 
+    backgroundColor: "#2e7d32" 
+  },
+  reportButton: { 
+    backgroundColor: "#1565c0" 
+  },
+  backButton: { 
+    backgroundColor: "#999" 
+  },
   buttonText: {
     color: "#fff",
     fontWeight: "bold",
@@ -424,24 +525,19 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   emptyContainer: {
-    padding: 20,
+    padding: 40,
     alignItems: "center",
   },
   emptyText: {
     color: "#666",
-    fontSize: 16,
-    fontStyle: "italic",
+    fontSize: 18,
+    fontWeight: "600",
+    marginBottom: 10,
   },
-  actionButton: {
-    backgroundColor: "#2e7d32",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-  },
-  actionButtonText: {
-    color: "#fff",
-    fontSize: 12,
-    fontWeight: "bold",
+  emptySubtext: {
+    color: "#999",
+    fontSize: 14,
+    textAlign: "center",
   },
   retryButton: {
     backgroundColor: "#d32f2f",

@@ -460,7 +460,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     width: "100%",
     alignItems: "center",
-    paddingTop: Platform.OS === "ios" ? 40 : 20,
+    paddingTop: Platform.OS === "ios" ? 50 : 30,
   },
   logoImage: {
     width: 80,
@@ -524,9 +524,15 @@ const styles = StyleSheet.create({
   },
   menuHamburguer: {
     position: "absolute",
-    top: 10,
+    top: Platform.OS === "ios" ? 50 : 30,
     right: 20,
     zIndex: 1001,
+    backgroundColor: "rgba(46, 125, 50, 0.9)",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.3)",
   },
   menuBackdrop: {
     position: "absolute",
@@ -539,7 +545,7 @@ const styles = StyleSheet.create({
   },
   menuMobileContainer: {
     position: "absolute",
-    top: 120,
+    top: Platform.OS === "ios" ? 90 : 70,
     right: 20,
     backgroundColor: "rgba(46, 125, 50, 0.95)",
     borderRadius: 10,

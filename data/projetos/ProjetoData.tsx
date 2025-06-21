@@ -5,8 +5,40 @@ class ProjetoData {
   projetos: Projeto[] = [];
 
   constructor() {
-    // Inicialização vazia - projetos serão adicionados dinamicamente
-    console.log("ProjetoData inicializado com array vazio");
+    // Adicionar dados de exemplo para testar a funcionalidade
+    this.projetos.push(
+      new Projeto(
+        1,
+        "Projeto Flora Amazônica",
+        "Estudo da biodiversidade da flora amazônica",
+        "2024-01-01",
+        "2024-06-30",
+        "2024-12-31",
+        1, // responsavel_id
+        1, // usuario_dono_id
+        "data:image/jpeg;base64,exemplo", // imagemBase64
+        "Ativo", // status
+        "2024-01-01T00:00:00Z", // created_at
+        "2024-01-01T00:00:00Z", // updated_at
+        false // deleted
+      ),
+      new Projeto(
+        2,
+        "Projeto Mata Atlântica",
+        "Pesquisa sobre espécies endêmicas da Mata Atlântica",
+        "2024-02-01",
+        "2024-07-15",
+        "2024-11-30",
+        1, // responsavel_id
+        1, // usuario_dono_id
+        "data:image/jpeg;base64,exemplo", // imagemBase64
+        "Ativo", // status
+        "2024-02-01T00:00:00Z", // created_at
+        "2024-02-01T00:00:00Z", // updated_at
+        false // deleted
+      )
+    );
+    console.log("ProjetoData inicializado com projetos de exemplo");
   }
 
   getLastId(): number {

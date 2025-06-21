@@ -40,6 +40,11 @@ import ChatEuConhecoEssa from "./screens/Chat-EuConhecoEssa";
 import ReportConfiguration from "./screens/ReportConfiguration";
 import ReportView from "./screens/ReportView";
 
+// Novas telas de relatório
+import BiodiversityReport from "./screens/BiodiversityReport";
+import QuantitativeReport from "./screens/QuantitativeReport";
+import QualitativeReport from "./screens/QualitativeReport";
+
 const Stack = createNativeStackNavigator();
 
 const App = () => {
@@ -218,6 +223,23 @@ const App = () => {
             <Stack.Screen
               name="ReportView"
               component={ReportView}
+              options={{ headerShown: false, gestureEnabled: true }}
+            />
+
+            {/* Novas telas de relatório biodiversificado */}
+            <Stack.Screen
+              name="BiodiversityReport"
+              component={BiodiversityReport}
+              options={{ headerShown: false, gestureEnabled: true }}
+            />
+            <Stack.Screen
+              name="QuantitativeReport"
+              component={QuantitativeReport}
+              options={{ headerShown: false, gestureEnabled: true }}
+            />
+            <Stack.Screen
+              name="QualitativeReport"
+              component={QualitativeReport}
               options={{ headerShown: false, gestureEnabled: true }}
             />
           </Stack.Navigator>

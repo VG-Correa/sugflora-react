@@ -64,16 +64,22 @@ const ColetaScreen = () => {
       if (coleta.familia_id) {
         const familiaData = getFamiliaById(coleta.familia_id).data;
         setFamilia(familiaData);
+      } else {
+        setFamilia(null);
       }
       
       if (coleta.genero_id) {
         const generoData = getGeneroById(coleta.genero_id).data;
         setGenero(generoData);
+      } else {
+        setGenero(null);
       }
       
       if (coleta.especie_id) {
         const especieData = getEspecieById(coleta.especie_id).data;
         setEspecie(especieData);
+      } else {
+        setEspecie(null);
       }
     }
   }, [coleta, getFamiliaById, getGeneroById, getEspecieById]);
@@ -203,13 +209,22 @@ const ColetaScreen = () => {
       const response = await updateColeta(coletaAtualizada);
 
       if (response.status === 200) {
+        // Atualizar o estado local da coleta com os dados atualizados
+        const coletaAtualizadaCompleta = response.data;
+        
         Alert.alert(
           "Sucesso",
           "Coleta atualizada com sucesso!",
           [
             {
               text: "OK",
-              onPress: () => setIsEditing(false),
+              onPress: () => {
+                setIsEditing(false);
+                // Atualizar os dados da coleta no route.params
+                route.params.coleta = coletaAtualizadaCompleta;
+                // Forçar re-renderização da tela
+                navigation.setParams({ coleta: coletaAtualizadaCompleta });
+              },
             },
           ],
           { cancelable: false }
@@ -365,6 +380,17 @@ const ColetaScreen = () => {
   return (
     <View style={styles.container}>
       <HeaderInterno />
+      
+      {/* Botão de voltar */}
+      <View style={styles.backButtonContainer}>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.backButtonText}>← Voltar</Text>
+        </TouchableOpacity>
+      </View>
+      
       <KeyboardAvoidingView
         style={styles.content}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -595,8 +621,6 @@ const ColetaScreen = () => {
                   items={especies.map((e) => ({
                     id: e.id,
                     label: e.nome,
-                    genero: e.genero,
-                    familia: e.genero.familia,
                   }))}
                   placeholder="Selecione a espécie"
                   searchable
@@ -879,6 +903,26 @@ const styles = StyleSheet.create({
     marginTop: 15,
     color: "#2e7d32",
     fontSize: 16,
+  },
+  backButtonContainer: {
+    paddingHorizontal: 20,
+    paddingTop: 10,
+    paddingBottom: 5,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e0e0e0",
+  },
+  backButton: {
+    backgroundColor: "#2e7d32",
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignSelf: "flex-start",
+  },
+  backButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 14,
   },
 });
 

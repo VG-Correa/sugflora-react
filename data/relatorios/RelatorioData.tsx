@@ -1,7 +1,72 @@
 import Relatorio from "./Relatorio";
+import Message from "../../Messages/Message";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 class RelatorioData {
-  private baseURL: string = "http://localhost:8080/api";
+  relatorios: Relatorio[] = [];
+  private readonly STORAGE_KEY = "sugflora_relatorios";
+
+  constructor() {
+    console.log("RelatorioData inicializado");
+    this.loadFromStorage();
+  }
+
+  private async loadFromStorage() {
+    try {
+      console.log("Carregando relatórios do AsyncStorage...");
+      const storedData = await AsyncStorage.getItem(this.STORAGE_KEY);
+      console.log("Dados encontrados no storage:", storedData ? "sim" : "não");
+      
+      if (storedData) {
+        const parsedData = JSON.parse(storedData);
+        console.log("Dados parseados:", parsedData);
+        
+        this.relatorios = parsedData.map((r: any) => 
+          new Relatorio(
+            r.id,
+            r.titulo,
+            r.descricao,
+            r.tipo,
+            r.projeto_id,
+            r.usuario_id,
+            r.data_inicio,
+            r.data_fim,
+            r.status,
+            r.arquivo_url,
+            r.created_at,
+            r.updated_at,
+            r.deleted
+          )
+        );
+        console.log("Relatórios carregados do storage:", this.relatorios.length);
+        console.log("Relatórios:", this.relatorios);
+      } else {
+        console.log("Nenhum relatório encontrado no storage");
+        this.relatorios = [];
+      }
+    } catch (error) {
+      console.error("Erro ao carregar relatórios do storage:", error);
+      this.relatorios = [];
+    }
+  }
+
+  private async saveToStorage() {
+    try {
+      await AsyncStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.relatorios));
+      console.log("Relatórios salvos no storage:", this.relatorios.length);
+    } catch (error) {
+      console.error("Erro ao salvar relatórios no storage:", error);
+    }
+  }
+
+  getLastId(): number {
+    if (this.relatorios.length === 0) {
+      return 0;
+    } else {
+      const id: number | undefined = this.relatorios[this.relatorios.length - 1].id;
+      return id ? id : 0;
+    }
+  }
 
   async getAllRelatorios(): Promise<{
     status: number;
@@ -9,37 +74,15 @@ class RelatorioData {
     message?: string;
   }> {
     try {
-      const response = await fetch(`${this.baseURL}/relatorios`);
-      const data = await response.json();
-
-      if (response.ok) {
-        return {
-          status: 200,
-          data: data.map(
-            (item: any) =>
-              new Relatorio(
-                item.id,
-                item.titulo,
-                item.descricao,
-                item.tipo,
-                item.projeto_id,
-                item.usuario_id,
-                item.data_inicio,
-                item.data_fim,
-                item.status,
-                item.arquivo_url,
-                item.created_at,
-                item.updated_at,
-                item.deleted
-              )
-          ),
-        };
-      } else {
-        return {
-          status: response.status,
-          message: data.message || "Erro ao buscar relatórios",
-        };
-      }
+      console.log("getAllRelatorios chamado - todos os relatórios:", this.relatorios);
+      const relatoriosAtivos = this.relatorios.filter((r) => !r.deleted);
+      console.log("Relatórios ativos (não deletados):", relatoriosAtivos);
+      
+      return {
+        status: 200,
+        data: relatoriosAtivos,
+        message: "Relatórios localizados"
+      };
     } catch (error) {
       console.error("Erro ao buscar relatórios:", error);
       return {
@@ -53,32 +96,20 @@ class RelatorioData {
     id: number
   ): Promise<{ status: number; data?: any; message?: string }> {
     try {
-      const response = await fetch(`${this.baseURL}/relatorios/${id}`);
-      const data = await response.json();
-
-      if (response.ok) {
+      const relatorio = this.relatorios.find(
+        (r) => r.id === id && !r.deleted
+      );
+      
+      if (relatorio) {
         return {
           status: 200,
-          data: new Relatorio(
-            data.id,
-            data.titulo,
-            data.descricao,
-            data.tipo,
-            data.projeto_id,
-            data.usuario_id,
-            data.data_inicio,
-            data.data_fim,
-            data.status,
-            data.arquivo_url,
-            data.created_at,
-            data.updated_at,
-            data.deleted
-          ),
+          data: relatorio,
+          message: "Relatório localizado"
         };
       } else {
         return {
-          status: response.status,
-          message: data.message || "Erro ao buscar relatório",
+          status: 404,
+          message: "Relatório não localizado"
         };
       }
     } catch (error) {
@@ -94,39 +125,15 @@ class RelatorioData {
     projetoId: number
   ): Promise<{ status: number; data?: any; message?: string }> {
     try {
-      const response = await fetch(
-        `${this.baseURL}/relatorios/projeto/${projetoId}`
+      const relatorios = this.relatorios.filter(
+        (r) => r.projeto_id === projetoId && !r.deleted
       );
-      const data = await response.json();
-
-      if (response.ok) {
-        return {
-          status: 200,
-          data: data.map(
-            (item: any) =>
-              new Relatorio(
-                item.id,
-                item.titulo,
-                item.descricao,
-                item.tipo,
-                item.projeto_id,
-                item.usuario_id,
-                item.data_inicio,
-                item.data_fim,
-                item.status,
-                item.arquivo_url,
-                item.created_at,
-                item.updated_at,
-                item.deleted
-              )
-          ),
-        };
-      } else {
-        return {
-          status: response.status,
-          message: data.message || "Erro ao buscar relatórios do projeto",
-        };
-      }
+      
+      return {
+        status: 200,
+        data: relatorios,
+        message: "Relatórios do projeto localizados"
+      };
     } catch (error) {
       console.error("Erro ao buscar relatórios do projeto:", error);
       return {
@@ -140,39 +147,15 @@ class RelatorioData {
     usuarioId: number
   ): Promise<{ status: number; data?: any; message?: string }> {
     try {
-      const response = await fetch(
-        `${this.baseURL}/relatorios/usuario/${usuarioId}`
+      const relatorios = this.relatorios.filter(
+        (r) => r.usuario_id === usuarioId && !r.deleted
       );
-      const data = await response.json();
-
-      if (response.ok) {
-        return {
-          status: 200,
-          data: data.map(
-            (item: any) =>
-              new Relatorio(
-                item.id,
-                item.titulo,
-                item.descricao,
-                item.tipo,
-                item.projeto_id,
-                item.usuario_id,
-                item.data_inicio,
-                item.data_fim,
-                item.status,
-                item.arquivo_url,
-                item.created_at,
-                item.updated_at,
-                item.deleted
-              )
-          ),
-        };
-      } else {
-        return {
-          status: response.status,
-          message: data.message || "Erro ao buscar relatórios do usuário",
-        };
-      }
+      
+      return {
+        status: 200,
+        data: relatorios,
+        message: "Relatórios do usuário localizados"
+      };
     } catch (error) {
       console.error("Erro ao buscar relatórios do usuário:", error);
       return {
@@ -186,41 +169,29 @@ class RelatorioData {
     relatorio: Relatorio
   ): Promise<{ status: number; data?: any; message?: string }> {
     try {
-      const response = await fetch(`${this.baseURL}/relatorios`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(relatorio),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        return {
-          status: 200,
-          data: new Relatorio(
-            data.id,
-            data.titulo,
-            data.descricao,
-            data.tipo,
-            data.projeto_id,
-            data.usuario_id,
-            data.data_inicio,
-            data.data_fim,
-            data.status,
-            data.arquivo_url,
-            data.created_at,
-            data.updated_at,
-            data.deleted
-          ),
-        };
-      } else {
-        return {
-          status: response.status,
-          message: data.message || "Erro ao criar relatório",
-        };
-      }
+      console.log("Criando relatório:", relatorio);
+      console.log("Relatórios antes da criação:", this.relatorios.length);
+      
+      relatorio.id = this.getLastId() + 1;
+      relatorio.created_at = new Date().toISOString();
+      relatorio.updated_at = new Date().toISOString();
+      relatorio.deleted = false;
+      
+      console.log("Relatório após configuração:", relatorio);
+      
+      this.relatorios.push(relatorio);
+      
+      // Salvar no storage
+      await this.saveToStorage();
+      
+      console.log("Relatórios após criação:", this.relatorios.length);
+      console.log("Todos os relatórios:", this.relatorios);
+      
+      return {
+        status: 200,
+        data: relatorio,
+        message: "Relatório criado com sucesso"
+      };
     } catch (error) {
       console.error("Erro ao criar relatório:", error);
       return {
@@ -234,42 +205,26 @@ class RelatorioData {
     relatorio: Relatorio
   ): Promise<{ status: number; data?: any; message?: string }> {
     try {
-      const response = await fetch(
-        `${this.baseURL}/relatorios/${relatorio.id}`,
-        {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify(relatorio),
-        }
+      const index = this.relatorios.findIndex(
+        (r) => r.id === relatorio.id && !r.deleted
       );
 
-      const data = await response.json();
-
-      if (response.ok) {
+      if (index !== -1) {
+        relatorio.updated_at = new Date().toISOString();
+        this.relatorios[index] = { ...this.relatorios[index], ...relatorio };
+        
+        // Salvar no storage
+        await this.saveToStorage();
+        
         return {
           status: 200,
-          data: new Relatorio(
-            data.id,
-            data.titulo,
-            data.descricao,
-            data.tipo,
-            data.projeto_id,
-            data.usuario_id,
-            data.data_inicio,
-            data.data_fim,
-            data.status,
-            data.arquivo_url,
-            data.created_at,
-            data.updated_at,
-            data.deleted
-          ),
+          data: this.relatorios[index],
+          message: "Relatório atualizado com sucesso"
         };
       } else {
         return {
-          status: response.status,
-          message: data.message || "Erro ao atualizar relatório",
+          status: 404,
+          message: "Relatório não encontrado para atualização"
         };
       }
     } catch (error) {
@@ -285,20 +240,23 @@ class RelatorioData {
     id: number
   ): Promise<{ status: number; data?: any; message?: string }> {
     try {
-      const response = await fetch(`${this.baseURL}/relatorios/${id}`, {
-        method: "DELETE",
-      });
+      const index = this.relatorios.findIndex((r) => r.id === id && !r.deleted);
 
-      if (response.ok) {
+      if (index !== -1) {
+        this.relatorios[index].deleted = true;
+        this.relatorios[index].updated_at = new Date().toISOString();
+        
+        // Salvar no storage
+        await this.saveToStorage();
+        
         return {
           status: 200,
-          message: "Relatório excluído com sucesso",
+          message: "Relatório excluído com sucesso"
         };
       } else {
-        const data = await response.json();
         return {
-          status: response.status,
-          message: data.message || "Erro ao excluir relatório",
+          status: 404,
+          message: "Relatório não encontrado para exclusão"
         };
       }
     } catch (error) {
@@ -314,30 +272,18 @@ class RelatorioData {
     relatorio: Relatorio
   ): Promise<{ status: number; data?: any; message?: string }> {
     try {
-      const response = await fetch(`${this.baseURL}/relatorios/gerar`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(relatorio),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        return {
-          status: 200,
-          data: {
-            ...data,
-            arquivo_url: data.arquivo_url,
-          },
-        };
-      } else {
-        return {
-          status: response.status,
-          message: data.message || "Erro ao gerar relatório",
-        };
-      }
+      // Simular geração de relatório
+      const relatorioGerado = {
+        ...relatorio,
+        arquivo_url: `relatorio_${relatorio.id}_${Date.now()}.pdf`,
+        status: "gerado"
+      };
+      
+      return {
+        status: 200,
+        data: relatorioGerado,
+        message: "Relatório gerado com sucesso"
+      };
     } catch (error) {
       console.error("Erro ao gerar relatório:", error);
       return {

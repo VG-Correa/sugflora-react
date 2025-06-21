@@ -7,9 +7,6 @@ import React, {
 } from "react";
 import RelatorioData from "./RelatorioData";
 import Relatorio from "./Relatorio";
-import PersistenceService from "../services/PersistenceService";
-import CacheService from "../services/CacheService";
-import SyncService from "../services/SyncService";
 
 interface RelatorioDataContextType {
   relatorios: Relatorio[];
@@ -50,9 +47,6 @@ export const RelatorioDataProvider: React.FC<RelatorioDataProviderProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   const relatorioData = new RelatorioData();
-  const persistenceService = PersistenceService.getInstance();
-  const cacheService = CacheService.getInstance();
-  const syncService = SyncService.getInstance();
 
   // Carregar dados iniciais
   useEffect(() => {
@@ -64,63 +58,29 @@ export const RelatorioDataProvider: React.FC<RelatorioDataProviderProps> = ({
       setLoading(true);
       setError(null);
 
-      // Tentar carregar do cache primeiro
-      const cachedRelatorios = cacheService.get("relatorios");
-      if (cachedRelatorios) {
-        setRelatorios(
-          cachedRelatorios.map(
-            (r: any) =>
-              new Relatorio(
-                r.id,
-                r.titulo,
-                r.descricao,
-                r.tipo,
-                r.projeto_id,
-                r.usuario_id,
-                r.data_inicio,
-                r.data_fim,
-                r.status,
-                r.arquivo_url,
-                r.created_at,
-                r.updated_at,
-                r.deleted
-              )
-          )
-        );
-        setLoading(false);
-        return;
+      console.log("=== CARREGANDO DADOS INICIAIS ===");
+      
+      // Aguardar mais tempo para o RelatorioData carregar do storage
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Carregar relatórios do RelatorioData local
+      const response = await relatorioData.getAllRelatorios();
+      
+      console.log("Resposta do getAllRelatorios:", response);
+      
+      if (response.status === 200 && response.data) {
+        console.log("Relatórios carregados no contexto:", response.data.length);
+        console.log("Relatórios:", response.data);
+        setRelatorios(response.data);
+      } else {
+        console.log("Nenhum relatório encontrado ou erro:", response.message);
+        setRelatorios([]);
       }
 
-      // Se não há cache, carregar da persistência local
-      const persistedRelatorios = await persistenceService.loadRelatorios();
-      if (persistedRelatorios) {
-        const relatorioObjects = persistedRelatorios.map(
-          (r: any) =>
-            new Relatorio(
-              r.id,
-              r.titulo,
-              r.descricao,
-              r.tipo,
-              r.projeto_id,
-              r.usuario_id,
-              r.data_inicio,
-              r.data_fim,
-              r.status,
-              r.arquivo_url,
-              r.created_at,
-              r.updated_at,
-              r.deleted
-            )
-        );
-        setRelatorios(relatorioObjects);
-        cacheService.set("relatorios", relatorioObjects, 5 * 60 * 1000); // 5 minutos
-      }
-
-      // Tentar sincronizar com o servidor
-      await syncRelatorios();
     } catch (err) {
       console.error("Erro ao carregar dados iniciais:", err);
       setError("Erro ao carregar relatórios");
+      setRelatorios([]);
     } finally {
       setLoading(false);
     }
@@ -130,37 +90,19 @@ export const RelatorioDataProvider: React.FC<RelatorioDataProviderProps> = ({
     relatorio: Relatorio
   ): Promise<{ status: number; data?: any; message?: string }> => {
     try {
+      console.log("=== CRIANDO RELATÓRIO NO CONTEXTO ===");
       const response = await relatorioData.createRelatorio(relatorio);
 
       if (response.status === 200 && response.data) {
-        const newRelatorio = new Relatorio(
-          response.data.id,
-          response.data.titulo,
-          response.data.descricao,
-          response.data.tipo,
-          response.data.projeto_id,
-          response.data.usuario_id,
-          response.data.data_inicio,
-          response.data.data_fim,
-          response.data.status,
-          response.data.arquivo_url,
-          response.data.created_at,
-          response.data.updated_at,
-          response.data.deleted
-        );
-
-        setRelatorios((prev) => [...prev, newRelatorio]);
-
-        // Atualizar persistência e cache
-        await persistenceService.saveRelatorios([...relatorios, newRelatorio]);
-        cacheService.set(
-          "relatorios",
-          [...relatorios, newRelatorio],
-          5 * 60 * 1000
-        );
-
-        // Invalidar cache relacionado
-        cacheService.invalidateRelated("relatorios");
+        const newRelatorio = response.data;
+        console.log("Novo relatório criado:", newRelatorio);
+        
+        // Atualizar o estado local
+        setRelatorios((prev) => {
+          const updated = [...prev, newRelatorio];
+          console.log("Relatórios atualizados no contexto:", updated.length);
+          return updated;
+        });
       }
 
       return response;
@@ -180,19 +122,6 @@ export const RelatorioDataProvider: React.FC<RelatorioDataProviderProps> = ({
         setRelatorios((prev) =>
           prev.map((r) => (r.id === relatorio.id ? relatorio : r))
         );
-
-        // Atualizar persistência e cache
-        await persistenceService.saveRelatorios(
-          relatorios.map((r) => (r.id === relatorio.id ? relatorio : r))
-        );
-        cacheService.set(
-          "relatorios",
-          relatorios.map((r) => (r.id === relatorio.id ? relatorio : r)),
-          5 * 60 * 1000
-        );
-
-        // Invalidar cache relacionado
-        cacheService.invalidateRelated("relatorios");
       }
 
       return response;
@@ -210,19 +139,6 @@ export const RelatorioDataProvider: React.FC<RelatorioDataProviderProps> = ({
 
       if (response.status === 200) {
         setRelatorios((prev) => prev.filter((r) => r.id !== id));
-
-        // Atualizar persistência e cache
-        await persistenceService.saveRelatorios(
-          relatorios.filter((r) => r.id !== id)
-        );
-        cacheService.set(
-          "relatorios",
-          relatorios.filter((r) => r.id !== id),
-          5 * 60 * 1000
-        );
-
-        // Invalidar cache relacionado
-        cacheService.invalidateRelated("relatorios");
       }
 
       return response;
@@ -237,11 +153,24 @@ export const RelatorioDataProvider: React.FC<RelatorioDataProviderProps> = ({
   };
 
   const getRelatoriosByProjeto = (projetoId: number): Relatorio[] => {
-    return relatorios.filter((r) => r.projeto_id === projetoId && !r.deleted);
+    console.log("=== BUSCANDO RELATÓRIOS POR PROJETO ===");
+    console.log("projetoId:", projetoId);
+    console.log("relatórios disponíveis:", relatorios.length);
+    console.log("relatórios:", relatorios);
+    
+    const filtered = relatorios.filter((r) => r.projeto_id === projetoId && !r.deleted);
+    console.log("relatórios filtrados:", filtered.length);
+    return filtered;
   };
 
   const getRelatoriosByUsuario = (usuarioId: number): Relatorio[] => {
-    return relatorios.filter((r) => r.usuario_id === usuarioId && !r.deleted);
+    console.log("=== BUSCANDO RELATÓRIOS POR USUÁRIO ===");
+    console.log("usuarioId:", usuarioId);
+    console.log("relatórios disponíveis:", relatorios.length);
+    
+    const filtered = relatorios.filter((r) => r.usuario_id === usuarioId && !r.deleted);
+    console.log("relatórios filtrados:", filtered.length);
+    return filtered;
   };
 
   const gerarRelatorio = async (
@@ -259,19 +188,6 @@ export const RelatorioDataProvider: React.FC<RelatorioDataProviderProps> = ({
         setRelatorios((prev) =>
           prev.map((r) => (r.id === relatorio.id ? updatedRelatorio : r))
         );
-
-        // Atualizar persistência e cache
-        await persistenceService.saveRelatorios(
-          relatorios.map((r) => (r.id === relatorio.id ? updatedRelatorio : r))
-        );
-        cacheService.set(
-          "relatorios",
-          relatorios.map((r) => (r.id === relatorio.id ? updatedRelatorio : r)),
-          5 * 60 * 1000
-        );
-
-        // Invalidar cache relacionado
-        cacheService.invalidateRelated("relatorios");
       }
 
       return response;
@@ -284,12 +200,6 @@ export const RelatorioDataProvider: React.FC<RelatorioDataProviderProps> = ({
   const refreshRelatorios = async (): Promise<void> => {
     try {
       setLoading(true);
-      setError(null);
-
-      // Limpar cache para forçar recarregamento
-      cacheService.delete("relatorios");
-
-      // Recarregar dados
       await loadInitialData();
     } catch (err) {
       console.error("Erro ao atualizar relatórios:", err);
@@ -301,39 +211,14 @@ export const RelatorioDataProvider: React.FC<RelatorioDataProviderProps> = ({
 
   const syncRelatorios = async (): Promise<void> => {
     try {
-      await syncService.syncRelatorios();
-
-      // Recarregar dados após sincronização
-      const persistedRelatorios = await persistenceService.loadRelatorios();
-      if (persistedRelatorios) {
-        const relatorioObjects = persistedRelatorios.map(
-          (r: any) =>
-            new Relatorio(
-              r.id,
-              r.titulo,
-              r.descricao,
-              r.tipo,
-              r.projeto_id,
-              r.usuario_id,
-              r.data_inicio,
-              r.data_fim,
-              r.status,
-              r.arquivo_url,
-              r.created_at,
-              r.updated_at,
-              r.deleted
-            )
-        );
-        setRelatorios(relatorioObjects);
-        cacheService.set("relatorios", relatorioObjects, 5 * 60 * 1000);
-      }
+      // Simular sincronização (não há servidor real)
+      console.log("Sincronização de relatórios simulada");
     } catch (err) {
-      console.error("Erro na sincronização de relatórios:", err);
-      // Não definir erro aqui, pois a sincronização pode falhar sem afetar o uso offline
+      console.error("Erro ao sincronizar relatórios:", err);
     }
   };
 
-  const value: RelatorioDataContextType = {
+  const contextValue: RelatorioDataContextType = {
     relatorios,
     loading,
     error,
@@ -349,7 +234,7 @@ export const RelatorioDataProvider: React.FC<RelatorioDataProviderProps> = ({
   };
 
   return (
-    <RelatorioDataContext.Provider value={value}>
+    <RelatorioDataContext.Provider value={contextValue}>
       {children}
     </RelatorioDataContext.Provider>
   );
@@ -357,10 +242,8 @@ export const RelatorioDataProvider: React.FC<RelatorioDataProviderProps> = ({
 
 export const useRelatorioData = (): RelatorioDataContextType => {
   const context = useContext(RelatorioDataContext);
-  if (context === undefined) {
-    throw new Error(
-      "useRelatorioData deve ser usado dentro de um RelatorioDataProvider"
-    );
+  if (!context) {
+    throw new Error("useRelatorioData deve ser usado dentro de um RelatorioDataProvider");
   }
   return context;
 };

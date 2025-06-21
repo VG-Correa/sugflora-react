@@ -1,13 +1,14 @@
 class Relatorio {
   id: number | undefined;
   titulo: string;
-  tipo: string; // 'quantitativo', 'qualitativo'
+  descricao?: string;
+  tipo: string; // 'quantitativo', 'qualitativo', 'biodiversidade'
   projeto_id: number;
-  campo_id: number | null;
-  periodo_inicio: string;
-  periodo_fim: string;
-  dados: any; // JSON com os dados do relatório
-  usuario_gerador_id: string;
+  usuario_id: number;
+  data_inicio?: string;
+  data_fim?: string;
+  status?: string;
+  arquivo_url?: string;
   created_at: string;
   updated_at: string;
   deleted: boolean;
@@ -15,26 +16,28 @@ class Relatorio {
   constructor(
     id: number | undefined,
     titulo: string,
+    descricao: string | undefined,
     tipo: string,
     projeto_id: number,
-    campo_id: number | null,
-    periodo_inicio: string,
-    periodo_fim: string,
-    dados: any,
-    usuario_gerador_id: string,
+    usuario_id: number,
+    data_inicio: string | undefined,
+    data_fim: string | undefined,
+    status: string | undefined,
+    arquivo_url: string | undefined,
     created_at: string,
     updated_at: string,
     deleted: boolean = false
   ) {
     this.id = id;
     this.titulo = titulo;
+    this.descricao = descricao;
     this.tipo = tipo;
     this.projeto_id = projeto_id;
-    this.campo_id = campo_id;
-    this.periodo_inicio = periodo_inicio;
-    this.periodo_fim = periodo_fim;
-    this.dados = dados;
-    this.usuario_gerador_id = usuario_gerador_id;
+    this.usuario_id = usuario_id;
+    this.data_inicio = data_inicio;
+    this.data_fim = data_fim;
+    this.status = status;
+    this.arquivo_url = arquivo_url;
     this.created_at = created_at;
     this.updated_at = updated_at;
     this.deleted = deleted;

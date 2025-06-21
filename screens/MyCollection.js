@@ -175,7 +175,7 @@ const MyCollectionsScreen = () => {
   };
 
   const handleGenerateReport = () => {
-    navigation.navigate("ReportConfiguration");
+    navigation.navigate("MyReports");
   };
 
   const handleBack = () => {

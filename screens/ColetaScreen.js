@@ -29,70 +29,60 @@ const ColetaScreen = () => {
   const { coleta, campo, projeto } = route.params;
 
   const { updateColeta, deleteColeta } = useColetaData();
-  const { familias } = useFamiliaData();
-  const { generos, getGenerosByFamilia } = useGeneroData();
-  const { especies, getEspeciesByGenero } = useEspecieData();
+  const { familias, getFamiliaById } = useFamiliaData();
+  const { generos, getGenerosByFamilia, getGeneroById } = useGeneroData();
+  const { especies, getEspeciesByGenero, getEspecieById } = useEspecieData();
 
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({
-    nome: "",
-    data_coleta: null,
-    familia_id: null,
-    genero_id: null,
-    especie_id: null,
-    nome_comum: "",
-    observacoes: "",
-    imagens: [],
-    solicita_ajuda_identificacao: false,
-  });
+  
+  // Estados para edição baseados na AddCollection
+  const [nomeColeta, setNomeColeta] = useState("");
+  const [dataColeta, setDataColeta] = useState(null);
+  const [familia, setFamilia] = useState(null);
+  const [genero, setGenero] = useState(null);
+  const [especie, setEspecie] = useState(null);
+  const [nomeComum, setNomeComum] = useState("");
+  const [observacoes, setObservacoes] = useState("");
+  const [images, setImages] = useState([]);
+  const [solicitaAjuda, setSolicitaAjuda] = useState(false);
 
   // Determinar se é modo de visualização ou criação
   const isViewMode = !!coleta;
 
   useEffect(() => {
     if (coleta) {
-      // Modo visualização - carregar dados da coleta
-      setFormData({
-        nome: coleta.nome || "",
-        data_coleta: coleta.data_coleta ? new Date(coleta.data_coleta) : null,
-        familia_id: coleta.familia_id,
-        genero_id: coleta.genero_id,
-        especie_id: coleta.especie_id,
-        nome_comum: coleta.nome_comum || "",
-        observacoes: coleta.observacoes || "",
-        imagens: coleta.imagens || [],
-        solicita_ajuda_identificacao: coleta.solicita_ajuda_identificacao || false,
-      });
-    }
-  }, [coleta]);
-
-  // Listener para recarregar dados quando a tela voltar ao foco
-  useEffect(() => {
-    const unsubscribe = navigation.addListener("focus", () => {
-      if (coleta && !isEditing) {
-        // Recarregar dados da coleta se necessário
-        setFormData({
-          nome: coleta.nome || "",
-          data_coleta: coleta.data_coleta ? new Date(coleta.data_coleta) : null,
-          familia_id: coleta.familia_id,
-          genero_id: coleta.genero_id,
-          especie_id: coleta.especie_id,
-          nome_comum: coleta.nome_comum || "",
-          observacoes: coleta.observacoes || "",
-          imagens: coleta.imagens || [],
-          solicita_ajuda_identificacao: coleta.solicita_ajuda_identificacao || false,
-        });
+      // Carregar dados da coleta para visualização e edição
+      setNomeColeta(coleta.nome || "");
+      setDataColeta(coleta.data_coleta ? new Date(coleta.data_coleta) : null);
+      setNomeComum(coleta.nome_comum || "");
+      setObservacoes(coleta.observacoes || "");
+      setImages(coleta.imagens || []);
+      setSolicitaAjuda(coleta.solicita_ajuda_identificacao || false);
+      
+      // Carregar família, gênero e espécie se existirem
+      if (coleta.familia_id) {
+        const familiaData = getFamiliaById(coleta.familia_id).data;
+        setFamilia(familiaData);
       }
-    });
-
-    return unsubscribe;
-  }, [navigation, coleta, isEditing]);
+      
+      if (coleta.genero_id) {
+        const generoData = getGeneroById(coleta.genero_id).data;
+        setGenero(generoData);
+      }
+      
+      if (coleta.especie_id) {
+        const especieData = getEspecieById(coleta.especie_id).data;
+        setEspecie(especieData);
+      }
+    }
+  }, [coleta, getFamiliaById, getGeneroById, getEspecieById]);
 
   // Carrega gêneros quando família muda
   useEffect(() => {
-    const famId = formData.familia_id;
+    const famId = familia?.id;
     if (!famId) {
+      setGenero(null);
       return;
     }
 
@@ -104,12 +94,13 @@ const ColetaScreen = () => {
     } catch (error) {
       console.error("Erro ao carregar gêneros:", error);
     }
-  }, [formData.familia_id, getGenerosByFamilia]);
+  }, [familia?.id, getGenerosByFamilia]);
 
   // Carrega espécies quando gênero muda
   useEffect(() => {
-    const genId = formData.genero_id;
+    const genId = genero?.id;
     if (!genId) {
+      setEspecie(null);
       return;
     }
 
@@ -121,14 +112,51 @@ const ColetaScreen = () => {
     } catch (error) {
       console.error("Erro ao carregar espécies:", error);
     }
-  }, [formData.genero_id, getEspeciesByGenero]);
+  }, [genero?.id, getEspeciesByGenero]);
 
-  const handleInputChange = (field, value) => {
-    if (isViewMode && !isEditing) return; // Não permitir edição em modo visualização
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+  const handleFamiliaSelect = (item) => {
+    if (!item || item.id === 0) {
+      setFamilia(null);
+      setGenero(null);
+      setEspecie(null);
+      return;
+    }
+
+    setFamilia(getFamiliaById(item.id).data);
+    if (genero && genero.familia_id !== item.id) {
+      setGenero(null);
+      setEspecie(null);
+    }
+  };
+
+  const handleGeneroSelect = (item) => {
+    if (!item || item.id === 0) {
+      setGenero(null);
+      setEspecie(null);
+      return;
+    }
+    const gen = getGeneroById(item.id).data;
+    setGenero(gen);
+    const fam = getFamiliaById(gen.familia_id).data; 
+    setFamilia(fam);
+
+    if (especie && especie.genero_id !== item.id) {
+      setEspecie(null);
+    }
+  };
+
+  const handleEspecieSelect = (item) => {
+    const esp = getEspecieById(item.id).data;
+    const gen = getGeneroById(esp.genero_id).data;
+    const fam = getFamiliaById(gen.familia_id).data;
+
+    if (familia?.id !== fam.id) {
+      setFamilia(fam);
+    }
+    if (genero?.id !== gen.id) {
+      setGenero(gen);
+    }
+    setEspecie(esp);
   };
 
   const formatDate = (date) => {
@@ -149,26 +177,26 @@ const ColetaScreen = () => {
       setLoading(true);
 
       // Validação básica
-      if (!formData.nome.trim()) {
+      if (!nomeColeta.trim()) {
         throw new Error("O nome da coleta é obrigatório");
       }
 
-      if (!formData.data_coleta) {
+      if (!dataColeta) {
         throw new Error("A data da coleta é obrigatória");
       }
 
       const coletaAtualizada = {
         ...coleta,
-        nome: formData.nome.trim(),
-        data_coleta: toISODate(formData.data_coleta),
-        familia_id: formData.familia_id,
-        genero_id: formData.genero_id,
-        especie_id: formData.especie_id,
-        nome_comum: formData.nome_comum.trim() || null,
-        observacoes: formData.observacoes.trim() || null,
-        imagens: formData.imagens.length > 0 ? formData.imagens : null,
-        identificada: !!formData.especie_id,
-        solicita_ajuda_identificacao: formData.solicita_ajuda_identificacao,
+        nome: nomeColeta.trim(),
+        data_coleta: toISODate(dataColeta),
+        familia_id: familia?.id || null,
+        genero_id: genero?.id || null,
+        especie_id: especie?.id || null,
+        nome_comum: nomeComum.trim() || null,
+        observacoes: observacoes.trim() || null,
+        imagens: images.length > 0 ? images : null,
+        identificada: !!especie?.id,
+        solicita_ajuda_identificacao: solicitaAjuda,
         updated_at: new Date().toISOString(),
       };
 
@@ -209,17 +237,33 @@ const ColetaScreen = () => {
     setIsEditing(false);
     // Restaurar dados originais
     if (coleta) {
-      setFormData({
-        nome: coleta.nome || "",
-        data_coleta: coleta.data_coleta ? new Date(coleta.data_coleta) : null,
-        familia_id: coleta.familia_id,
-        genero_id: coleta.genero_id,
-        especie_id: coleta.especie_id,
-        nome_comum: coleta.nome_comum || "",
-        observacoes: coleta.observacoes || "",
-        imagens: coleta.imagens || [],
-        solicita_ajuda_identificacao: coleta.solicita_ajuda_identificacao || false,
-      });
+      setNomeColeta(coleta.nome || "");
+      setDataColeta(coleta.data_coleta ? new Date(coleta.data_coleta) : null);
+      setNomeComum(coleta.nome_comum || "");
+      setObservacoes(coleta.observacoes || "");
+      setImages(coleta.imagens || []);
+      setSolicitaAjuda(coleta.solicita_ajuda_identificacao || false);
+      
+      if (coleta.familia_id) {
+        const familiaData = getFamiliaById(coleta.familia_id).data;
+        setFamilia(familiaData);
+      } else {
+        setFamilia(null);
+      }
+      
+      if (coleta.genero_id) {
+        const generoData = getGeneroById(coleta.genero_id).data;
+        setGenero(generoData);
+      } else {
+        setGenero(null);
+      }
+      
+      if (coleta.especie_id) {
+        const especieData = getEspecieById(coleta.especie_id).data;
+        setEspecie(especieData);
+      } else {
+        setEspecie(null);
+      }
     }
   };
 
@@ -399,89 +443,94 @@ const ColetaScreen = () => {
             </View>
           )}
 
-          {/* Informações da coleta */}
-          <View style={styles.infoSection}>
-            <Text style={styles.sectionTitle}>📝 Informações Básicas</Text>
-            
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Nome:</Text>
-              <Text style={styles.infoValue}>{coleta?.nome || "Não definido"}</Text>
-            </View>
+          {/* Modo visualização */}
+          {isViewMode && !isEditing && (
+            <>
+              {/* Informações da coleta */}
+              <View style={styles.infoSection}>
+                <Text style={styles.sectionTitle}>📝 Informações Básicas</Text>
+                
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Nome:</Text>
+                  <Text style={styles.infoValue}>{coleta?.nome || "Não definido"}</Text>
+                </View>
 
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Data da Coleta:</Text>
-              <Text style={styles.infoValue}>{formatDate(coleta?.data_coleta)}</Text>
-            </View>
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Data da Coleta:</Text>
+                  <Text style={styles.infoValue}>{formatDate(coleta?.data_coleta)}</Text>
+                </View>
 
-            {coleta?.nome_comum && (
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Nome Comum:</Text>
-                <Text style={styles.infoValue}>{coleta.nome_comum}</Text>
+                {coleta?.nome_comum && (
+                  <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>Nome Comum:</Text>
+                    <Text style={styles.infoValue}>{coleta.nome_comum}</Text>
+                  </View>
+                )}
+
+                {coleta?.observacoes && (
+                  <View style={styles.infoRow}>
+                    <Text style={styles.infoLabel}>Observações:</Text>
+                    <Text style={styles.infoValue}>{coleta.observacoes}</Text>
+                  </View>
+                )}
               </View>
-            )}
 
-            {coleta?.observacoes && (
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Observações:</Text>
-                <Text style={styles.infoValue}>{coleta.observacoes}</Text>
+              {/* Classificação taxonômica */}
+              <View style={styles.infoSection}>
+                <Text style={styles.sectionTitle}>🌿 Classificação Taxonômica</Text>
+                
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Família:</Text>
+                  <Text style={styles.infoValue}>
+                    {coleta?.familia_id ? (familias.find(f => f.id === coleta.familia_id)?.nome || "Não encontrada") : "Não definida"}
+                  </Text>
+                </View>
+
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Gênero:</Text>
+                  <Text style={styles.infoValue}>
+                    {coleta?.genero_id ? (generos.find(g => g.id === coleta.genero_id)?.nome || "Não encontrado") : "Não definido"}
+                  </Text>
+                </View>
+
+                <View style={styles.infoRow}>
+                  <Text style={styles.infoLabel}>Espécie:</Text>
+                  <Text style={styles.infoValue}>
+                    {coleta?.especie_id ? (especies.find(e => e.id === coleta.especie_id)?.nome || "Não encontrada") : "Não definida"}
+                  </Text>
+                </View>
               </View>
-            )}
-          </View>
 
-          {/* Classificação taxonômica */}
-          <View style={styles.infoSection}>
-            <Text style={styles.sectionTitle}>🌿 Classificação Taxonômica</Text>
-            
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Família:</Text>
-              <Text style={styles.infoValue}>
-                {coleta?.familia_id ? (familias.find(f => f.id === coleta.familia_id)?.nome || "Não encontrada") : "Não definida"}
-              </Text>
-            </View>
+              {/* Imagens */}
+              {coleta?.imagens && coleta.imagens.length > 0 && (
+                <View style={styles.infoSection}>
+                  <Text style={styles.sectionTitle}>📸 Imagens ({coleta.imagens.length})</Text>
+                  <View style={styles.imagesContainer}>
+                    {coleta.imagens.map((imagem, index) => (
+                      <Image
+                        key={index}
+                        source={{ uri: imagem }}
+                        style={styles.imageThumbnail}
+                        resizeMode="cover"
+                      />
+                    ))}
+                  </View>
+                </View>
+              )}
 
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Gênero:</Text>
-              <Text style={styles.infoValue}>
-                {coleta?.genero_id ? (generos.find(g => g.id === coleta.genero_id)?.nome || "Não encontrado") : "Não definido"}
-              </Text>
-            </View>
-
-            <View style={styles.infoRow}>
-              <Text style={styles.infoLabel}>Espécie:</Text>
-              <Text style={styles.infoValue}>
-                {coleta?.especie_id ? (especies.find(e => e.id === coleta.especie_id)?.nome || "Não encontrada") : "Não definida"}
-              </Text>
-            </View>
-          </View>
-
-          {/* Imagens */}
-          {coleta?.imagens && coleta.imagens.length > 0 && (
-            <View style={styles.infoSection}>
-              <Text style={styles.sectionTitle}>📸 Imagens ({coleta.imagens.length})</Text>
-              <View style={styles.imagesContainer}>
-                {coleta.imagens.map((imagem, index) => (
-                  <Image
-                    key={index}
-                    source={{ uri: imagem }}
-                    style={styles.imageThumbnail}
-                    resizeMode="cover"
-                  />
-                ))}
-              </View>
-            </View>
-          )}
-
-          {/* Solicitação de ajuda */}
-          {coleta?.solicita_ajuda_identificacao && (
-            <View style={styles.infoSection}>
-              <Text style={styles.sectionTitle}>🆘 Solicitação de Ajuda</Text>
-              <View style={styles.helpContainer}>
-                <Text style={styles.helpText}>
-                  Esta coleta solicita ajuda para identificação. 
-                  Outros usuários podem ajudar a identificar a espécie.
-                </Text>
-              </View>
-            </View>
+              {/* Solicitação de ajuda */}
+              {coleta?.solicita_ajuda_identificacao && (
+                <View style={styles.infoSection}>
+                  <Text style={styles.sectionTitle}>🆘 Solicitação de Ajuda</Text>
+                  <View style={styles.helpContainer}>
+                    <Text style={styles.helpText}>
+                      Esta coleta solicita ajuda para identificação. 
+                      Outros usuários podem ajudar a identificar a espécie.
+                    </Text>
+                  </View>
+                </View>
+              )}
+            </>
           )}
 
           {/* Formulário de edição */}
@@ -493,31 +542,31 @@ const ColetaScreen = () => {
                 <Text style={styles.label}>Nome da Coleta *</Text>
                 <TextInput
                   style={styles.input}
-                  value={formData.nome}
-                  onChangeText={(text) => handleInputChange("nome", text)}
+                  value={nomeColeta}
+                  onChangeText={setNomeColeta}
                   placeholder="Digite o nome da coleta"
                 />
 
                 <Text style={styles.label}>Data da Coleta *</Text>
                 <DatePicker
-                  value={formData.data_coleta}
-                  onChange={(date) => handleInputChange("data_coleta", date)}
+                  value={dataColeta}
+                  onChange={setDataColeta}
                   placeholder="Selecione a data da coleta"
                 />
 
                 <Text style={styles.label}>Nome Comum</Text>
                 <TextInput
                   style={styles.input}
-                  value={formData.nome_comum}
-                  onChangeText={(text) => handleInputChange("nome_comum", text)}
+                  value={nomeComum}
+                  onChangeText={setNomeComum}
                   placeholder="Digite o nome comum"
                 />
 
                 <Text style={styles.label}>Observações</Text>
                 <TextInput
                   style={styles.textArea}
-                  value={formData.observacoes}
-                  onChangeText={(text) => handleInputChange("observacoes", text)}
+                  value={observacoes}
+                  onChangeText={setObservacoes}
                   placeholder="Digite observações sobre a coleta"
                   multiline
                   numberOfLines={4}
@@ -528,10 +577,8 @@ const ColetaScreen = () => {
                   items={familias.map((f) => ({ id: f.id, label: f.nome }))}
                   placeholder="Selecione a família"
                   searchable
-                  value={formData.familia_id}
-                  onChange={(item) =>
-                    handleInputChange("familia_id", item?.id || null)
-                  }
+                  value={familia?.id}
+                  onChange={handleFamiliaSelect}
                 />
 
                 <Text style={styles.label}>Gênero</Text>
@@ -539,10 +586,8 @@ const ColetaScreen = () => {
                   items={generos.map((g) => ({ id: g.id, label: g.nome }))}
                   placeholder="Selecione o gênero"
                   searchable
-                  value={formData.genero_id}
-                  onChange={(item) =>
-                    handleInputChange("genero_id", item?.id || null)
-                  }
+                  value={genero?.id}
+                  onChange={handleGeneroSelect}
                 />
 
                 <Text style={styles.label}>Espécie</Text>
@@ -555,44 +600,34 @@ const ColetaScreen = () => {
                   }))}
                   placeholder="Selecione a espécie"
                   searchable
-                  value={formData.especie_id}
-                  onChange={(item) =>
-                    handleInputChange("especie_id", item?.id || null)
-                  }
+                  value={especie?.id}
+                  onChange={handleEspecieSelect}
                 />
 
                 <Text style={styles.label}>Imagens</Text>
                 <ImageSelector
-                  images={formData.imagens}
+                  images={images}
                   onAddImage={(uri) => {
-                    setFormData((prev) => ({
-                      ...prev,
-                      imagens: [...prev.imagens, uri],
-                    }));
+                    setImages([...images, uri]);
                   }}
                   onRemoveImage={(uri) => {
-                    setFormData((prev) => ({
-                      ...prev,
-                      imagens: prev.imagens.filter((i) => i !== uri),
-                    }));
+                    setImages(images.filter((i) => i !== uri));
                   }}
                 />
 
                 <Text style={styles.label}>Solicitar Ajuda para Identificação</Text>
                 <View style={styles.switchContainer}>
                   <Text style={styles.switchLabel}>
-                    {formData.solicita_ajuda_identificacao 
+                    {solicitaAjuda 
                       ? "Sim - Esta coleta solicita ajuda para identificação"
                       : "Não - Esta coleta não solicita ajuda para identificação"
                     }
                   </Text>
                   <Switch
-                    value={formData.solicita_ajuda_identificacao}
-                    onValueChange={(value) => 
-                      handleInputChange("solicita_ajuda_identificacao", value)
-                    }
+                    value={solicitaAjuda}
+                    onValueChange={setSolicitaAjuda}
                     trackColor={{ false: "#767577", true: "#81b0ff" }}
-                    thumbColor={formData.solicita_ajuda_identificacao ? "#2e7d32" : "#f4f3f4"}
+                    thumbColor={solicitaAjuda ? "#2e7d32" : "#f4f3f4"}
                   />
                 </View>
               </View>

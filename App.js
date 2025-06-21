@@ -45,6 +45,10 @@ import BiodiversityReport from "./screens/BiodiversityReport";
 import QuantitativeReport from "./screens/QuantitativeReport";
 import QualitativeReport from "./screens/QualitativeReport";
 
+// Novas telas de sugestão de identificação
+import TelaPedidodeAjuda from "./screens/TelaPedidodeAjuda-AjudemeaIdentificar";
+import ChatAjudemeaIdentificar from "./screens/Chat-AjudemeaIdentificar";
+
 const Stack = createNativeStackNavigator();
 
 const App = () => {
@@ -82,6 +86,18 @@ const App = () => {
             <Stack.Screen
               name="ChatEuConhecoEssa"
               component={ChatEuConhecoEssa}
+              options={{ headerShown: false, gestureEnabled: true }}
+            />
+
+            {/* Novas telas de sugestão de identificação */}
+            <Stack.Screen
+              name="TelaPedidodeAjuda-AjudemeaIdentificar"
+              component={TelaPedidodeAjuda}
+              options={{ headerShown: false, gestureEnabled: true }}
+            />
+            <Stack.Screen
+              name="Chat-AjudemeaIdentificar"
+              component={ChatAjudemeaIdentificar}
               options={{ headerShown: false, gestureEnabled: true }}
             />
 

@@ -8,6 +8,7 @@ import { GeneroDataProvider } from "./generos/GeneroDataContext";
 import { EspecieDataProvider } from "./especies/EspecieDataContext";
 import { NotificacaoDataProvider } from "./notificacoes/NotificacaoDataContext";
 import { RelatorioDataProvider } from "./relatorios/RelatorioDataContext";
+import { SugestaoIdentificacaoDataProvider } from "./sugestoes/SugestaoIdentificacaoContext";
 import PersistenceService from "./services/PersistenceService";
 import CacheService from "./services/CacheService";
 import SyncService from "./services/SyncService";
@@ -87,7 +88,11 @@ export const AppDataProvider: React.FC<AppDataProviderProps> = ({
                 <GeneroDataProvider>
                   <EspecieDataProvider>
                     <NotificacaoDataProvider>
-                      <RelatorioDataProvider>{children}</RelatorioDataProvider>
+                      <RelatorioDataProvider>
+                        <SugestaoIdentificacaoDataProvider>
+                          {children}
+                        </SugestaoIdentificacaoDataProvider>
+                      </RelatorioDataProvider>
                     </NotificacaoDataProvider>
                   </EspecieDataProvider>
                 </GeneroDataProvider>

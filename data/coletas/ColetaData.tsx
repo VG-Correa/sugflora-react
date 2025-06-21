@@ -190,6 +190,61 @@ class ColetaData {
       return new Message(500, "Erro ao identificar coleta");
     }
   }
+
+  // Método para buscar coletas que solicitam ajuda para identificação
+  public getSolicitamAjuda(): Message<Coleta[]> {
+    const coletas = this.coletas.filter(
+      (coleta) => coleta.solicita_ajuda_identificacao && !coleta.deleted
+    );
+    if (coletas.length > 0) {
+      return new Message(200, "Coletas que solicitam ajuda localizadas", coletas);
+    } else {
+      return new Message(404, "Nenhuma coleta que solicita ajuda encontrada");
+    }
+  }
+
+  // Método para buscar coletas públicas (que podem ser visualizadas por outros usuários)
+  public getColetasPublicas(): Message<Coleta[]> {
+    const coletas = this.coletas.filter(
+      (coleta) => coleta.solicita_ajuda_identificacao && !coleta.deleted
+    );
+    if (coletas.length > 0) {
+      return new Message(200, "Coletas públicas localizadas", coletas);
+    } else {
+      return new Message(404, "Nenhuma coleta pública encontrada");
+    }
+  }
+
+  // Método para buscar coletas com informações limitadas (sem dados sigilosos)
+  public getColetasParaIdentificacao(): Message<any[]> {
+    const coletas = this.coletas.filter(
+      (coleta) => coleta.solicita_ajuda_identificacao && !coleta.deleted
+    );
+    
+    if (coletas.length > 0) {
+      // Retorna apenas informações necessárias para identificação
+      const coletasLimitadas = coletas.map(coleta => ({
+        id: coleta.id,
+        nome: coleta.nome,
+        data_coleta: coleta.data_coleta,
+        familia_id: coleta.familia_id,
+        genero_id: coleta.genero_id,
+        especie_id: coleta.especie_id,
+        nome_comum: coleta.nome_comum,
+        identificada: coleta.identificada,
+        imagens: coleta.imagens,
+        observacoes: coleta.observacoes,
+        solicita_ajuda_identificacao: coleta.solicita_ajuda_identificacao,
+        created_at: coleta.created_at,
+        updated_at: coleta.updated_at,
+        // Não inclui campo_id para manter sigilo do projeto/campo
+      }));
+      
+      return new Message(200, "Coletas para identificação localizadas", coletasLimitadas);
+    } else {
+      return new Message(404, "Nenhuma coleta para identificação encontrada");
+    }
+  }
 }
 
 export default ColetaData;

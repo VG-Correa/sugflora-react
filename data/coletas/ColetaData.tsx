@@ -74,6 +74,40 @@ class ColetaData {
         "2024-01-18T16:45:00Z", // created_at
         "2024-01-18T16:45:00Z", // updated_at
         false // deleted
+      ),
+      new Coleta(
+        5,
+        "Coleta 5 - Espécie E (Cerrado)",
+        4, // campo_id - Campo do usuário 2
+        "2024-01-19T10:30:00Z",
+        null, // familia_id
+        null, // genero_id
+        null, // especie_id
+        "Espécie E", // nome_comum
+        false, // identificada
+        ["imagem5.jpg"], // imagens
+        "Observações da coleta 5 - Espécie do Cerrado", // observacoes
+        true, // solicita_ajuda_identificacao
+        "2024-01-19T10:30:00Z", // created_at
+        "2024-01-19T10:30:00Z", // updated_at
+        false // deleted
+      ),
+      new Coleta(
+        6,
+        "Coleta 6 - Espécie F (Cerrado)",
+        5, // campo_id - Campo do usuário 2
+        "2024-01-20T14:15:00Z",
+        null, // familia_id
+        null, // genero_id
+        null, // especie_id
+        "Espécie F", // nome_comum
+        false, // identificada
+        ["imagem6.jpg"], // imagens
+        "Observações da coleta 6 - Outra espécie do Cerrado", // observacoes
+        true, // solicita_ajuda_identificacao
+        "2024-01-20T14:15:00Z", // created_at
+        "2024-01-20T14:15:00Z", // updated_at
+        false // deleted
       )
     );
   }

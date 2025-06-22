@@ -8,6 +8,7 @@ import React, {
 import SugestaoIdentificacaoData from "./SugestaoIdentificacaoData";
 import SugestaoIdentificacao from "./SugestaoIdentificacao";
 import Message from "../../Messages/Message";
+import { useColetaData } from "../coletas/ColetaDataContext";
 
 interface SugestaoIdentificacaoContextType {
   sugestoes: SugestaoIdentificacao[];
@@ -43,6 +44,9 @@ export const SugestaoIdentificacaoDataProvider = ({
   const [sugestoes, setSugestoes] = useState<SugestaoIdentificacao[]>(
     sugestaoService.getAll().data || []
   );
+  
+  // Usar o contexto de coletas para atualizar a coleta quando necessário
+  const { atualizarComSugestaoAceita } = useColetaData();
 
   const getSugestaoById = useCallback(
     (id: number): Message<SugestaoIdentificacao> => {
@@ -107,10 +111,28 @@ export const SugestaoIdentificacaoDataProvider = ({
       const result = sugestaoService.updateStatus(id, status);
       if (result.status === 200 && result.data) {
         setSugestoes([...sugestaoService.getAll().data!]);
+        
+        // Se a sugestão foi aceita, atualizar a coleta correspondente
+        if (status === 'aceita' && result.data) {
+          const sugestao = result.data;
+          
+          // Atualizar a coleta com os dados da sugestão aceita
+          const resultadoColeta = atualizarComSugestaoAceita(
+            sugestao.coleta_id,
+            sugestao.familia_sugerida_id,
+            sugestao.genero_sugerido_id,
+            sugestao.especie_sugerida_id,
+            sugestao.nome_comum_sugerido
+          );
+          
+          if (resultadoColeta.status !== 200) {
+            console.error('Erro ao atualizar coleta:', resultadoColeta.message);
+          }
+        }
       }
       return result;
     },
-    [sugestaoService]
+    [sugestaoService, atualizarComSugestaoAceita]
   );
 
   const getSugestoesCompletas = useCallback((): Message<any[]> => {

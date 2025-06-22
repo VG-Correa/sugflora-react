@@ -8,7 +8,9 @@ class CampoData {
     this.campos.push(
       new Campo(1, "Campo 1", "Descrição do Campo 1", "2023-01-01T00:00:00Z", "2023-01-02T00:00:00Z", "Rua tal","Ferraz", "SP", "Brasil", 1, 1, "2023-01-03T00:00:00Z", "usuario_1", false),
       new Campo(2, "Campo 2", "Descrição do Campo 2", "2023-02-01T00:00:00Z", "2023-02-02T00:00:00Z", "Rua tal","Ferraz", "SP", "Brasil", 1, 1, "2023-02-03T00:00:00Z", "usuario_1", false),
-      new Campo(3, "Campo 3", "Descrição do Campo 3", "2023-03-01T00:00:00Z", "2023-03-02T00:00:00Z", "Rua tal","Ferraz", "SP", "Brasil", 2, 1, "2023-03-03T00:00:00Z", "usuario_1", false)
+      new Campo(3, "Campo 3", "Descrição do Campo 3", "2023-03-01T00:00:00Z", "2023-03-02T00:00:00Z", "Rua tal","Ferraz", "SP", "Brasil", 2, 1, "2023-03-03T00:00:00Z", "usuario_1", false),
+      new Campo(4, "Campo Cerrado 1", "Descrição do Campo Cerrado 1", "2023-04-01T00:00:00Z", "2023-04-02T00:00:00Z", "Rua tal","Brasília", "DF", "Brasil", 3, 2, "2023-04-03T00:00:00Z", "usuario_2", false),
+      new Campo(5, "Campo Cerrado 2", "Descrição do Campo Cerrado 2", "2023-05-01T00:00:00Z", "2023-05-02T00:00:00Z", "Rua tal","Goiânia", "GO", "Brasil", 3, 2, "2023-05-03T00:00:00Z", "usuario_2", false)
     )
   }
 

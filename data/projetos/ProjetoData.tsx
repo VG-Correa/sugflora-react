@@ -15,7 +15,7 @@ class ProjetoData {
         "2024-06-30",
         "2024-12-31",
         1, // responsavel_id
-        1, // usuario_dono_id
+        1, // usuario_dono_id - Usuário 1
         "data:image/jpeg;base64,exemplo", // imagemBase64
         "Ativo", // status
         "2024-01-01T00:00:00Z", // created_at
@@ -30,11 +30,26 @@ class ProjetoData {
         "2024-07-15",
         "2024-11-30",
         1, // responsavel_id
-        1, // usuario_dono_id
+        1, // usuario_dono_id - Usuário 1
         "data:image/jpeg;base64,exemplo", // imagemBase64
         "Ativo", // status
         "2024-02-01T00:00:00Z", // created_at
         "2024-02-01T00:00:00Z", // updated_at
+        false // deleted
+      ),
+      new Projeto(
+        3,
+        "Projeto Cerrado",
+        "Estudo da biodiversidade do Cerrado",
+        "2024-03-01",
+        "2024-08-30",
+        "2024-12-31",
+        2, // responsavel_id
+        2, // usuario_dono_id - Usuário 2
+        "data:image/jpeg;base64,exemplo", // imagemBase64
+        "Ativo", // status
+        "2024-03-01T00:00:00Z", // created_at
+        "2024-03-01T00:00:00Z", // updated_at
         false // deleted
       )
     );

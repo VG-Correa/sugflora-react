@@ -19,10 +19,12 @@ interface ColetaContextType {
   getColetasSolicitamAjuda: () => Message<Coleta[]>;
   getColetasPublicas: () => Message<Coleta[]>;
   getColetasParaIdentificacao: () => Message<any[]>;
+  getColetasOutrosUsuarios: (usuarioLogadoId: number, campos: any[], projetos: any[]) => Message<any[]>;
   addColeta: (coleta: Coleta) => Promise<Message<Coleta>>;
   updateColeta: (coleta: Coleta) => Message<Coleta>;
   deleteColeta: (id: number) => Message<boolean>;
   identificarColeta: (id: number, especie_id: number) => Message<Coleta>;
+  atualizarComSugestaoAceita: (coleta_id: number, familia_id: number | null, genero_id: number | null, especie_id: number | null, nome_comum: string | null) => Message<Coleta>;
 }
 
 const ColetaContext = createContext<ColetaContextType | undefined>(undefined);
@@ -82,6 +84,13 @@ export const ColetaDataProvider = ({
   const getColetasParaIdentificacao = useCallback((): Message<any[]> => {
     return coletaService.getColetasParaIdentificacao();
   }, [coletaService]);
+
+  const getColetasOutrosUsuarios = useCallback(
+    (usuarioLogadoId: number, campos: any[], projetos: any[]): Message<any[]> => {
+      return coletaService.getColetasOutrosUsuarios(usuarioLogadoId, campos, projetos);
+    },
+    [coletaService]
+  );
 
   const addColeta = useCallback(
     async (coleta: Coleta): Promise<Message<Coleta>> => {
@@ -144,6 +153,17 @@ export const ColetaDataProvider = ({
     [coletaService]
   );
 
+  const atualizarComSugestaoAceita = useCallback(
+    (coleta_id: number, familia_id: number | null, genero_id: number | null, especie_id: number | null, nome_comum: string | null): Message<Coleta> => {
+      const result = coletaService.atualizarComSugestaoAceita(coleta_id, familia_id, genero_id, especie_id, nome_comum);
+      if (result.status === 200 && result.data) {
+        setColetas([...coletaService.getAll().data!]);
+      }
+      return result;
+    },
+    [coletaService]
+  );
+
   const value = {
     coletas,
     getColetaById,
@@ -153,10 +173,12 @@ export const ColetaDataProvider = ({
     getColetasSolicitamAjuda,
     getColetasPublicas,
     getColetasParaIdentificacao,
+    getColetasOutrosUsuarios,
     addColeta,
     updateColeta,
     deleteColeta,
     identificarColeta,
+    atualizarComSugestaoAceita,
   };
 
   return (
